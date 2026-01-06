@@ -416,7 +416,9 @@ class _TransactionList extends StatelessWidget {
             final tx = TransactionModel.fromMap(data, docs[index].id);
             final isMe = tx.senderUid == userUid;
 
-            return Card(
+            final docId = docs[index].id;
+
+            final cardWidget = Card(
               margin: const EdgeInsets.only(bottom: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -452,6 +454,54 @@ class _TransactionList extends StatelessWidget {
                   ),
                 ),
               ),
+            );
+
+            if (!isMe) return cardWidget;
+
+            return Dismissible(
+              key: Key(docId),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 20),
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(Icons.delete, color: Colors.white),
+              ),
+              confirmDismiss: (direction) async {
+                return await showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Delete Transaction?'),
+                    content: const Text(
+                      'Are you sure you want to delete this item?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text(
+                          'Delete',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              onDismissed: (direction) {
+                FirebaseFirestore.instance
+                    .collection('transactions')
+                    .doc(docId)
+                    .delete();
+              },
+              child: cardWidget,
             );
           },
         );

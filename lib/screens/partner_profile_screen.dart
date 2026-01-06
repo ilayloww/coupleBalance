@@ -16,7 +16,7 @@ class PartnerProfileScreen extends StatefulWidget {
 class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
   bool _isLoading = false;
 
-  Future<void> _confirmUnlink(BuildContext context) async {
+  Future<void> _confirmUnlink() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -151,9 +151,7 @@ class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
                     width: double.infinity,
                     height: 50,
                     child: OutlinedButton.icon(
-                      onPressed: _isLoading
-                          ? null
-                          : () => _confirmUnlink(context),
+                      onPressed: _isLoading ? null : () => _confirmUnlink(),
                       icon: const Icon(Icons.link_off, color: Colors.red),
                       label: _isLoading
                           ? const SizedBox(

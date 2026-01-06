@@ -1,8 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
@@ -22,52 +20,6 @@ class AddExpenseViewModel extends ChangeNotifier {
   void setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
-  }
-
-  Future<void> fetchLocation() async {
-    setLoading(true);
-    try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        throw Exception('Location services are disabled.');
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          throw Exception('Location permissions are denied');
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        throw Exception('Location permissions are permanently denied.');
-      }
-
-      Position position = await Geolocator.getCurrentPosition();
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-
-      String addressName = '';
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks[0];
-        addressName = '${place.name}, ${place.locality}';
-      }
-
-      _state.selectedLocation = TransactionLocation(
-        lat: position.latitude,
-        lng: position.longitude,
-        addressName: addressName,
-      );
-      notifyListeners();
-    } catch (e) {
-      debugPrint("Error fetching location: $e");
-      // Handle error cleanly (e.g. show snackbar in UI)
-    } finally {
-      setLoading(false);
-    }
   }
 
   Future<void> pickImage(ImageSource source) async {
@@ -117,7 +69,6 @@ class AddExpenseViewModel extends ChangeNotifier {
         amount: amount,
         note: note,
         photoUrl: photoUrl,
-        location: _state.selectedLocation,
         timestamp: DateTime.now(),
       );
 
@@ -134,6 +85,5 @@ class AddExpenseViewModel extends ChangeNotifier {
 }
 
 class AddExpenseScreenState {
-  TransactionLocation? selectedLocation;
   File? selectedImage;
 }

@@ -81,35 +81,6 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
               ),
               const SizedBox(height: 24),
 
-              // Location Action
-              ListTile(
-                leading: const Icon(
-                  Icons.location_on,
-                  color: Colors.pinkAccent,
-                ),
-                title: Text(
-                  state.selectedLocation?.addressName ?? 'Add Location',
-                ),
-                subtitle: state.selectedLocation != null
-                    ? Text(
-                        '${state.selectedLocation!.lat}, ${state.selectedLocation!.lng}',
-                      )
-                    : null,
-                tileColor: Colors.pink[50],
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                onTap: () => viewModel.fetchLocation(),
-                trailing: viewModel.isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : null,
-              ),
-              const SizedBox(height: 16),
-
               // Image Action
               ListTile(
                 leading: const Icon(

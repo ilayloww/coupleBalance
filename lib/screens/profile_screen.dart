@@ -50,6 +50,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       imageQuality: 70,
     );
 
+    if (!mounted) return;
+
     if (pickedFile != null) {
       setState(() => _isLoading = true);
       try {
