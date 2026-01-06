@@ -161,7 +161,7 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                           receiverUid: widget.partnerUid,
                         );
 
-                        if (!mounted) return;
+                        if (!context.mounted) return;
                         if (success) {
                           Navigator.pop(context);
                         }
