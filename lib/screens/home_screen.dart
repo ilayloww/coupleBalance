@@ -287,18 +287,37 @@ class _BalanceCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
+                  InkWell(
+                    onTap: () => _selectSettlementDay(
+                      context,
+                      userUid,
+                      partnerUid,
+                      settlementDay,
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      'Settlement in $daysLeft days',
-                      style: const TextStyle(color: Colors.white),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Settlement in $daysLeft days',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.edit,
+                            color: Colors.white70,
+                            size: 14,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -308,6 +327,55 @@ class _BalanceCard extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _selectSettlementDay(
+    BuildContext context,
+    String myUid,
+    String? partnerUid,
+    int currentDay,
+  ) async {
+    final pickedDay = await showDialog<int>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Select Settlement Day'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: 31,
+              itemBuilder: (context, index) {
+                final day = index + 1;
+                return ListTile(
+                  title: Text('Day $day'),
+                  selected: day == currentDay,
+                  onTap: () => Navigator.pop(ctx, day),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    if (pickedDay != null && pickedDay != currentDay) {
+      final batch = FirebaseFirestore.instance.batch();
+      final myRef = FirebaseFirestore.instance.collection('users').doc(myUid);
+
+      batch.set(myRef, {'settlementDay': pickedDay}, SetOptions(merge: true));
+
+      if (partnerUid != null) {
+        final partnerRef = FirebaseFirestore.instance
+            .collection('users')
+            .doc(partnerUid);
+        batch.set(partnerRef, {
+          'settlementDay': pickedDay,
+        }, SetOptions(merge: true));
+      }
+
+      await batch.commit();
+    }
   }
 }
 
