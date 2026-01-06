@@ -79,6 +79,39 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                   fillColor: Colors.grey[100],
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // Quick Options
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children:
+                      [
+                            'Food',
+                            'Coffee',
+                            'Groceries',
+                            'Rent',
+                            'Transport',
+                            'Date',
+                            'Bills',
+                            'Shopping',
+                          ]
+                          .map(
+                            (option) => Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: ActionChip(
+                                label: Text(option),
+                                backgroundColor: Colors.white,
+                                side: BorderSide(color: Colors.grey[300]!),
+                                onPressed: () {
+                                  _noteController.text = option;
+                                },
+                              ),
+                            ),
+                          )
+                          .toList(),
+                ),
+              ),
               const SizedBox(height: 24),
 
               // Image Action
