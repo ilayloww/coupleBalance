@@ -27,6 +27,24 @@ class HomeScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
+          StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .snapshots(),
+            builder: (context, snapshot) {
+              final userData = snapshot.data?.data() as Map<String, dynamic>?;
+              final partnerUid = userData?['partnerUid'];
+
+              if (partnerUid == null) return const SizedBox();
+
+              return IconButton(
+                icon: const Icon(Icons.link_off, color: Colors.redAccent),
+                tooltip: 'Unlink Partner',
+                onPressed: () => _confirmUnlink(context, user.uid, partnerUid),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.black),
             onPressed: () {
@@ -89,6 +107,52 @@ class HomeScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Future<void> _confirmUnlink(
+    BuildContext context,
+    String myUid,
+    String partnerUid,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Unlink Partner?'),
+        content: const Text(
+          'This will disconnect your accounts. You will no longer see shared expenses.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Unlink', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final batch = FirebaseFirestore.instance.batch();
+      final myRef = FirebaseFirestore.instance.collection('users').doc(myUid);
+      final partnerRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(partnerUid);
+
+      // Remove field using FieldValue.delete()
+      batch.update(myRef, {'partnerUid': FieldValue.delete()});
+      batch.update(partnerRef, {'partnerUid': FieldValue.delete()});
+
+      await batch.commit();
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Unlinked successfully')));
+      }
+    }
   }
 }
 
