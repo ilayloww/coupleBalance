@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -23,39 +24,38 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[50], // Soft background
       appBar: AppBar(
+        leading: StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .snapshots(),
+          builder: (context, snapshot) {
+            final userData = snapshot.data?.data() as Map<String, dynamic>?;
+            final partnerUid = userData?['partnerUid'];
+
+            if (partnerUid == null) return const SizedBox();
+
+            return _AnimatedHeartButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        PartnerProfileScreen(partnerUid: partnerUid),
+                  ),
+                );
+              },
+            );
+          },
+        ),
         title: const Text(
           'CoupleBalance',
           style: TextStyle(color: Colors.black),
         ),
+        centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          StreamBuilder<DocumentSnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('users')
-                .doc(user.uid)
-                .snapshots(),
-            builder: (context, snapshot) {
-              final userData = snapshot.data?.data() as Map<String, dynamic>?;
-              final partnerUid = userData?['partnerUid'];
-
-              if (partnerUid == null) return const SizedBox();
-
-              return IconButton(
-                icon: const Icon(Icons.favorite, color: Colors.redAccent),
-                tooltip: 'Partner Info',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          PartnerProfileScreen(partnerUid: partnerUid),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
           StreamBuilder<DocumentSnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('users')
@@ -506,6 +506,65 @@ class _TransactionList extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+class _AnimatedHeartButton extends StatefulWidget {
+  final VoidCallback onPressed;
+  const _AnimatedHeartButton({required this.onPressed});
+
+  @override
+  State<_AnimatedHeartButton> createState() => _AnimatedHeartButtonState();
+}
+
+class _AnimatedHeartButtonState extends State<_AnimatedHeartButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+      lowerBound: 0.0,
+      upperBound: 1.0,
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.8,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleTap() async {
+    await HapticFeedback.mediumImpact();
+    await _controller.forward();
+    await _controller.reverse();
+    widget.onPressed();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _handleTap,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Transform.scale(scale: _scaleAnimation.value, child: child);
+        },
+        child: const Padding(
+          padding: EdgeInsets.all(8.0),
+          child: Icon(Icons.favorite, color: Colors.redAccent, size: 28),
+        ),
+      ),
     );
   }
 }
