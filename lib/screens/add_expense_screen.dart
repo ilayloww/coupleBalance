@@ -11,7 +11,7 @@ class AddExpenseScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => AddExpenseViewModel(),
+      create: (_) => AddExpenseViewModel()..init(partnerUid),
       child: _AddExpenseContent(partnerUid: partnerUid),
     );
   }
@@ -51,6 +51,7 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
               TextField(
                 controller: _amountController,
                 keyboardType: TextInputType.number,
+                onChanged: (_) => setState(() {}), // Refresh for dynamic text
                 decoration: InputDecoration(
                   labelText: 'Amount (₺)',
                   border: OutlineInputBorder(
@@ -64,6 +65,67 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // Split Options
+              Column(
+                children: [
+                  _SplitOptionCard(
+                    title: 'You paid, split equally',
+                    isSelected:
+                        viewModel.selectedOption == SplitOption.youPaidSplit,
+                    onTap: () =>
+                        viewModel.setSplitOption(SplitOption.youPaidSplit),
+                    icon: Icons.call_split,
+                  ),
+                  const SizedBox(height: 8),
+                  _SplitOptionCard(
+                    title: 'You are owed full amount',
+                    isSelected:
+                        viewModel.selectedOption == SplitOption.youPaidFull,
+                    onTap: () =>
+                        viewModel.setSplitOption(SplitOption.youPaidFull),
+                    icon: Icons.arrow_outward,
+                  ),
+                  const SizedBox(height: 8),
+                  _SplitOptionCard(
+                    title: '${viewModel.partnerName} paid, split equally',
+                    isSelected:
+                        viewModel.selectedOption ==
+                        SplitOption.partnerPaidSplit,
+                    onTap: () =>
+                        viewModel.setSplitOption(SplitOption.partnerPaidSplit),
+                    icon: Icons.call_split,
+                    isPartner: true,
+                  ),
+                  const SizedBox(height: 8),
+                  _SplitOptionCard(
+                    title: '${viewModel.partnerName} is owed full amount',
+                    isSelected:
+                        viewModel.selectedOption == SplitOption.partnerPaidFull,
+                    onTap: () =>
+                        viewModel.setSplitOption(SplitOption.partnerPaidFull),
+                    icon: Icons.arrow_downward,
+                    isPartner: true,
+                  ),
+                ],
+              ),
+
+              // Dynamic Explanation
+              if (_amountController.text.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0, left: 4),
+                  child: Text(
+                    viewModel.getDescriptionText(
+                      double.tryParse(_amountController.text) ?? 0,
+                    ),
+                    style: TextStyle(
+                      color: Colors.pinkAccent[700],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+
               const SizedBox(height: 16),
 
               // Note Input
@@ -219,6 +281,83 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                 Navigator.pop(ctx);
               },
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SplitOptionCard extends StatelessWidget {
+  final String title;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final IconData icon;
+  final bool isPartner;
+
+  const _SplitOptionCard({
+    required this.title,
+    required this.isSelected,
+    required this.onTap,
+    required this.icon,
+    this.isPartner = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.pink[50] : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? Colors.pinkAccent : Colors.grey[300]!,
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.pinkAccent.withValues(alpha: 0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isSelected ? Colors.pink[100] : Colors.grey[100],
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: isSelected ? Colors.pink : Colors.grey[600],
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected ? Colors.pink[900] : Colors.black87,
+                ),
+              ),
+            ),
+            if (isSelected)
+              const Icon(
+                Icons.check_circle,
+                color: Colors.pinkAccent,
+                size: 24,
+              ),
           ],
         ),
       ),
