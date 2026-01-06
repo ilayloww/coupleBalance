@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
 import '../models/transaction_model.dart';
 import '../services/auth_service.dart';
 import 'add_expense_screen.dart';
 import 'partner_link_screen.dart';
 import 'profile_screen.dart';
+import 'partner_profile_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -40,9 +42,17 @@ class HomeScreen extends StatelessWidget {
               if (partnerUid == null) return const SizedBox();
 
               return IconButton(
-                icon: const Icon(Icons.link_off, color: Colors.redAccent),
-                tooltip: 'Unlink Partner',
-                onPressed: () => _confirmUnlink(context, user.uid, partnerUid),
+                icon: const Icon(Icons.favorite, color: Colors.redAccent),
+                tooltip: 'Partner Info',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          PartnerProfileScreen(partnerUid: partnerUid),
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -55,6 +65,7 @@ class HomeScreen extends StatelessWidget {
               final userData = snapshot.data?.data() as Map<String, dynamic>?;
               final displayName = userData?['displayName'] as String? ?? '';
               final email = userData?['email'] as String? ?? '';
+              final photoBase64 = userData?['photoBase64'] as String?;
 
               String initials = 'U';
               if (displayName.isNotEmpty) {
@@ -74,13 +85,18 @@ class HomeScreen extends StatelessWidget {
                   },
                   child: CircleAvatar(
                     backgroundColor: Colors.pinkAccent,
-                    child: Text(
-                      initials,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    backgroundImage: photoBase64 != null
+                        ? MemoryImage(base64Decode(photoBase64))
+                        : null,
+                    child: photoBase64 == null
+                        ? Text(
+                            initials,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        : null,
                   ),
                 ),
               );
@@ -142,52 +158,6 @@ class HomeScreen extends StatelessWidget {
         },
       ),
     );
-  }
-
-  Future<void> _confirmUnlink(
-    BuildContext context,
-    String myUid,
-    String partnerUid,
-  ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Unlink Partner?'),
-        content: const Text(
-          'This will disconnect your accounts. You will no longer see shared expenses.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Unlink', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      final batch = FirebaseFirestore.instance.batch();
-      final myRef = FirebaseFirestore.instance.collection('users').doc(myUid);
-      final partnerRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(partnerUid);
-
-      // Remove field using FieldValue.delete()
-      batch.update(myRef, {'partnerUid': FieldValue.delete()});
-      batch.update(partnerRef, {'partnerUid': FieldValue.delete()});
-
-      await batch.commit();
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Unlinked successfully')));
-      }
-    }
   }
 }
 
