@@ -6,6 +6,7 @@ import '../models/transaction_model.dart';
 import '../services/auth_service.dart';
 import 'add_expense_screen.dart';
 import 'partner_link_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -45,10 +46,44 @@ class HomeScreen extends StatelessWidget {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.black),
-            onPressed: () {
-              Provider.of<AuthService>(context, listen: false).signOut();
+          StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .snapshots(),
+            builder: (context, snapshot) {
+              final userData = snapshot.data?.data() as Map<String, dynamic>?;
+              final displayName = userData?['displayName'] as String? ?? '';
+              final email = userData?['email'] as String? ?? '';
+
+              String initials = 'U';
+              if (displayName.isNotEmpty) {
+                initials = displayName[0].toUpperCase();
+              } else if (email.isNotEmpty) {
+                initials = email[0].toUpperCase();
+              }
+
+              return Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                    );
+                  },
+                  child: CircleAvatar(
+                    backgroundColor: Colors.pinkAccent,
+                    child: Text(
+                      initials,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              );
             },
           ),
         ],
