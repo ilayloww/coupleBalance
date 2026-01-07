@@ -10,6 +10,8 @@ import 'add_expense_screen.dart';
 import 'partner_link_screen.dart';
 import 'profile_screen.dart';
 import 'partner_profile_screen.dart';
+import 'settlement_history_screen.dart';
+import '../viewmodels/settlement_viewmodel.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -227,13 +229,14 @@ class _BalanceCard extends StatelessWidget {
               .snapshots(),
           builder: (context, txSnap) {
             if (!txSnap.hasData) return const CircularProgressIndicator();
-
             final docs = txSnap.data!.docs;
             double mySpends = 0;
             double partnerSpends = 0;
 
             for (var doc in docs) {
               final data = doc.data() as Map<String, dynamic>;
+              if (data['isSettled'] == true) continue; // Skip settled
+
               final sender = data['senderUid'];
               final receiver = data['receiverUid'];
               final amount = (data['amount'] ?? 0).toDouble();
@@ -325,6 +328,54 @@ class _BalanceCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (absBalance > 0)
+                        ElevatedButton.icon(
+                          onPressed: () => _showSettleUpDialog(
+                            context,
+                            userUid,
+                            partnerUid,
+                            absBalance,
+                            !isPositive, // I am payer if balance is negative (partner owes me is positive) -> Wait.
+                            // isPositive = (mySpends - partnerSpends) >= 0.
+                            // If positive: partner owes me. I am receiver. IAmPayer = false.
+                            // If negative: I owe partner. I am payer. IAmPayer = true.
+                            // Logic: isPositive means Partner Owes Me.
+                            // So if isPositive is true, iAmPayer is false.
+                            // If isPositive is false, iAmPayer is true.
+                          ),
+                          icon: const Icon(Icons.check, size: 18),
+                          label: const Text('Settle Up'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.pinkAccent,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                        ),
+                      if (absBalance > 0) const SizedBox(width: 12),
+                      IconButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SettlementHistoryScreen(
+                                myUid: userUid,
+                                partnerUid: partnerUid,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.history, color: Colors.white),
+                        tooltip: 'History',
+                      ),
+                    ],
+                  ),
                 ],
               ),
             );
@@ -332,6 +383,68 @@ class _BalanceCard extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _showSettleUpDialog(
+    BuildContext context,
+    String myUid,
+    String partnerUid,
+    double amount,
+    bool iAmPayer,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Settle Up?'),
+        content: Text(
+          'This will archive all current transactions and reset the balance to 0.\n\n'
+          'Amount: ${amount.toStringAsFixed(2)} ₺\n'
+          '${iAmPayer ? "You are paying" : "Partner is paying"}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => SettlementViewModel(),
+            child: Consumer<SettlementViewModel>(
+              builder: (context, viewModel, child) {
+                if (viewModel.isLoading) {
+                  return const CircularProgressIndicator();
+                }
+                return TextButton(
+                  onPressed: () async {
+                    final success = await viewModel.settleUp(
+                      myUid: myUid,
+                      partnerUid: partnerUid,
+                      totalAmount: amount,
+                      iAmPayer: iAmPayer,
+                    );
+                    if (context.mounted) {
+                      Navigator.pop(context, success);
+                    }
+                  },
+                  child: const Text(
+                    'Confirm',
+                    style: TextStyle(
+                      color: Colors.pinkAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Settlement complete! Balance reset.')),
+      );
+    }
   }
 
   Future<void> _selectSettlementDay(
@@ -413,6 +526,10 @@ class _TransactionList extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemBuilder: (context, index) {
             final data = docs[index].data() as Map<String, dynamic>;
+
+            // Skip settled transactions
+            if (data['isSettled'] == true) return const SizedBox.shrink();
+
             final tx = TransactionModel.fromMap(data, docs[index].id);
             final isMe = tx.senderUid == userUid;
 

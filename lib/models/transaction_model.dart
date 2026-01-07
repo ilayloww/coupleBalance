@@ -9,6 +9,8 @@ class TransactionModel {
   final String note;
   final String? photoUrl;
   final DateTime timestamp;
+  final bool isSettled;
+  final String? settlementId;
 
   TransactionModel({
     required this.id,
@@ -19,6 +21,8 @@ class TransactionModel {
     required this.note,
     this.photoUrl,
     required this.timestamp,
+    this.isSettled = false,
+    this.settlementId,
   });
 
   factory TransactionModel.fromMap(
@@ -34,6 +38,8 @@ class TransactionModel {
       note: data['note'] ?? '',
       photoUrl: data['photoUrl'],
       timestamp: (data['timestamp'] as Timestamp).toDate(),
+      isSettled: data['isSettled'] ?? false,
+      settlementId: data['settlementId'],
     );
   }
 
@@ -46,6 +52,8 @@ class TransactionModel {
       'note': note,
       'photoUrl': photoUrl,
       'timestamp': Timestamp.fromDate(timestamp),
+      'isSettled': isSettled,
+      'settlementId': settlementId,
     };
   }
 }
