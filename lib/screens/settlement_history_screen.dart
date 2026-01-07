@@ -19,16 +19,7 @@ class SettlementHistoryScreen extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => SettlementViewModel(),
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            'Settlement History',
-            style: TextStyle(color: Colors.black),
-          ),
-          leading: const BackButton(color: Colors.black),
-          backgroundColor: Colors.white,
-          elevation: 0,
-        ),
-        backgroundColor: Colors.grey[50],
+        appBar: AppBar(title: const Text('Settlement History'), elevation: 0),
         body: Consumer<SettlementViewModel>(
           builder: (context, viewModel, child) {
             return StreamBuilder<List<SettlementModel>>(
@@ -39,16 +30,20 @@ class SettlementHistoryScreen extends StatelessWidget {
                 }
 
                 if (snapshot.hasError) {
+                  debugPrint('SettlementHistory Error: ${snapshot.error}');
                   return const Center(child: Text('Error loading history'));
                 }
 
                 final settlements = snapshot.data ?? [];
 
                 if (settlements.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
                       'No past settlements',
-                      style: TextStyle(color: Colors.grey, fontSize: 16),
+                      style: TextStyle(
+                        color: Theme.of(context).hintColor,
+                        fontSize: 16,
+                      ),
                     ),
                   );
                 }
@@ -79,7 +74,7 @@ class SettlementHistoryScreen extends StatelessWidget {
                                     'MMM d, yyyy',
                                   ).format(settlement.timestamp),
                                   style: TextStyle(
-                                    color: Colors.grey[600],
+                                    color: Theme.of(context).hintColor,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -89,13 +84,13 @@ class SettlementHistoryScreen extends StatelessWidget {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.green[50],
+                                    color: Colors.green.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: Text(
+                                  child: const Text(
                                     'Settled',
                                     style: TextStyle(
-                                      color: Colors.green[700],
+                                      color: Colors.green,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 12,
                                     ),
@@ -108,13 +103,19 @@ class SettlementHistoryScreen extends StatelessWidget {
                               children: [
                                 CircleAvatar(
                                   backgroundColor: isPayer
-                                      ? Colors.blue[50]
-                                      : Colors.pink[50],
+                                      ? Theme.of(context).colorScheme.secondary
+                                            .withValues(alpha: 0.1)
+                                      : Theme.of(context).colorScheme.primary
+                                            .withValues(alpha: 0.1),
                                   child: Icon(
                                     isPayer
                                         ? Icons.arrow_outward
                                         : Icons.arrow_downward,
-                                    color: isPayer ? Colors.blue : Colors.pink,
+                                    color: isPayer
+                                        ? Theme.of(
+                                            context,
+                                          ).colorScheme.secondary
+                                        : Theme.of(context).colorScheme.primary,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -133,7 +134,7 @@ class SettlementHistoryScreen extends StatelessWidget {
                                     Text(
                                       '${settlement.transactionIds.length} transactions',
                                       style: TextStyle(
-                                        color: Colors.grey[600],
+                                        color: Theme.of(context).hintColor,
                                         fontSize: 12,
                                       ),
                                     ),

@@ -28,6 +28,12 @@ class SettlementViewModel extends ChangeNotifier {
 
       final snapshot = await firestore
           .collection('transactions')
+          .where(
+            Filter.or(
+              Filter('senderUid', isEqualTo: myUid),
+              Filter('receiverUid', isEqualTo: myUid),
+            ),
+          )
           .orderBy('timestamp', descending: true)
           .get();
 
@@ -95,6 +101,12 @@ class SettlementViewModel extends ChangeNotifier {
   ) {
     return FirebaseFirestore.instance
         .collection('settlements')
+        .where(
+          Filter.or(
+            Filter('payerUid', isEqualTo: myUid),
+            Filter('receiverUid', isEqualTo: myUid),
+          ),
+        )
         .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snapshot) {

@@ -195,7 +195,9 @@ class _BalanceCard extends StatelessWidget {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.pink[50],
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(24),
             ),
             child: Column(
@@ -222,22 +224,21 @@ class _BalanceCard extends StatelessWidget {
         }
 
         return StreamBuilder<QuerySnapshot>(
-          // Fetch all transactions involving me OR partner is hard with one query unless we have a 'chatId' or similar.
-          // For POC, we fetch 'transactions' collection generally and filter client side?
-          // OR better: 'transactions' where users array-contains 'me'.
-          // Let's assume we filter client-side for now or use Composite Query.
-          // Simplest for POC: fetch all transactions where 'senderUid' is Me or 'receiverUid' is Me.
-          // Firestore doesn't support logical OR directly in one field easily without multiple queries.
-          // So we will do TWO streams and Merge, or just fetch all 'transactions' (if small scale)
-          // Let's use two streams approach via 'rxdart' usually, but here just StreamBuilder nesting or simple approach.
-
-          // Optimization: Let's assume we just query 'transactions' orders by timestamp.
-          // We will filter in the builder logic for simplicity in this proto.
           stream: FirebaseFirestore.instance
               .collection('transactions')
+              .where(
+                Filter.or(
+                  Filter('senderUid', isEqualTo: userUid),
+                  Filter('receiverUid', isEqualTo: userUid),
+                ),
+              )
               .orderBy('timestamp', descending: true)
               .snapshots(),
           builder: (context, txSnap) {
+            if (txSnap.hasError) {
+              debugPrint('BalanceCard Error: ${txSnap.error}');
+              return const Center(child: Text('Error loading data'));
+            }
             if (!txSnap.hasData) return const CircularProgressIndicator();
             final docs = txSnap.data!.docs;
             double mySpends = 0;
@@ -263,29 +264,40 @@ class _BalanceCard extends StatelessWidget {
             final absBalance = netBalance.abs();
 
             // Settlement Day Logic
-            final today = DateTime.now();
+            final now = DateTime.now();
+            final today = DateTime(now.year, now.month, now.day);
             final settlementDay = userData?['settlementDay'] ?? 10;
+
             var targetDate = DateTime(today.year, today.month, settlementDay);
             if (today.day > settlementDay) {
               targetDate = DateTime(today.year, today.month + 1, settlementDay);
             }
             final daysLeft = targetDate.difference(today).inDays;
 
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+
             return Container(
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.pinkAccent.shade100, Colors.pinkAccent],
+                  colors: isDark
+                      ? [
+                          Colors.pink.shade900.withValues(alpha: 0.8),
+                          Colors.pink.shade600.withValues(alpha: 0.9),
+                        ]
+                      : [Colors.pinkAccent.shade100, Colors.pinkAccent],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.pinkAccent.withValues(alpha: 0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
+                    color: (isDark ? Colors.pinkAccent : Colors.pinkAccent)
+                        .withValues(alpha: isDark ? 0.15 : 0.3),
+                    blurRadius: isDark ? 20 : 10,
+                    offset: isDark ? const Offset(0, 0) : const Offset(0, 5),
+                    spreadRadius: isDark ? 2 : 0,
                   ),
                 ],
               ),
@@ -318,15 +330,27 @@ class _BalanceCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: Colors.white.withValues(
+                          alpha: isDark ? 0.1 : 0.2,
+                        ),
                         borderRadius: BorderRadius.circular(20),
+                        border: isDark
+                            ? Border.all(
+                                color: Colors.white.withValues(alpha: 0.1),
+                                width: 0.5,
+                              )
+                            : null,
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             'Settlement in $daysLeft days',
-                            style: const TextStyle(color: Colors.white),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                           const SizedBox(width: 4),
                           const Icon(
@@ -360,11 +384,19 @@ class _BalanceCard extends StatelessWidget {
                           icon: const Icon(Icons.check, size: 18),
                           label: const Text('Settle Up'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.pinkAccent,
+                            backgroundColor: isDark
+                                ? Colors.white.withValues(alpha: 0.9)
+                                : Colors.white,
+                            foregroundColor: isDark
+                                ? Colors.pink.shade700
+                                : Colors.pinkAccent,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
                             elevation: 0,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(16),
                             ),
                           ),
                         ),
@@ -383,6 +415,12 @@ class _BalanceCard extends StatelessWidget {
                         },
                         icon: const Icon(Icons.history, color: Colors.white),
                         tooltip: 'History',
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(
+                            alpha: isDark ? 0.1 : 0.15,
+                          ),
+                          padding: const EdgeInsets.all(12),
+                        ),
                       ),
                     ],
                   ),
@@ -516,10 +554,17 @@ class _TransactionList extends StatelessWidget {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('transactions')
+          .where(
+            Filter.or(
+              Filter('senderUid', isEqualTo: userUid),
+              Filter('receiverUid', isEqualTo: userUid),
+            ),
+          )
           .orderBy('timestamp', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
+          debugPrint('TransactionList Error: ${snapshot.error}');
           return const Center(child: Text('Error loading data'));
         }
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -572,10 +617,18 @@ class _TransactionList extends StatelessWidget {
                   vertical: 8,
                 ),
                 leading: CircleAvatar(
-                  backgroundColor: isMe ? Colors.pink[50] : Colors.blue[50],
+                  backgroundColor: isMe
+                      ? Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.1)
+                      : Theme.of(
+                          context,
+                        ).colorScheme.secondary.withValues(alpha: 0.1),
                   child: Icon(
                     isMe ? Icons.arrow_outward : Icons.arrow_downward,
-                    color: isMe ? Colors.pink : Colors.blue,
+                    color: isMe
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.secondary,
                   ),
                 ),
                 title: Text(
@@ -584,14 +637,19 @@ class _TransactionList extends StatelessWidget {
                 ),
                 subtitle: Text(
                   DateFormat.MMMd().add_jm().format(tx.timestamp),
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  style: TextStyle(
+                    color: Theme.of(context).hintColor,
+                    fontSize: 12,
+                  ),
                 ),
                 trailing: Text(
                   '${isMe ? '+' : '-'}${tx.amount.toStringAsFixed(0)} ${tx.currency}',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: isMe ? Colors.pink : Colors.blue,
+                    color: isMe
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.secondary,
                   ),
                 ),
               ),
