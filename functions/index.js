@@ -1,11 +1,11 @@
-const functions = require("firebase-functions");
+const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
 
 /**
  * Triggered when a new transaction is created.
- * Sends a notification to the receiver.
+ * Sends a notification to the person who DID NOT add it.
  */
 exports.sendExpenseNotification = functions.firestore
     .document("transactions/{transactionId}")
@@ -16,34 +16,49 @@ exports.sendExpenseNotification = functions.firestore
         const amount = newData.amount;
         const note = newData.note;
         const currency = newData.currency || "₺";
+        const addedByUid = newData.addedByUid;
 
-        console.log(`New transaction from ${senderUid} to ${receiverUid}`);
+        console.log(`[NewExpense] TxId: ${context.params.transactionId}`);
+        console.log(`[NewExpense] Sender: ${senderUid}, Receiver: ${receiverUid}, AddedBy: ${addedByUid}`);
+
+        // Logic: Notify the person who is NOT the creator.
+        // If addedByUid exists, use it. If not, fallback to legacy assumption.
+        // Legacy assumption: Ideally the one who created it IS the sender if not specified? 
+        // But let's assume if addedByUid is missing, we notify receiverUid (safest fallback).
+        let targetUid = receiverUid;
+        if (addedByUid) {
+            targetUid = (addedByUid === senderUid) ? receiverUid : senderUid;
+        }
+
+        if (!targetUid) {
+            console.log("[NewExpense] No target UID found.");
+            return null;
+        }
+        console.log(`[NewExpense] Target for notification: ${targetUid}`);
 
         try {
-            // 1. Get Sender's Name
-            const senderDoc = await admin.firestore().collection("users").doc(senderUid).get();
-            const senderName = senderDoc.exists ? senderDoc.data().displayName : "Partner";
+            // Get Creator Name
+            const creatorUid = addedByUid || senderUid;
+            const creatorDoc = await admin.firestore().collection("users").doc(creatorUid).get();
+            const creatorName = creatorDoc.exists ? creatorDoc.data().displayName : "Partner";
 
-            // 2. Get Receiver's Token
-            const receiverDoc = await admin.firestore().collection("users").doc(receiverUid).get();
-            if (!receiverDoc.exists) {
-                console.log("Receiver not found");
+            // Get Target Token
+            const targetDoc = await admin.firestore().collection("users").doc(targetUid).get();
+            if (!targetDoc.exists) {
+                console.log(`[NewExpense] Target user doc not found: ${targetUid}`);
                 return null;
             }
 
-            const receiverData = receiverDoc.data();
-            const fcmToken = receiverData.fcmToken;
-
+            const fcmToken = targetDoc.data().fcmToken;
             if (!fcmToken) {
-                console.log("No FCM token for receiver");
-                return null; // Receiver has no token
+                console.log(`[NewExpense] No FCM token for target: ${targetUid}`);
+                return null;
             }
 
-            // 3. Construct Payload
             const message = {
                 notification: {
                     title: "New Expense Added",
-                    body: `${senderName} added ${amount}${currency} for you. Note: ${note}`,
+                    body: `${creatorName} added ${amount}${currency} for you. Note: ${note}`,
                 },
                 data: {
                     click_action: "FLUTTER_NOTIFICATION_CLICK",
@@ -53,71 +68,149 @@ exports.sendExpenseNotification = functions.firestore
                 token: fcmToken,
             };
 
-            // 4. Send Message
             const response = await admin.messaging().send(message);
-            console.log("Successfully sent message:", response);
+            console.log("[NewExpense] Successfully sent messageId:", response);
             return response;
 
         } catch (error) {
-            console.error("Error sending notification:", error);
+            console.error("[NewExpense] Error sending notification:", error);
             return null;
         }
     });
 
 /**
  * Triggered when a transaction is deleted.
- * Sends a notification to the involved partner.
+ * Sends a notification to the person who DID NOT delete it.
+ */
+/**
+ * Triggered when a transaction is updated (Soft Delete).
+ * Sends notification and then deletes the document.
  */
 exports.sendDeleteNotification = functions.firestore
     .document("transactions/{transactionId}")
-    .onDelete(async (snap, context) => {
-        const deletedData = snap.data();
-        const senderUid = deletedData.senderUid;
-        const receiverUid = deletedData.receiverUid; // We want to notify the OTHER person usually, or the receiver? 
-        // Requirement: "When User A deletes a transaction -> Send Push Notification to User B."
-        // If User A (sender) deleted it, notify User B (receiver).
-        // But what if User B deleted it? (Assuming anyone can delete) 
-        // For simplicity, let's assume we notify the 'receiver' if the 'sender' was the one who added it, 
-        // but here we don't know who performed the delete action easily without context.
-        // However, the requirement says "notify partner". Let's notify the receiverUid associated with the tx.
+    .onUpdate(async (change, context) => {
+        const newData = change.after.data();
+        const oldData = change.before.data();
 
-        // A better approach in a real app is to check who triggered the delete, but for this triggers, 
-        // we'll just notify the receiverUid (or senderUid if needed). 
-        // Let's stick to notifying the `receiverUid` as per the example logic "Ilayda added... for you" -> "Deleted by Ilayda..."
+        // Only flow: isDeleted changed from false/undefined to true
+        if (!newData.isDeleted || oldData.isDeleted) {
+            return null;
+        }
 
-        // We need the name of the person who deleted... 
-        // Firestore triggers don't easily give the "deleter" uid without extra work.
-        // We will assume the notification comes from the "System" or generically "Partner".
-        // Or we fetch the senderName again.
+        const senderUid = newData.senderUid;
+        const receiverUid = newData.receiverUid;
+        const deleterUid = newData.deletedBy; // Now explicit!
+
+        console.log(`[SoftDelete] TxId: ${context.params.transactionId}`);
+        console.log(`[SoftDelete] Deleter: ${deleterUid}, Sender: ${senderUid}, Receiver: ${receiverUid}`);
+
+        // Notify the OTHER person
+        let targetUid = receiverUid;
+        if (deleterUid) {
+            targetUid = (deleterUid === senderUid) ? receiverUid : senderUid;
+        }
 
         try {
-            const senderDoc = await admin.firestore().collection("users").doc(senderUid).get();
-            const senderName = senderDoc.exists ? senderDoc.data().displayName : "Partner";
+            // 1. Send Notification
+            let deleterName = "Partner";
+            if (deleterUid) {
+                const userDoc = await admin.firestore().collection("users").doc(deleterUid).get();
+                if (userDoc.exists) deleterName = userDoc.data().displayName;
+            }
 
-            const receiverDoc = await admin.firestore().collection("users").doc(receiverUid).get();
-            if (!receiverDoc.exists) return null;
+            const targetDoc = await admin.firestore().collection("users").doc(targetUid).get();
+            if (targetDoc.exists) {
+                const fcmToken = targetDoc.data().fcmToken;
+                if (fcmToken) {
+                    const message = {
+                        notification: {
+                            title: "Transaction Deleted",
+                            body: `Transaction deleted by ${deleterName}. Your balance has been updated.`,
+                        },
+                        data: {
+                            click_action: "FLUTTER_NOTIFICATION_CLICK",
+                            type: "delete_expense",
+                        },
+                        token: fcmToken,
+                    };
+                    await admin.messaging().send(message);
+                    console.log("[SoftDelete] Notification sent.");
+                }
+            }
 
-            const fcmToken = receiverDoc.data().fcmToken;
-            if (!fcmToken) return null;
+            // 2. Actually Delete the Document
+            await change.after.ref.delete();
+            console.log("[SoftDelete] Document deleted.");
+            return true;
+
+        } catch (error) {
+            console.error("[SoftDelete] Error:", error);
+            return null;
+        }
+    });
+
+/**
+ * Triggered when a new settlement is created.
+ * Sends a notification to the involved partner.
+ */
+exports.sendSettlementNotification = functions.firestore
+    .document("settlements/{settlementId}")
+    .onCreate(async (snap, context) => {
+        const data = snap.data();
+        const payerUid = data.payerUid;
+        const receiverUid = data.receiverUid;
+        const totalAmount = data.totalAmount;
+        // Prefer 'settledByUid' field if available, else fallback to context.auth.uid
+        const settlerUid = data.settledByUid || (context.auth ? context.auth.uid : null);
+
+        console.log(`[Settlement] Id: ${context.params.settlementId}`);
+        console.log(`[Settlement] Payer: ${payerUid}, Receiver: ${receiverUid}, Settler: ${settlerUid}`);
+
+        // Notify the OTHER person
+        let targetUid = receiverUid;
+        if (settlerUid) {
+            targetUid = (settlerUid === payerUid) ? receiverUid : payerUid;
+        }
+
+        console.log(`[Settlement] Target for notification: ${targetUid}`);
+
+        try {
+            let settlerName = "Partner";
+            if (settlerUid) {
+                const userDoc = await admin.firestore().collection("users").doc(settlerUid).get();
+                if (userDoc.exists) settlerName = userDoc.data().displayName;
+            }
+
+            const targetDoc = await admin.firestore().collection("users").doc(targetUid).get();
+            if (!targetDoc.exists) {
+                console.log(`[Settlement] Target user doc not found: ${targetUid}`);
+                return null;
+            }
+
+            const fcmToken = targetDoc.data().fcmToken;
+            if (!fcmToken) {
+                console.log(`[Settlement] No FCM token for target: ${targetUid}`);
+                return null;
+            }
 
             const message = {
                 notification: {
-                    title: "Transaction Deleted",
-                    body: `Transaction deleted by ${senderName}. Your balance has been updated.`,
+                    title: "Settled Up!",
+                    body: `${settlerName} marked ${totalAmount}₺ as settled. You are all caught up!`,
                 },
                 data: {
                     click_action: "FLUTTER_NOTIFICATION_CLICK",
-                    type: "delete_expense",
+                    type: "settlement",
                 },
                 token: fcmToken,
             };
 
-            await admin.messaging().send(message);
-            console.log("Sent delete notification");
-            return true;
+            const response = await admin.messaging().send(message);
+            console.log("[Settlement] Successfully sent messageId:", response);
+            return response;
 
         } catch (error) {
-            console.error("Error sending delete notification:", error);
+            console.error("[Settlement] Error sending notification:", error);
             return null;
         }
     });

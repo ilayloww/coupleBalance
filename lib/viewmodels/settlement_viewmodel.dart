@@ -63,7 +63,10 @@ class SettlementViewModel extends ChangeNotifier {
         timestamp: DateTime.now(),
       );
 
-      batch.set(settlementRef, settlement.toMap());
+      final settlementMap = settlement.toMap();
+      settlementMap['settledByUid'] =
+          myUid; // Explicitly add who clicked the button
+      batch.set(settlementRef, settlementMap);
 
       // 3. Update Transactions
       for (var doc in relevantDocs) {

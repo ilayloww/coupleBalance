@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'services/auth_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
@@ -8,20 +9,24 @@ import 'screens/login_screen.dart';
 // UNCOMMENT the following line after running `flutterfire configure`
 import 'firebase_options.dart';
 
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // If you're going to use other Firebase services in the background, such as Firestore,
+  // make sure you call `initializeApp` before using other Firebase services.
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  debugPrint("Handling a background message: ${message.messageId}");
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     // Try to initialize Firebase
-    // If you haven't generated firebase_options.dart yet, run:
-    // flutterfire configure
-
-    // Check if DefaultFirebaseOptions is available (you need to uncomment the import above)
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    // Fallback for when options are not yet generated (Works on Web/Android if google-services.json is present, but manual options preferred)
-    // await Firebase.initializeApp();
+    // Set the background messaging handler early on, as a named top-level function
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
     runApp(const MyApp());
   } catch (e) {

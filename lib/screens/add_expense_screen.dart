@@ -41,217 +41,240 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Amount Input
-              TextField(
-                controller: _amountController,
-                keyboardType: TextInputType.number,
-                onChanged: (_) => setState(() {}), // Refresh for dynamic text
-                decoration: InputDecoration(
-                  labelText: 'Amount (₺)',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                ),
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Split Options
-              Column(
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _SplitOptionCard(
-                    title: 'You paid, split equally',
-                    isSelected:
-                        viewModel.selectedOption == SplitOption.youPaidSplit,
-                    onTap: () =>
-                        viewModel.setSplitOption(SplitOption.youPaidSplit),
-                    icon: Icons.call_split,
-                  ),
-                  const SizedBox(height: 8),
-                  _SplitOptionCard(
-                    title: 'You are owed full amount',
-                    isSelected:
-                        viewModel.selectedOption == SplitOption.youPaidFull,
-                    onTap: () =>
-                        viewModel.setSplitOption(SplitOption.youPaidFull),
-                    icon: Icons.arrow_downward,
-                  ),
-                  const SizedBox(height: 8),
-                  _SplitOptionCard(
-                    title: '${viewModel.partnerName} paid, split equally',
-                    isSelected:
-                        viewModel.selectedOption ==
-                        SplitOption.partnerPaidSplit,
-                    onTap: () =>
-                        viewModel.setSplitOption(SplitOption.partnerPaidSplit),
-                    icon: Icons.call_split,
-                    isPartner: true,
-                  ),
-                  const SizedBox(height: 8),
-                  _SplitOptionCard(
-                    title: '${viewModel.partnerName} is owed full amount',
-                    isSelected:
-                        viewModel.selectedOption == SplitOption.partnerPaidFull,
-                    onTap: () =>
-                        viewModel.setSplitOption(SplitOption.partnerPaidFull),
-                    icon: Icons.arrow_upward,
-                    isPartner: true,
-                  ),
-                ],
-              ),
-
-              // Dynamic Explanation
-              if (_amountController.text.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0, left: 4),
-                  child: Text(
-                    viewModel.getDescriptionText(
-                      double.tryParse(_amountController.text) ?? 0,
+                  // Amount Input
+                  TextField(
+                    controller: _amountController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
                     ),
-                    style: TextStyle(
-                      color: Colors.pinkAccent[700],
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      labelText: 'Amount (₺)',
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 20,
+                        horizontal: 16,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                    ),
+                    style: const TextStyle(
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
+                  const SizedBox(height: 16),
 
-              const SizedBox(height: 16),
-
-              // Note Input
-              TextField(
-                controller: _noteController,
-                decoration: InputDecoration(
-                  labelText: 'What is it for?',
-                  hintText: 'e.g. Dinner, Rent',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  // Split Options
+                  Column(
+                    children: [
+                      _SplitOptionCard(
+                        title: 'You paid, split equally',
+                        isSelected:
+                            viewModel.selectedOption ==
+                            SplitOption.youPaidSplit,
+                        onTap: () =>
+                            viewModel.setSplitOption(SplitOption.youPaidSplit),
+                        icon: Icons.call_split,
+                      ),
+                      const SizedBox(height: 8),
+                      _SplitOptionCard(
+                        title: 'You are owed full amount',
+                        isSelected:
+                            viewModel.selectedOption == SplitOption.youPaidFull,
+                        onTap: () =>
+                            viewModel.setSplitOption(SplitOption.youPaidFull),
+                        icon: Icons.arrow_downward,
+                      ),
+                      const SizedBox(height: 8),
+                      _SplitOptionCard(
+                        title: '${viewModel.partnerName} paid, split equally',
+                        isSelected:
+                            viewModel.selectedOption ==
+                            SplitOption.partnerPaidSplit,
+                        onTap: () => viewModel.setSplitOption(
+                          SplitOption.partnerPaidSplit,
+                        ),
+                        icon: Icons.call_split,
+                        isPartner: true,
+                      ),
+                      const SizedBox(height: 8),
+                      _SplitOptionCard(
+                        title: '${viewModel.partnerName} is owed full amount',
+                        isSelected:
+                            viewModel.selectedOption ==
+                            SplitOption.partnerPaidFull,
+                        onTap: () => viewModel.setSplitOption(
+                          SplitOption.partnerPaidFull,
+                        ),
+                        icon: Icons.arrow_upward,
+                        isPartner: true,
+                      ),
+                    ],
                   ),
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                ),
-              ),
-              const SizedBox(height: 16),
 
-              // Quick Options
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children:
-                      [
-                            'Food',
-                            'Coffee',
-                            'Groceries',
-                            'Rent',
-                            'Transport',
-                            'Date',
-                            'Bills',
-                            'Shopping',
-                          ]
-                          .map(
-                            (option) => Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: ActionChip(
-                                label: Text(option),
-                                backgroundColor: Colors.white,
-                                side: BorderSide(color: Colors.grey[300]!),
-                                onPressed: () {
-                                  _noteController.text = option;
-                                },
-                              ),
-                            ),
-                          )
-                          .toList(),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Image Action
-              ListTile(
-                leading: const Icon(
-                  Icons.camera_alt,
-                  color: Colors.purpleAccent,
-                ),
-                title: const Text('Add Receipt / Photo'),
-                subtitle: state.selectedImage != null
-                    ? const Text('Image selected')
-                    : null,
-                tileColor: Colors.purple[50],
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                onTap: () => _showImagePickerModal(context, viewModel),
-              ),
-              if (state.selectedImage != null) ...[
-                const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    state.selectedImage!,
-                    height: 150,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 32),
-
-              // Submit Button
-              ElevatedButton(
-                onPressed: viewModel.isLoading
-                    ? null
-                    : () async {
-                        final amount = double.tryParse(_amountController.text);
-                        if (amount == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Please enter a valid amount'),
-                            ),
-                          );
-                          return;
-                        }
-
-                        final success = await viewModel.saveExpense(
-                          amount: amount,
-                          note: _noteController.text,
-                          receiverUid: widget.partnerUid,
-                        );
-
-                        if (!context.mounted) return;
-                        if (success) {
-                          Navigator.pop(context);
-                        }
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.pinkAccent,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: viewModel.isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'Add Expense',
+                  // Dynamic Explanation
+                  if (_amountController.text.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0, left: 4),
+                      child: Text(
+                        viewModel.getDescriptionText(
+                          double.tryParse(_amountController.text) ?? 0,
+                        ),
                         style: TextStyle(
-                          fontSize: 18,
+                          color: Colors.pinkAccent[700],
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                    ),
+
+                  const SizedBox(height: 16),
+
+                  // Note Input
+                  TextField(
+                    controller: _noteController,
+                    decoration: InputDecoration(
+                      labelText: 'What is it for?',
+                      hintText: 'e.g. Dinner, Rent',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Quick Options
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children:
+                          [
+                                'Food',
+                                'Coffee',
+                                'Groceries',
+                                'Rent',
+                                'Transport',
+                                'Date',
+                                'Bills',
+                                'Shopping',
+                              ]
+                              .map(
+                                (option) => Padding(
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  child: ActionChip(
+                                    label: Text(option),
+                                    backgroundColor: Colors.white,
+                                    side: BorderSide(color: Colors.grey[300]!),
+                                    onPressed: () {
+                                      _noteController.text = option;
+                                    },
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Image Action
+                  ListTile(
+                    leading: const Icon(
+                      Icons.camera_alt,
+                      color: Colors.purpleAccent,
+                    ),
+                    title: const Text('Add Receipt / Photo'),
+                    subtitle: state.selectedImage != null
+                        ? const Text('Image selected')
+                        : null,
+                    tileColor: Colors.purple[50],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    onTap: () => _showImagePickerModal(context, viewModel),
+                  ),
+                  if (state.selectedImage != null) ...[
+                    const SizedBox(height: 10),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.file(
+                        state.selectedImage!,
+                        height: 150,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: viewModel.isLoading
+                      ? null
+                      : () async {
+                          final amount = double.tryParse(
+                            _amountController.text,
+                          );
+                          if (amount == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please enter a valid amount'),
+                              ),
+                            );
+                            return;
+                          }
+
+                          final success = await viewModel.saveExpense(
+                            amount: amount,
+                            note: _noteController.text,
+                            receiverUid: widget.partnerUid,
+                          );
+
+                          if (!context.mounted) return;
+                          if (success) {
+                            Navigator.pop(context);
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.pinkAccent,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: viewModel.isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Add Expense',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

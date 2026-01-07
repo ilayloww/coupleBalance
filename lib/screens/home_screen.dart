@@ -14,8 +14,21 @@ import 'settlement_history_screen.dart';
 import '../viewmodels/settlement_viewmodel.dart';
 import 'transaction_detail_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+import '../services/notification_service.dart';
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    NotificationService().initialize();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -516,7 +529,13 @@ class _TransactionList extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final docs = snapshot.data?.docs ?? [];
+        final allDocs = snapshot.data?.docs ?? [];
+        // Filter out deleted and settled transactions
+        final docs = allDocs.where((d) {
+          final data = d.data() as Map<String, dynamic>;
+          return data['isDeleted'] != true && data['isSettled'] != true;
+        }).toList();
+
         if (docs.isEmpty) {
           return const Center(child: Text('No transactions yet.'));
         }
@@ -526,9 +545,6 @@ class _TransactionList extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemBuilder: (context, index) {
             final data = docs[index].data() as Map<String, dynamic>;
-
-            // Skip settled transactions
-            if (data['isSettled'] == true) return const SizedBox.shrink();
 
             final tx = TransactionModel.fromMap(data, docs[index].id);
             final isMe = tx.senderUid == userUid;
@@ -628,10 +644,16 @@ class _TransactionList extends StatelessWidget {
                 );
               },
               onDismissed: (direction) {
-                FirebaseFirestore.instance
-                    .collection('transactions')
-                    .doc(docId)
-                    .delete();
+                final myUid = Provider.of<AuthService>(
+                  context,
+                  listen: false,
+                ).currentUser?.uid;
+                if (myUid != null) {
+                  FirebaseFirestore.instance
+                      .collection('transactions')
+                      .doc(docId)
+                      .update({'isDeleted': true, 'deletedBy': myUid});
+                }
               },
               child: cardWidget,
             );

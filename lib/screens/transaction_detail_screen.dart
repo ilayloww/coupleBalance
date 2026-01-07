@@ -42,7 +42,7 @@ class TransactionDetailScreen extends StatelessWidget {
                     PageRouteBuilder(
                       opaque: false,
                       barrierColor: Colors.black,
-                      pageBuilder: (BuildContext context, _, __) {
+                      pageBuilder: (BuildContext context, _, _) {
                         return _FullScreenImageView(
                           photoUrl: transaction.photoUrl!,
                           heroTag: 'tx_photo_${transaction.id}',
