@@ -85,7 +85,7 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                         viewModel.selectedOption == SplitOption.youPaidFull,
                     onTap: () =>
                         viewModel.setSplitOption(SplitOption.youPaidFull),
-                    icon: Icons.arrow_outward,
+                    icon: Icons.arrow_downward,
                   ),
                   const SizedBox(height: 8),
                   _SplitOptionCard(
@@ -105,7 +105,7 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                         viewModel.selectedOption == SplitOption.partnerPaidFull,
                     onTap: () =>
                         viewModel.setSplitOption(SplitOption.partnerPaidFull),
-                    icon: Icons.arrow_downward,
+                    icon: Icons.arrow_upward,
                     isPartner: true,
                   ),
                 ],
