@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'dart:convert';
 import '../models/transaction_model.dart';
 
 enum SplitOption {
@@ -70,7 +70,11 @@ class AddExpenseViewModel extends ChangeNotifier {
 
   Future<void> pickImage(ImageSource source) async {
     try {
-      final XFile? image = await _picker.pickImage(source: source);
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        maxWidth: 600,
+        imageQuality: 50,
+      );
       if (image != null) {
         _state.selectedImage = File(image.path);
         notifyListeners();
@@ -89,21 +93,14 @@ class AddExpenseViewModel extends ChangeNotifier {
 
     setLoading(true);
     try {
-      // 1. Upload Image if exists
+      // 1. Encode Image to Base64 if exists
       String? photoUrl;
       if (_state.selectedImage != null) {
         try {
-          final ref = firebase_storage.FirebaseStorage.instance
-              .ref()
-              .child('expenses')
-              .child(_auth.currentUser!.uid)
-              .child('${DateTime.now().toIso8601String()}.jpg');
-
-          await ref.putFile(_state.selectedImage!);
-          photoUrl = await ref.getDownloadURL();
+          final bytes = await _state.selectedImage!.readAsBytes();
+          photoUrl = base64Encode(bytes);
         } catch (e) {
-          debugPrint("Image upload failed: $e");
-          // Continue without image or handle error
+          debugPrint("Image encoding failed: $e");
         }
       }
 
@@ -145,6 +142,7 @@ class AddExpenseViewModel extends ChangeNotifier {
         note: note,
         photoUrl: photoUrl,
         timestamp: DateTime.now(),
+        addedByUid: _auth.currentUser!.uid,
       );
 
       // 3. Save to Firestore

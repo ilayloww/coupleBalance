@@ -12,6 +12,7 @@ import 'profile_screen.dart';
 import 'partner_profile_screen.dart';
 import 'settlement_history_screen.dart';
 import '../viewmodels/settlement_viewmodel.dart';
+import 'transaction_detail_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -121,7 +122,6 @@ class HomeScreen extends StatelessWidget {
                   'Recent Transactions',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                Icon(Icons.history, color: Colors.grey),
               ],
             ),
           ),
@@ -543,6 +543,17 @@ class _TransactionList extends StatelessWidget {
               elevation: 0,
               color: Colors.white,
               child: ListTile(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TransactionDetailScreen(
+                        transaction: tx,
+                        currentUserId: userUid,
+                      ),
+                    ),
+                  );
+                },
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 8,
@@ -573,7 +584,11 @@ class _TransactionList extends StatelessWidget {
               ),
             );
 
-            if (!isMe) return cardWidget;
+            final canDelete = tx.addedByUid != null
+                ? tx.addedByUid == userUid
+                : tx.senderUid == userUid;
+
+            if (!canDelete) return cardWidget;
 
             return Dismissible(
               key: Key(docId),

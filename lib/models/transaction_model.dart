@@ -11,6 +11,7 @@ class TransactionModel {
   final DateTime timestamp;
   final bool isSettled;
   final String? settlementId;
+  final String? addedByUid;
 
   TransactionModel({
     required this.id,
@@ -23,6 +24,7 @@ class TransactionModel {
     required this.timestamp,
     this.isSettled = false,
     this.settlementId,
+    this.addedByUid,
   });
 
   factory TransactionModel.fromMap(
@@ -40,6 +42,7 @@ class TransactionModel {
       timestamp: (data['timestamp'] as Timestamp).toDate(),
       isSettled: data['isSettled'] ?? false,
       settlementId: data['settlementId'],
+      addedByUid: data['addedByUid'],
     );
   }
 
@@ -54,6 +57,7 @@ class TransactionModel {
       'timestamp': Timestamp.fromDate(timestamp),
       'isSettled': isSettled,
       'settlementId': settlementId,
+      'addedByUid': addedByUid,
     };
   }
 }
