@@ -35,12 +35,7 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
     final state = viewModel.state;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Expense', style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
-      ),
+      appBar: AppBar(title: const Text('Add Expense')),
       body: Column(
         children: [
           Expanded(
@@ -66,7 +61,7 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      // fillColor handled by Theme
                     ),
                     style: const TextStyle(
                       fontSize: 24,
@@ -150,7 +145,6 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      fillColor: Colors.grey[100],
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -175,8 +169,12 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                                   padding: const EdgeInsets.only(right: 8.0),
                                   child: ActionChip(
                                     label: Text(option),
-                                    backgroundColor: Colors.white,
-                                    side: BorderSide(color: Colors.grey[300]!),
+                                    backgroundColor: Theme.of(
+                                      context,
+                                    ).cardColor,
+                                    side: BorderSide(
+                                      color: Theme.of(context).dividerColor,
+                                    ),
                                     onPressed: () {
                                       _noteController.text = option;
                                     },
@@ -190,15 +188,17 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
 
                   // Image Action
                   ListTile(
-                    leading: const Icon(
+                    leading: Icon(
                       Icons.camera_alt,
-                      color: Colors.purpleAccent,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                     title: const Text('Add Receipt / Photo'),
                     subtitle: state.selectedImage != null
                         ? const Text('Image selected')
                         : null,
-                    tileColor: Colors.purple[50],
+                    tileColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -206,14 +206,44 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                   ),
                   if (state.selectedImage != null) ...[
                     const SizedBox(height: 10),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.file(
-                        state.selectedImage!,
-                        height: 150,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            state.selectedImage!,
+                            height: 150,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: GestureDetector(
+                            onTap: () => viewModel.removeImage(),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).cardColor,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 4,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                size: 20,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                   const SizedBox(height: 20),
@@ -335,10 +365,14 @@ class _SplitOptionCard extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.pink[50] : Colors.white,
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+              : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? Colors.pinkAccent : Colors.grey[300]!,
+            color: isSelected
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).dividerColor,
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
@@ -356,12 +390,18 @@ class _SplitOptionCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.pink[100] : Colors.grey[100],
+                color: isSelected
+                    ? Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.2)
+                    : Theme.of(context).colorScheme.surfaceContainerHighest,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
-                color: isSelected ? Colors.pink : Colors.grey[600],
+                color: isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).hintColor,
                 size: 20,
               ),
             ),
@@ -371,7 +411,9 @@ class _SplitOptionCard extends StatelessWidget {
                 title,
                 style: TextStyle(
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? Colors.pink[900] : Colors.black87,
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),

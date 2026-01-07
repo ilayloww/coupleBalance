@@ -79,14 +79,11 @@ class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Partner Profile',
-          style: TextStyle(color: Colors.black),
-        ),
-        backgroundColor: Colors.white,
+        title: const Text('Partner Profile'),
+        // backgroundColor: handled by Theme
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -144,7 +141,10 @@ class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
                   const SizedBox(height: 8),
                   Text(
                     email,
-                    style: const TextStyle(fontSize: 16, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(context).hintColor,
+                    ),
                   ),
                   const SizedBox(height: 48),
                   SizedBox(

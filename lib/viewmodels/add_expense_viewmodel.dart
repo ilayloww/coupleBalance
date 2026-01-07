@@ -85,6 +85,11 @@ class AddExpenseViewModel extends ChangeNotifier {
     }
   }
 
+  void removeImage() {
+    _state.selectedImage = null;
+    notifyListeners();
+  }
+
   Future<bool> saveExpense({
     required double amount,
     required String note,

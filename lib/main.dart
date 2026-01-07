@@ -3,6 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'services/auth_service.dart';
+import 'services/theme_service.dart';
+import 'config/theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 
@@ -92,17 +94,21 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthService())],
-      child: MaterialApp(
-        title: 'CoupleBalance',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.pinkAccent),
-          useMaterial3: true,
-          fontFamily:
-              'Roboto', // Default, but good to be explicit or use Google Fonts
-        ),
-        home: const AuthWrapper(),
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(create: (_) => ThemeService()),
+      ],
+      child: Consumer<ThemeService>(
+        builder: (context, themeService, child) {
+          return MaterialApp(
+            title: 'CoupleBalance',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeService.themeMode,
+            home: const AuthWrapper(),
+          );
+        },
       ),
     );
   }

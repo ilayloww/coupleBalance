@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/auth_service.dart';
+import '../services/theme_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -134,16 +135,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthService>(context).currentUser;
+    final themeService = Provider.of<ThemeService>(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Profile', style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: const Text('My Profile'),
+        // Remove hardcoded colors, let Theme handle it
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -156,22 +153,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   CircleAvatar(
                     radius: 60,
-                    backgroundColor: Colors.pinkAccent.shade100,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer,
                     backgroundImage: _photoUrl != null
                         ? CachedNetworkImageProvider(_photoUrl!)
                         : null,
                     child: _photoUrl == null
-                        ? const Icon(
+                        ? Icon(
                             Icons.person,
                             size: 70,
-                            color: Colors.white,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onPrimaryContainer,
                           )
                         : null,
                   ),
                   Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(color: Colors.black26, blurRadius: 4),
@@ -206,6 +207,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 32),
+
+            _ThemeSelector(
+              currentMode: themeService.themeMode,
+              onChanged: (mode) => themeService.setThemeMode(mode),
+            ),
+            const SizedBox(height: 32),
+
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -221,7 +229,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text(
                         'Save Profile',
-                        style: TextStyle(fontSize: 18),
+                        style: TextStyle(fontSize: 18, color: Colors.white),
                       ),
               ),
             ),
@@ -248,6 +256,125 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemeSelector extends StatelessWidget {
+  final ThemeMode currentMode;
+  final Function(ThemeMode) onChanged;
+
+  const _ThemeSelector({required this.currentMode, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Appearance',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Theme.of(
+              context,
+            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              _ThemeOption(
+                label: 'System',
+                icon: Icons.brightness_auto,
+                isSelected: currentMode == ThemeMode.system,
+                onTap: () => onChanged(ThemeMode.system),
+              ),
+              _ThemeOption(
+                label: 'Light',
+                icon: Icons.light_mode,
+                isSelected: currentMode == ThemeMode.light,
+                onTap: () => onChanged(ThemeMode.light),
+              ),
+              _ThemeOption(
+                label: 'Dark',
+                icon: Icons.dark_mode,
+                isSelected: currentMode == ThemeMode.dark,
+                onTap: () => onChanged(ThemeMode.dark),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ThemeOption extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ThemeOption({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? Theme.of(context).colorScheme.surface
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                color: isSelected
+                    ? Colors.pinkAccent
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+                size: 20,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected
+                      ? Colors.pinkAccent
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -38,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey[50], // Soft background
+      // backgroundColor: handled by Theme
       appBar: AppBar(
         leading: StreamBuilder<DocumentSnapshot>(
           stream: FirebaseFirestore.instance
@@ -64,12 +64,9 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
         ),
-        title: const Text(
-          'CoupleBalance',
-          style: TextStyle(color: Colors.black),
-        ),
+        title: const Text('CoupleBalance'),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        // backgroundColor: handled by Theme
         elevation: 0,
         actions: [
           StreamBuilder<DocumentSnapshot>(
@@ -557,7 +554,7 @@ class _TransactionList extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
               elevation: 0,
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               child: ListTile(
                 onTap: () {
                   Navigator.push(
