@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/transaction_model.dart';
 
 class TransactionDetailScreen extends StatelessWidget {
@@ -70,62 +70,26 @@ class TransactionDetailScreen extends StatelessWidget {
                     width: double.infinity,
                     child: Builder(
                       builder: (context) {
-                        final photo = transaction.photoUrl!;
-                        if (photo.startsWith('http')) {
-                          return Image.network(
-                            photo,
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                height: 200,
-                                color: Colors.grey[100],
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    value:
-                                        loadingProgress.expectedTotalBytes !=
-                                            null
-                                        ? loadingProgress
-                                                  .cumulativeBytesLoaded /
-                                              loadingProgress
-                                                  .expectedTotalBytes!
-                                        : null,
-                                  ),
-                                ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) =>
-                                Container(
-                                  height: 200,
-                                  color: Colors.grey[100],
-                                  child: const Icon(
-                                    Icons.broken_image,
-                                    size: 50,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                          );
-                        } else {
-                          try {
-                            // Assume Base64
-                            return Image.memory(
-                              base64Decode(photo),
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Container(
-                                    height: 200,
-                                    color: Colors.grey[100],
-                                    child: const Icon(
-                                      Icons.broken_image,
-                                      size: 50,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                            );
-                          } catch (e) {
-                            return const SizedBox();
-                          }
-                        }
+                        return CachedNetworkImage(
+                          imageUrl: transaction.photoUrl!,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            height: 200,
+                            color: Colors.grey[100],
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            height: 200,
+                            color: Colors.grey[100],
+                            child: const Icon(
+                              Icons.broken_image,
+                              size: 50,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        );
                       },
                     ),
                   ),
@@ -213,12 +177,7 @@ class TransactionDetailScreen extends StatelessWidget {
                     value: formattedDate,
                   ),
                   const SizedBox(height: 16),
-                  _DetailRow(
-                    icon: Icons.category,
-                    label: 'Category',
-                    value: 'Expense', // Could be dynamic if we had categories
-                  ),
-                  const SizedBox(height: 16),
+
                   if (transaction.isSettled)
                     _DetailRow(
                       icon: Icons.check_circle,
@@ -302,17 +261,6 @@ class _FullScreenImageView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget imageWidget;
-    if (photoUrl.startsWith('http')) {
-      imageWidget = Image.network(photoUrl, fit: BoxFit.contain);
-    } else {
-      try {
-        imageWidget = Image.memory(base64Decode(photoUrl), fit: BoxFit.contain);
-      } catch (e) {
-        imageWidget = const Icon(Icons.broken_image, color: Colors.white);
-      }
-    }
-
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -326,7 +274,15 @@ class _FullScreenImageView extends StatelessWidget {
             panEnabled: true,
             minScale: 0.5,
             maxScale: 4.0,
-            child: imageWidget,
+            child: CachedNetworkImage(
+              imageUrl: photoUrl,
+              fit: BoxFit.contain,
+              placeholder: (context, url) => const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+              errorWidget: (context, url, error) =>
+                  const Icon(Icons.broken_image, color: Colors.white),
+            ),
           ),
         ),
       ),

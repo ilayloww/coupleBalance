@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:convert';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../models/transaction_model.dart';
 
 enum SplitOption {
@@ -70,10 +70,11 @@ class AddExpenseViewModel extends ChangeNotifier {
 
   Future<void> pickImage(ImageSource source) async {
     try {
+      // Higher quality for storage upload
       final XFile? image = await _picker.pickImage(
         source: source,
-        maxWidth: 600,
-        imageQuality: 50,
+        maxWidth: 2048,
+        imageQuality: 90,
       );
       if (image != null) {
         _state.selectedImage = File(image.path);
@@ -93,18 +94,25 @@ class AddExpenseViewModel extends ChangeNotifier {
 
     setLoading(true);
     try {
-      // 1. Encode Image to Base64 if exists
+      // 1. Upload Image to Storage if exists
       String? photoUrl;
       if (_state.selectedImage != null) {
         try {
-          final bytes = await _state.selectedImage!.readAsBytes();
-          photoUrl = base64Encode(bytes);
+          final timestamp = DateTime.now().millisecondsSinceEpoch;
+          final storageRef = FirebaseStorage.instance
+              .ref()
+              .child('transaction_images')
+              .child(_auth.currentUser!.uid)
+              .child('$timestamp.jpg');
+
+          await storageRef.putFile(_state.selectedImage!);
+          photoUrl = await storageRef.getDownloadURL();
         } catch (e) {
-          debugPrint("Image encoding failed: $e");
+          debugPrint("Image upload failed: $e");
+          // Fail gracefully for now, but log the specific error
         }
       }
 
-      // 2. Create Transaction Object
       // 2. Create Transaction Object
       double finalAmount = amount;
       String finalSender = _auth.currentUser!.uid;

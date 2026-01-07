@@ -1,9 +1,10 @@
 import 'dart:io';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../services/auth_service.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -34,7 +35,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (doc.exists && mounted) {
         setState(() {
           _nameController.text = doc.data()?['displayName'] ?? '';
-          _photoUrl = doc.data()?['photoBase64'];
+          _photoUrl =
+              doc.data()?['photoUrl'] ??
+              doc.data()?['photoBase64']; // Fallback temporarily if needed, but user said delete older. Let's stick to photoUrl primarily, but maybe keep 'photoBase64' check just for reading old data if it wasn't deleted yet? User said "I will delete older photos now", implying manual deletion or he doesn't care. I'll stick to photoUrl mostly but reading old field doesn't hurt.
+          // Actually, let's just look at 'photoUrl'.
+          _photoUrl = doc.data()?['photoUrl'];
         });
       }
     }
@@ -42,12 +47,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _pickAndUploadImage() async {
     final picker = ImagePicker();
-    // Use lower quality and size to keep base64 string small
+    // High quality as requested
     final pickedFile = await picker.pickImage(
       source: ImageSource.gallery,
-      maxWidth: 512,
-      maxHeight: 512,
-      imageQuality: 70,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
     );
 
     if (!mounted) return;
@@ -62,18 +67,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (user == null) return;
 
         final file = File(pickedFile.path);
-        // Read file bytes and convert to Base64 string
-        final bytes = await file.readAsBytes();
-        final base64Image = base64Encode(bytes);
 
-        // Store Base64 string directly in Firestore
+        // Upload to Firebase Storage
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('profile_images')
+            .child('${user.uid}.jpg');
+
+        try {
+          // Explicitly wait for upload to complete
+          await storageRef.putFile(file);
+        } catch (e) {
+          throw 'Upload failed: $e';
+        }
+
+        String downloadUrl;
+        try {
+          downloadUrl = await storageRef.getDownloadURL();
+        } catch (e) {
+          throw 'Getting URL failed: $e';
+        }
+
+        // Store URL in Firestore
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-          'photoBase64': base64Image,
+          'photoUrl': downloadUrl,
+          'photoBase64': FieldValue.delete(), // Cleanup old field
         }, SetOptions(merge: true));
 
         if (mounted) {
           setState(() {
-            _photoUrl = base64Image;
+            _photoUrl = downloadUrl;
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profile picture updated!')),
@@ -135,7 +158,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     radius: 60,
                     backgroundColor: Colors.pinkAccent.shade100,
                     backgroundImage: _photoUrl != null
-                        ? MemoryImage(base64Decode(_photoUrl!))
+                        ? CachedNetworkImageProvider(_photoUrl!)
                         : null,
                     child: _photoUrl == null
                         ? const Icon(

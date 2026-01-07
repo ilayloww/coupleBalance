@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/transaction_model.dart';
 import '../services/auth_service.dart';
 import 'add_expense_screen.dart';
@@ -68,7 +68,7 @@ class HomeScreen extends StatelessWidget {
               final userData = snapshot.data?.data() as Map<String, dynamic>?;
               final displayName = userData?['displayName'] as String? ?? '';
               final email = userData?['email'] as String? ?? '';
-              final photoBase64 = userData?['photoBase64'] as String?;
+              final photoUrl = userData?['photoUrl'] as String?;
 
               String initials = 'U';
               if (displayName.isNotEmpty) {
@@ -88,10 +88,10 @@ class HomeScreen extends StatelessWidget {
                   },
                   child: CircleAvatar(
                     backgroundColor: Colors.pinkAccent,
-                    backgroundImage: photoBase64 != null
-                        ? MemoryImage(base64Decode(photoBase64))
+                    backgroundImage: photoUrl != null
+                        ? CachedNetworkImageProvider(photoUrl)
                         : null,
-                    child: photoBase64 == null
+                    child: photoUrl == null
                         ? Text(
                             initials,
                             style: const TextStyle(

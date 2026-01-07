@@ -6,6 +6,7 @@ class UserModel {
   final String? partnerUid;
   final String? fcmToken;
   final int settlementDay;
+  final String? photoUrl;
 
   UserModel({
     required this.uid,
@@ -13,6 +14,7 @@ class UserModel {
     this.partnerUid,
     this.fcmToken,
     this.settlementDay = 10,
+    this.photoUrl,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> data, String documentId) {
@@ -22,6 +24,7 @@ class UserModel {
       partnerUid: data['partnerUid'],
       fcmToken: data['fcmToken'],
       settlementDay: data['settlementDay'] ?? 10,
+      photoUrl: data['photoUrl'],
     );
   }
 
@@ -32,10 +35,14 @@ class UserModel {
       'partnerUid': partnerUid,
       'fcmToken': fcmToken,
       'settlementDay': settlementDay,
+      'photoUrl': photoUrl,
     };
   }
 
   factory UserModel.fromSnapshot(DocumentSnapshot snapshot) {
-    return UserModel.fromMap(snapshot.data() as Map<String, dynamic>, snapshot.id);
+    return UserModel.fromMap(
+      snapshot.data() as Map<String, dynamic>,
+      snapshot.id,
+    );
   }
 }

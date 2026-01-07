@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../services/auth_service.dart';
 
 class PartnerProfileScreen extends StatefulWidget {
@@ -107,7 +107,7 @@ class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
 
           final displayName = data['displayName'] as String? ?? 'Partner';
           final email = data['email'] as String? ?? 'No Email';
-          final photoBase64 = data['photoBase64'] as String?;
+          final photoUrl = data['photoUrl'] as String?;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -117,10 +117,10 @@ class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
                   CircleAvatar(
                     radius: 60,
                     backgroundColor: Colors.blueAccent.shade100,
-                    backgroundImage: photoBase64 != null
-                        ? MemoryImage(base64Decode(photoBase64))
+                    backgroundImage: photoUrl != null
+                        ? CachedNetworkImageProvider(photoUrl)
                         : null,
-                    child: photoBase64 == null
+                    child: photoUrl == null
                         ? Text(
                             displayName.isNotEmpty
                                 ? displayName[0].toUpperCase()
