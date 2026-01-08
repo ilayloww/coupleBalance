@@ -72,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      // backgroundColor: Colors.white, // Removed to use theme background
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -84,20 +84,26 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const Icon(Icons.favorite, size: 80, color: Colors.pinkAccent),
                 const SizedBox(height: 24),
-                Text(
-                  _isLogin ? 'Welcome Back!' : 'Create Account',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder: (child, animation) =>
+                      FadeTransition(opacity: animation, child: child),
+                  child: Text(
+                    key: ValueKey<bool>(_isLogin),
+                    _isLogin ? 'Welcome Back!' : 'Create Account',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Track expenses together <3',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
                 ),
                 const SizedBox(height: 48),
 
@@ -162,8 +168,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.pinkAccent,
-                    foregroundColor: Colors.white,
+                    // backgroundColor: Colors.pinkAccent, // Removed to use theme
+                    // foregroundColor: Colors.white, // Removed to use theme
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -179,11 +185,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : Text(
-                          _isLogin ? 'Login' : 'Sign Up',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                      : AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          transitionBuilder: (child, animation) =>
+                              FadeTransition(opacity: animation, child: child),
+                          child: Text(
+                            key: ValueKey<bool>(_isLogin),
+                            _isLogin ? 'Login' : 'Sign Up',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                 ),
@@ -192,11 +204,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Toggle Button
                 TextButton(
                   onPressed: _isLoading ? null : _toggleAuthMode,
-                  child: Text(
-                    _isLogin
-                        ? "Don't have an account? Sign Up"
-                        : "Already have an account? Login",
-                    style: const TextStyle(color: Colors.pinkAccent),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder: (child, animation) =>
+                        FadeTransition(opacity: animation, child: child),
+                    child: Text(
+                      key: ValueKey<bool>(_isLogin),
+                      _isLogin
+                          ? "Don't have an account? Sign Up"
+                          : "Already have an account? Login",
+                      style: const TextStyle(color: Colors.pinkAccent),
+                    ),
                   ),
                 ),
               ],
