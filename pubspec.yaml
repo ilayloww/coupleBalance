@@ -1,5 +1,7 @@
 name: couple_balance
-description: "A new Flutter project."
+description: "Simplify shared expenses and keep your relationship balanced.
+ Couple Balance is a modern, intuitive expense tracker designed specifically for couples. Forget complicated spreadsheets or generic group splitting apps; Couple Balance focuses on the 1-on-1 dynamic, letting you quickly log expenses, see who paid for what, and keep a running total of your shared balance effortlessly.
+ Whether it's a dinner date, grocery run, or monthly rent, specific features help you stay on the same page."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -9,7 +11,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # followed by an optional build number separated by a +.
 # Both the version and the builder number may be overridden in flutter
 # build by specifying --build-name and --build-number, respectively.
-# In Android, build-name is used as versionName while build-number used as versionCode.
+# In Android, build-name is used as versionName while build-number used as vrsionCode.
 # Read more about Android versioning at https://developer.android.com/studio/publish/versioning
 # In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
 # Read more about iOS versioning at
