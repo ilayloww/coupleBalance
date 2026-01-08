@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:couple_balance/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -127,10 +128,13 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
+              children: [
                 Text(
-                  'Recent Transactions',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  AppLocalizations.of(context)!.recentTransactions,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -153,7 +157,11 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () {
               if (partnerUid == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please link a partner first')),
+                  SnackBar(
+                    content: Text(
+                      AppLocalizations.of(context)!.pleaseLinkPartnerFirst,
+                    ),
+                  ),
                 );
                 return;
               }
@@ -202,9 +210,9 @@ class _BalanceCard extends StatelessWidget {
             ),
             child: Column(
               children: [
-                const Text(
-                  'No Partner Linked',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                Text(
+                  AppLocalizations.of(context)!.noPartnerLinked,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton(
@@ -216,7 +224,7 @@ class _BalanceCard extends StatelessWidget {
                       ),
                     );
                   },
-                  child: const Text('Link Partner'),
+                  child: Text(AppLocalizations.of(context)!.linkPartner),
                 ),
               ],
             ),
@@ -304,7 +312,9 @@ class _BalanceCard extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    isPositive ? 'Partner owes you' : 'You owe Partner',
+                    isPositive
+                        ? AppLocalizations.of(context)!.partnerOwesYou
+                        : AppLocalizations.of(context)!.youOwePartner,
                     style: const TextStyle(color: Colors.white, fontSize: 16),
                   ),
                   const SizedBox(height: 8),
@@ -345,7 +355,9 @@ class _BalanceCard extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'Settlement in $daysLeft days',
+                            AppLocalizations.of(
+                              context,
+                            )!.settlementInDays(daysLeft),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 13,
@@ -382,7 +394,7 @@ class _BalanceCard extends StatelessWidget {
                             // If isPositive is false, iAmPayer is true.
                           ),
                           icon: const Icon(Icons.check, size: 18),
-                          label: const Text('Settle Up'),
+                          label: Text(AppLocalizations.of(context)!.settleUp),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: isDark
                                 ? Colors.white.withValues(alpha: 0.9)
@@ -414,7 +426,7 @@ class _BalanceCard extends StatelessWidget {
                           );
                         },
                         icon: const Icon(Icons.history, color: Colors.white),
-                        tooltip: 'History',
+                        tooltip: AppLocalizations.of(context)!.history,
                         style: IconButton.styleFrom(
                           backgroundColor: Colors.white.withValues(
                             alpha: isDark ? 0.1 : 0.15,
@@ -443,16 +455,20 @@ class _BalanceCard extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Settle Up?'),
+        title: Text(AppLocalizations.of(context)!.settleUpTitle),
         content: Text(
-          'This will archive all current transactions and reset the balance to 0.\n\n'
-          'Amount: ${amount.toStringAsFixed(2)} ₺\n'
-          '${iAmPayer ? "You are paying" : "Partner is paying"}',
+          AppLocalizations.of(context)!.settleUpContent(
+            amount.toStringAsFixed(2),
+            '₺',
+            iAmPayer
+                ? AppLocalizations.of(context)!.youArePaying
+                : AppLocalizations.of(context)!.partnerIsPaying,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           ChangeNotifierProvider(
             create: (_) => SettlementViewModel(),
@@ -473,8 +489,8 @@ class _BalanceCard extends StatelessWidget {
                       Navigator.pop(context, success);
                     }
                   },
-                  child: const Text(
-                    'Confirm',
+                  child: Text(
+                    AppLocalizations.of(context)!.confirm,
                     style: TextStyle(
                       color: Colors.pinkAccent,
                       fontWeight: FontWeight.bold,
@@ -490,7 +506,9 @@ class _BalanceCard extends StatelessWidget {
 
     if (confirmed == true && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Settlement complete! Balance reset.')),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.settlementComplete),
+        ),
       );
     }
   }
@@ -505,7 +523,7 @@ class _BalanceCard extends StatelessWidget {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text('Select Settlement Day'),
+          title: Text(AppLocalizations.of(context)!.selectSettlementDay),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -514,7 +532,7 @@ class _BalanceCard extends StatelessWidget {
               itemBuilder: (context, index) {
                 final day = index + 1;
                 return ListTile(
-                  title: Text('Day $day'),
+                  title: Text(AppLocalizations.of(context)!.day(day)),
                   selected: day == currentDay,
                   onTap: () => Navigator.pop(ctx, day),
                 );
@@ -579,7 +597,9 @@ class _TransactionList extends StatelessWidget {
         }).toList();
 
         if (docs.isEmpty) {
-          return const Center(child: Text('No transactions yet.'));
+          return Center(
+            child: Text(AppLocalizations.of(context)!.noTransactionsYet),
+          );
         }
 
         return ListView.builder(
@@ -678,19 +698,21 @@ class _TransactionList extends StatelessWidget {
                 return await showDialog(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: const Text('Delete Transaction?'),
-                    content: const Text(
-                      'Are you sure you want to delete this item?',
+                    title: Text(
+                      AppLocalizations.of(context)!.deleteTransactionTitle,
+                    ),
+                    content: Text(
+                      AppLocalizations.of(context)!.deleteTransactionContent,
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(ctx, false),
-                        child: const Text('Cancel'),
+                        child: Text(AppLocalizations.of(context)!.cancel),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(ctx, true),
-                        child: const Text(
-                          'Delete',
+                        child: Text(
+                          AppLocalizations.of(context)!.delete,
                           style: TextStyle(color: Colors.red),
                         ),
                       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:couple_balance/l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 
 class PartnerLinkScreen extends StatefulWidget {
@@ -29,30 +30,36 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Selected ${contact.displayName}: $email.'),
+                content: Text(
+                  AppLocalizations.of(
+                    context,
+                  )!.contactSelected(contact.displayName, email),
+                ),
               ),
             );
           } else {
             if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Selected contact has no email address.'),
+              SnackBar(
+                content: Text(AppLocalizations.of(context)!.noEmailContact),
               ),
             );
           }
         }
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error picking contact: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.contactPickError(e.toString()),
+            ),
+          ),
+        );
       }
     } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Permission denied. Cannot access contacts.'),
-        ),
+        SnackBar(content: Text(AppLocalizations.of(context)!.permissionDenied)),
       );
     }
   }
@@ -79,10 +86,8 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
       if (querySnapshot.docs.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Partner User not found with this email. Ask them to login once.',
-            ),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.partnerNotFound),
           ),
         );
         return;
@@ -94,7 +99,7 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
       if (partnerUid == currentUser.uid) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('You cannot link with yourself.')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.cannotLinkSelf)),
         );
         return;
       }
@@ -136,22 +141,24 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Link Partner')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.linkPartnerTitle),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              const Text(
-                'Enter your partner\'s Email Address to link accounts. Make sure they have updated their app and logged in at least once.',
-                style: TextStyle(fontSize: 16),
+              Text(
+                AppLocalizations.of(context)!.linkPartnerInstruction,
+                style: const TextStyle(fontSize: 16),
               ),
               const SizedBox(height: 20),
               TextField(
                 controller: _partnerEmailController,
-                decoration: const InputDecoration(
-                  labelText: 'Partner Email',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.partnerEmail,
+                  border: const OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.emailAddress,
               ),
@@ -159,7 +166,7 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
               ElevatedButton.icon(
                 onPressed: _pickContact,
                 icon: const Icon(Icons.contacts),
-                label: const Text('Pick from Contacts (Simulation)'),
+                label: Text(AppLocalizations.of(context)!.pickFromContacts),
               ),
               const Spacer(),
               SizedBox(
@@ -172,9 +179,9 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          'Link Partner',
-                          style: TextStyle(fontSize: 18),
+                      : Text(
+                          AppLocalizations.of(context)!.linkPartnerTitle,
+                          style: const TextStyle(fontSize: 18),
                         ),
                 ),
               ),

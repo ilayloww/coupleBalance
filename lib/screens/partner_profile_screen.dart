@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:couple_balance/l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 
 class PartnerProfileScreen extends StatefulWidget {
@@ -20,18 +21,19 @@ class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Unlink Partner?'),
-        content: const Text(
-          'Are you sure you want to unlink? You will no longer see shared expenses.',
-        ),
+        title: Text(AppLocalizations.of(context)!.unlinkPartnerTitle),
+        content: Text(AppLocalizations.of(context)!.unlinkWarning),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Unlink', style: TextStyle(color: Colors.red)),
+            child: Text(
+              AppLocalizations.of(context)!.unlink,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -59,15 +61,21 @@ class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Unlinked successfully')),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.unlinkedSuccess),
+            ),
           );
           Navigator.pop(context); // Go back to Home
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error unlinking: $e')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context)!.unlinkError(e.toString()),
+              ),
+            ),
+          );
         }
       } finally {
         if (mounted) setState(() => _isLoading = false);
@@ -79,7 +87,7 @@ class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Partner Profile'),
+        title: Text(AppLocalizations.of(context)!.partnerProfile),
         // backgroundColor: handled by Theme
         elevation: 0,
         leading: IconButton(
@@ -99,11 +107,17 @@ class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
 
           final data = snapshot.data!.data() as Map<String, dynamic>?;
           if (data == null) {
-            return const Center(child: Text('Partner data not found'));
+            return Center(
+              child: Text(AppLocalizations.of(context)!.partnerDataNotFound),
+            );
           }
 
-          final displayName = data['displayName'] as String? ?? 'Partner';
-          final email = data['email'] as String? ?? 'No Email';
+          final displayName =
+              data['displayName'] as String? ??
+              AppLocalizations.of(context)!.defaultPartnerName;
+
+          final email =
+              data['email'] as String? ?? AppLocalizations.of(context)!.noEmail;
           final photoUrl = data['photoUrl'] as String?;
 
           return SingleChildScrollView(
@@ -159,9 +173,9 @@ class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
                               width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text(
-                              'Unlink Partner',
-                              style: TextStyle(color: Colors.red),
+                          : Text(
+                              AppLocalizations.of(context)!.unlink,
+                              style: const TextStyle(color: Colors.red),
                             ),
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Colors.red),

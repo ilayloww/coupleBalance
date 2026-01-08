@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:couple_balance/l10n/app_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'services/auth_service.dart';
 import 'services/theme_service.dart';
+import 'services/localization_service.dart';
 import 'config/theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
@@ -97,15 +100,27 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => ThemeService()),
+        ChangeNotifierProvider(create: (_) => LocalizationService()),
       ],
-      child: Consumer<ThemeService>(
-        builder: (context, themeService, child) {
+      child: Consumer2<ThemeService, LocalizationService>(
+        builder: (context, themeService, localizationService, child) {
           return MaterialApp(
             title: 'CoupleBalance',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeService.themeMode,
+            locale: localizationService.locale,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('en'), // English
+              Locale('tr'), // Turkish
+            ],
             home: const AuthWrapper(),
           );
         },

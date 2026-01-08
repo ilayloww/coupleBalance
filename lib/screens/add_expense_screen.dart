@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:couple_balance/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../viewmodels/add_expense_viewmodel.dart';
@@ -35,7 +36,7 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
     final state = viewModel.state;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Expense')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.addExpense)),
       body: Column(
         children: [
           Expanded(
@@ -52,7 +53,7 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                     ),
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      labelText: 'Amount (₺)',
+                      labelText: AppLocalizations.of(context)!.amount('₺'),
                       contentPadding: const EdgeInsets.symmetric(
                         vertical: 20,
                         horizontal: 16,
@@ -74,7 +75,7 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                   Column(
                     children: [
                       _SplitOptionCard(
-                        title: 'You paid, split equally',
+                        title: AppLocalizations.of(context)!.youPaidSplit,
                         isSelected:
                             viewModel.selectedOption ==
                             SplitOption.youPaidSplit,
@@ -84,7 +85,7 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                       ),
                       const SizedBox(height: 8),
                       _SplitOptionCard(
-                        title: 'You are owed full amount',
+                        title: AppLocalizations.of(context)!.youPaidFull,
                         isSelected:
                             viewModel.selectedOption == SplitOption.youPaidFull,
                         onTap: () =>
@@ -93,7 +94,9 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                       ),
                       const SizedBox(height: 8),
                       _SplitOptionCard(
-                        title: '${viewModel.partnerName} paid, split equally',
+                        title: AppLocalizations.of(
+                          context,
+                        )!.partnerPaidSplit(viewModel.partnerName),
                         isSelected:
                             viewModel.selectedOption ==
                             SplitOption.partnerPaidSplit,
@@ -105,7 +108,9 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                       ),
                       const SizedBox(height: 8),
                       _SplitOptionCard(
-                        title: '${viewModel.partnerName} is owed full amount',
+                        title: AppLocalizations.of(
+                          context,
+                        )!.partnerPaidFull(viewModel.partnerName),
                         isSelected:
                             viewModel.selectedOption ==
                             SplitOption.partnerPaidFull,
@@ -139,8 +144,8 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                   TextField(
                     controller: _noteController,
                     decoration: InputDecoration(
-                      labelText: 'What is it for?',
-                      hintText: 'e.g. Dinner, Rent',
+                      labelText: AppLocalizations.of(context)!.whatIsItFor,
+                      hintText: AppLocalizations.of(context)!.expenseHint,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -155,14 +160,14 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                     child: Row(
                       children:
                           [
-                                'Food',
-                                'Coffee',
-                                'Groceries',
-                                'Rent',
-                                'Transport',
-                                'Date',
-                                'Bills',
-                                'Shopping',
+                                AppLocalizations.of(context)!.tagFood,
+                                AppLocalizations.of(context)!.tagCoffee,
+                                AppLocalizations.of(context)!.tagGroceries,
+                                AppLocalizations.of(context)!.tagRent,
+                                AppLocalizations.of(context)!.tagTransport,
+                                AppLocalizations.of(context)!.tagDate,
+                                AppLocalizations.of(context)!.tagBills,
+                                AppLocalizations.of(context)!.tagShopping,
                               ]
                               .map(
                                 (option) => Padding(
@@ -192,9 +197,9 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                       Icons.camera_alt,
                       color: Theme.of(context).colorScheme.primary,
                     ),
-                    title: const Text('Add Receipt / Photo'),
+                    title: Text(AppLocalizations.of(context)!.addReceiptPhoto),
                     subtitle: state.selectedImage != null
-                        ? const Text('Image selected')
+                        ? Text(AppLocalizations.of(context)!.imageSelected)
                         : null,
                     tileColor: Theme.of(
                       context,
@@ -265,8 +270,12 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                           );
                           if (amount == null) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Please enter a valid amount'),
+                              SnackBar(
+                                content: Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.validAmountError,
+                                ),
                               ),
                             );
                             return;
@@ -292,9 +301,9 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                   ),
                   child: viewModel.isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          'Add Expense',
-                          style: TextStyle(
+                      : Text(
+                          AppLocalizations.of(context)!.addExpense,
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -320,7 +329,7 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Gallery'),
+              title: Text(AppLocalizations.of(context)!.gallery),
               onTap: () {
                 viewModel.pickImage(ImageSource.gallery);
                 Navigator.pop(ctx);
@@ -328,7 +337,7 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt),
-              title: const Text('Camera'),
+              title: Text(AppLocalizations.of(context)!.camera),
               onTap: () {
                 viewModel.pickImage(ImageSource.camera);
                 Navigator.pop(ctx);

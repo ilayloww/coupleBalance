@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:couple_balance/l10n/app_localizations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/transaction_model.dart';
 
@@ -23,7 +24,10 @@ class TransactionDetailScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Details', style: TextStyle(color: Colors.black)),
+        title: Text(
+          AppLocalizations.of(context)!.details,
+          style: const TextStyle(color: Colors.black),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
@@ -110,7 +114,7 @@ class TransactionDetailScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'No receipt photo',
+                        AppLocalizations.of(context)!.noReceiptPhoto,
                         style: TextStyle(color: Colors.grey[400]),
                       ),
                     ],
@@ -155,7 +159,9 @@ class TransactionDetailScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            isMe ? 'You paid' : 'Partner paid',
+                            isMe
+                                ? AppLocalizations.of(context)!.youPaid
+                                : AppLocalizations.of(context)!.partnerPaid,
                             style: TextStyle(
                               color: isMe ? Colors.pink : Colors.blue,
                               fontWeight: FontWeight.bold,
@@ -173,7 +179,7 @@ class TransactionDetailScreen extends StatelessWidget {
                   // Metadata
                   _DetailRow(
                     icon: Icons.calendar_today,
-                    label: 'Date',
+                    label: AppLocalizations.of(context)!.date,
                     value: formattedDate,
                   ),
                   const SizedBox(height: 16),
@@ -181,15 +187,15 @@ class TransactionDetailScreen extends StatelessWidget {
                   if (transaction.isSettled)
                     _DetailRow(
                       icon: Icons.check_circle,
-                      label: 'Status',
-                      value: 'Settled',
+                      label: AppLocalizations.of(context)!.status,
+                      value: AppLocalizations.of(context)!.settled,
                       valueColor: Colors.green,
                     )
                   else
-                    const _DetailRow(
+                    _DetailRow(
                       icon: Icons.pending,
-                      label: 'Status',
-                      value: 'Unsettled',
+                      label: AppLocalizations.of(context)!.status,
+                      value: AppLocalizations.of(context)!.unsettled,
                       valueColor: Colors.orange,
                     ),
                 ],

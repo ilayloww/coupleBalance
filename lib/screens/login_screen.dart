@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:couple_balance/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -46,11 +47,11 @@ class _LoginScreenState extends State<LoginScreen> {
       // Navigation is handled by the StreamBuilder in AuthWrapper
     } on FirebaseAuthException catch (e) {
       setState(() {
-        _errorMessage = e.message ?? 'Authentication failed';
+        _errorMessage = e.message ?? AppLocalizations.of(context)!.authFailed;
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'An unexpected error occurred';
+        _errorMessage = AppLocalizations.of(context)!.unexpectedError;
       });
     } finally {
       if (mounted) {
@@ -90,7 +91,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       FadeTransition(opacity: animation, child: child),
                   child: Text(
                     key: ValueKey<bool>(_isLogin),
-                    _isLogin ? 'Welcome Back!' : 'Create Account',
+                    _isLogin
+                        ? AppLocalizations.of(context)!.welcomeBack
+                        : AppLocalizations.of(context)!.createAccount,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
@@ -99,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Track expenses together <3',
+                  AppLocalizations.of(context)!.trackExpensesTogether,
                   textAlign: TextAlign.center,
                   style: Theme.of(
                     context,
@@ -123,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
-                    labelText: 'Email',
+                    labelText: AppLocalizations.of(context)!.email,
                     prefixIcon: const Icon(Icons.email_outlined),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -146,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
-                    labelText: 'Password',
+                    labelText: AppLocalizations.of(context)!.password,
                     prefixIcon: const Icon(Icons.lock_outline),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -191,7 +194,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               FadeTransition(opacity: animation, child: child),
                           child: Text(
                             key: ValueKey<bool>(_isLogin),
-                            _isLogin ? 'Login' : 'Sign Up',
+                            _isLogin
+                                ? AppLocalizations.of(context)!.login
+                                : AppLocalizations.of(context)!.signUp,
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -211,8 +216,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Text(
                       key: ValueKey<bool>(_isLogin),
                       _isLogin
-                          ? "Don't have an account? Sign Up"
-                          : "Already have an account? Login",
+                          ? AppLocalizations.of(context)!.dontHaveAccount
+                          : AppLocalizations.of(context)!.alreadyHaveAccount,
                       style: const TextStyle(color: Colors.pinkAccent),
                     ),
                   ),

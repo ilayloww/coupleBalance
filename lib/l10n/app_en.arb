@@ -1,0 +1,194 @@
+{
+    "appTitle": "Couple Balance",
+    "welcomeBack": "Welcome Back!",
+    "createAccount": "Create Account",
+    "trackExpensesTogether": "Track expenses together <3",
+    "email": "Email",
+    "password": "Password",
+    "login": "Login",
+    "signUp": "Sign Up",
+    "dontHaveAccount": "Don't have an account? Sign Up",
+    "alreadyHaveAccount": "Already have an account? Login",
+    "authFailed": "Authentication failed",
+    "unexpectedError": "An unexpected error occurred",
+    "enterEmail": "Please enter your email",
+    "validEmail": "Please enter a valid email",
+    "enterPassword": "Please enter your password",
+    "passwordMinLength": "Password must be at least 6 characters",
+    "recentTransactions": "Recent Transactions",
+    "pleaseLinkPartnerFirst": "Please link a partner first",
+    "noPartnerLinked": "No Partner Linked",
+    "linkPartner": "Link Partner",
+    "partnerOwesYou": "Partner owes you",
+    "youOwePartner": "You owe Partner",
+    "settlementInDays": "Settlement in {days} days",
+    "@settlementInDays": {
+        "placeholders": {
+            "days": {
+                "type": "int"
+            }
+        }
+    },
+    "settleUp": "Settle Up",
+    "history": "History",
+    "settleUpTitle": "Settle Up?",
+    "settleUpContent": "This will archive all current transactions and reset the balance to 0.\n\nAmount: {amount} {currency}\n{payerInfo}",
+    "@settleUpContent": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            },
+            "currency": {
+                "type": "String"
+            },
+            "payerInfo": {
+                "type": "String"
+            }
+        }
+    },
+    "youArePaying": "You are paying",
+    "partnerIsPaying": "Partner is paying",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "settlementComplete": "Settlement complete! Balance reset.",
+    "selectSettlementDay": "Select Settlement Day",
+    "day": "Day {day}",
+    "@day": {
+        "placeholders": {
+            "day": {
+                "type": "int"
+            }
+        }
+    },
+    "noTransactionsYet": "No transactions yet.",
+    "deleteTransactionTitle": "Delete Transaction?",
+    "deleteTransactionContent": "Are you sure you want to delete this item?",
+    "delete": "Delete",
+    "addExpense": "Add Expense",
+    "amount": "Amount ({currency})",
+    "@amount": {
+        "placeholders": {
+            "currency": {
+                "type": "String"
+            }
+        }
+    },
+    "youPaidSplit": "You paid, split equally",
+    "youPaidFull": "You are owed full amount",
+    "partnerPaidSplit": "{partnerName} paid, split equally",
+    "@partnerPaidSplit": {
+        "placeholders": {
+            "partnerName": {
+                "type": "String"
+            }
+        }
+    },
+    "partnerPaidFull": "{partnerName} is owed full amount",
+    "@partnerPaidFull": {
+        "placeholders": {
+            "partnerName": {
+                "type": "String"
+            }
+        }
+    },
+    "whatIsItFor": "What is it for?",
+    "expenseHint": "e.g. Dinner, Rent",
+    "tagFood": "Food",
+    "tagCoffee": "Coffee",
+    "tagGroceries": "Groceries",
+    "tagRent": "Rent",
+    "tagTransport": "Transport",
+    "tagDate": "Date",
+    "tagBills": "Bills",
+    "tagShopping": "Shopping",
+    "addReceiptPhoto": "Add Receipt / Photo",
+    "imageSelected": "Image selected",
+    "validAmountError": "Please enter a valid amount",
+    "gallery": "Gallery",
+    "camera": "Camera",
+    "profilePictureUpdated": "Profile picture updated!",
+    "uploadError": "Error uploading image: {error}",
+    "@uploadError": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "profileUpdated": "Profile updated successfully",
+    "myProfile": "My Profile",
+    "displayName": "Display Name",
+    "appearance": "Appearance",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark",
+    "saveProfile": "Save Profile",
+    "logout": "Logout",
+    "language": "Language",
+    "english": "English",
+    "turkish": "Turkish",
+    "details": "Details",
+    "noReceiptPhoto": "No receipt photo",
+    "youPaid": "You paid",
+    "partnerPaid": "Partner paid",
+    "date": "Date",
+    "status": "Status",
+    "settled": "Settled",
+    "unsettled": "Unsettled",
+    "linkPartnerTitle": "Link Partner",
+    "contactSelected": "Selected {name}: {email}.",
+    "@contactSelected": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            },
+            "email": {
+                "type": "String"
+            }
+        }
+    },
+    "noEmailContact": "Selected contact has no email address.",
+    "contactPickError": "Error picking contact: {error}",
+    "@contactPickError": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "permissionDenied": "Permission denied. Cannot access contacts.",
+    "partnerNotFound": "Partner User not found with this email. Ask them to login once.",
+    "cannotLinkSelf": "You cannot link with yourself.",
+    "linkPartnerInstruction": "Enter your partner's Email Address to link accounts. Make sure they have updated their app and logged in at least once.",
+    "partnerEmail": "Partner Email",
+    "pickFromContacts": "Pick from Contacts (Simulation)",
+    "unlinkPartnerTitle": "Unlink Partner?",
+    "unlinkWarning": "Are you sure you want to unlink? You will no longer see shared expenses.",
+    "unlink": "Unlink",
+    "unlinkedSuccess": "Unlinked successfully",
+    "unlinkError": "Error unlinking: {error}",
+    "@unlinkError": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "partnerProfile": "Partner Profile",
+    "partnerDataNotFound": "Partner data not found",
+    "defaultPartnerName": "Partner",
+    "noEmail": "No Email",
+    "settlementHistory": "Settlement History",
+    "errorLoadingHistory": "Error loading history",
+    "noPastSettlements": "No past settlements",
+    "youPaidPartner": "You paid Partner",
+    "partnerPaidYou": "Partner paid You",
+    "transactionCount": "{count} transactions",
+    "@transactionCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    }
+}

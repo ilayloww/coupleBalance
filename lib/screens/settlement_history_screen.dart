@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:couple_balance/l10n/app_localizations.dart';
 import '../viewmodels/settlement_viewmodel.dart';
 import '../models/settlement_model.dart';
 
@@ -19,7 +20,10 @@ class SettlementHistoryScreen extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => SettlementViewModel(),
       child: Scaffold(
-        appBar: AppBar(title: const Text('Settlement History'), elevation: 0),
+        appBar: AppBar(
+          title: Text(AppLocalizations.of(context)!.settlementHistory),
+          elevation: 0,
+        ),
         body: Consumer<SettlementViewModel>(
           builder: (context, viewModel, child) {
             return StreamBuilder<List<SettlementModel>>(
@@ -31,7 +35,11 @@ class SettlementHistoryScreen extends StatelessWidget {
 
                 if (snapshot.hasError) {
                   debugPrint('SettlementHistory Error: ${snapshot.error}');
-                  return const Center(child: Text('Error loading history'));
+                  return Center(
+                    child: Text(
+                      AppLocalizations.of(context)!.errorLoadingHistory,
+                    ),
+                  );
                 }
 
                 final settlements = snapshot.data ?? [];
@@ -39,7 +47,7 @@ class SettlementHistoryScreen extends StatelessWidget {
                 if (settlements.isEmpty) {
                   return Center(
                     child: Text(
-                      'No past settlements',
+                      AppLocalizations.of(context)!.noPastSettlements,
                       style: TextStyle(
                         color: Theme.of(context).hintColor,
                         fontSize: 16,
@@ -87,9 +95,9 @@ class SettlementHistoryScreen extends StatelessWidget {
                                     color: Colors.green.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: const Text(
-                                    'Settled',
-                                    style: TextStyle(
+                                  child: Text(
+                                    AppLocalizations.of(context)!.settled,
+                                    style: const TextStyle(
                                       color: Colors.green,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 12,
@@ -124,15 +132,23 @@ class SettlementHistoryScreen extends StatelessWidget {
                                   children: [
                                     Text(
                                       isPayer
-                                          ? 'You paid Partner'
-                                          : 'Partner paid You',
+                                          ? AppLocalizations.of(
+                                              context,
+                                            )!.youPaidPartner
+                                          : AppLocalizations.of(
+                                              context,
+                                            )!.partnerPaidYou,
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 16,
                                       ),
                                     ),
                                     Text(
-                                      '${settlement.transactionIds.length} transactions',
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.transactionCount(
+                                        settlement.transactionIds.length,
+                                      ),
                                       style: TextStyle(
                                         color: Theme.of(context).hintColor,
                                         fontSize: 12,

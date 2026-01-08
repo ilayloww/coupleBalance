@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:couple_balance/l10n/app_localizations.dart';
+import '../services/localization_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -19,11 +21,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _nameController = TextEditingController();
   bool _isLoading = false;
   String? _photoUrl;
+  File? _imageFile;
+  ThemeMode? _selectedThemeMode;
+  Locale? _selectedLocale;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    // Initialize local state from services
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final themeService = Provider.of<ThemeService>(context, listen: false);
+      final localizationService = Provider.of<LocalizationService>(
+        context,
+        listen: false,
+      );
+      setState(() {
+        _selectedThemeMode = themeService.themeMode;
+        _selectedLocale = localizationService.locale;
+      });
+    });
   }
 
   Future<void> _loadUserData() async {
@@ -36,19 +53,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (doc.exists && mounted) {
         setState(() {
           _nameController.text = doc.data()?['displayName'] ?? '';
-          _photoUrl =
-              doc.data()?['photoUrl'] ??
-              doc.data()?['photoBase64']; // Fallback temporarily if needed, but user said delete older. Let's stick to photoUrl primarily, but maybe keep 'photoBase64' check just for reading old data if it wasn't deleted yet? User said "I will delete older photos now", implying manual deletion or he doesn't care. I'll stick to photoUrl mostly but reading old field doesn't hurt.
-          // Actually, let's just look at 'photoUrl'.
           _photoUrl = doc.data()?['photoUrl'];
         });
       }
     }
   }
 
-  Future<void> _pickAndUploadImage() async {
+  Future<void> _pickImage() async {
     final picker = ImagePicker();
-    // High quality as requested
     final pickedFile = await picker.pickImage(
       source: ImageSource.gallery,
       maxWidth: 1024,
@@ -56,90 +68,88 @@ class _ProfileScreenState extends State<ProfileScreen> {
       imageQuality: 85,
     );
 
-    if (!mounted) return;
-
-    if (pickedFile != null) {
-      setState(() => _isLoading = true);
-      try {
-        final user = Provider.of<AuthService>(
-          context,
-          listen: false,
-        ).currentUser;
-        if (user == null) return;
-
-        final file = File(pickedFile.path);
-
-        // Upload to Firebase Storage
-        final storageRef = FirebaseStorage.instance
-            .ref()
-            .child('profile_images')
-            .child('${user.uid}.jpg');
-
-        try {
-          // Explicitly wait for upload to complete
-          await storageRef.putFile(file);
-        } catch (e) {
-          throw 'Upload failed: $e';
-        }
-
-        String downloadUrl;
-        try {
-          downloadUrl = await storageRef.getDownloadURL();
-        } catch (e) {
-          throw 'Getting URL failed: $e';
-        }
-
-        // Store URL in Firestore
-        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-          'photoUrl': downloadUrl,
-          'photoBase64': FieldValue.delete(), // Cleanup old field
-        }, SetOptions(merge: true));
-
-        if (mounted) {
-          setState(() {
-            _photoUrl = downloadUrl;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile picture updated!')),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error uploading image: $e')));
-        }
-      } finally {
-        if (mounted) setState(() => _isLoading = false);
-      }
+    if (pickedFile != null && mounted) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
     }
   }
 
   Future<void> _saveProfile() async {
     setState(() => _isLoading = true);
     final user = Provider.of<AuthService>(context, listen: false).currentUser;
-    if (user != null) {
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-        'displayName': _nameController.text.trim(),
-      }, SetOptions(merge: true));
 
+    try {
+      if (user != null) {
+        String? newPhotoUrl = _photoUrl;
+
+        // Upload new image if selected
+        if (_imageFile != null) {
+          final storageRef = FirebaseStorage.instance
+              .ref()
+              .child('profile_images')
+              .child('${user.uid}.jpg');
+
+          await storageRef.putFile(_imageFile!);
+          newPhotoUrl = await storageRef.getDownloadURL();
+        }
+
+        // Update Firestore
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'displayName': _nameController.text.trim(),
+          if (newPhotoUrl != null) 'photoUrl': newPhotoUrl,
+          'photoBase64': FieldValue.delete(),
+        }, SetOptions(merge: true));
+
+        // Update local state helpers
+        if (newPhotoUrl != null) {
+          setState(() => _photoUrl = newPhotoUrl);
+        }
+
+        // Apply Theme Change
+        if (_selectedThemeMode != null && mounted) {
+          Provider.of<ThemeService>(
+            context,
+            listen: false,
+          ).setThemeMode(_selectedThemeMode!);
+        }
+
+        // Apply Language Change
+        if (_selectedLocale != null && mounted) {
+          Provider.of<LocalizationService>(
+            context,
+            listen: false,
+          ).setLocale(_selectedLocale!);
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.profileUpdated),
+            ),
+          );
+        }
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully')),
+          SnackBar(
+            content: Text('Error saving profile: $e'),
+          ), // Fallback string as we might not have 'errorSaving' key
         );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-    setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthService>(context).currentUser;
-    final themeService = Provider.of<ThemeService>(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Profile'),
+        title: Text(AppLocalizations.of(context)!.myProfile),
         // Remove hardcoded colors, let Theme handle it
       ),
       body: SingleChildScrollView(
@@ -147,7 +157,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           children: [
             GestureDetector(
-              onTap: _isLoading ? null : _pickAndUploadImage,
+              onTap: _isLoading ? null : _pickImage,
               child: Stack(
                 alignment: Alignment.bottomRight,
                 children: [
@@ -156,9 +166,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     backgroundColor: Theme.of(
                       context,
                     ).colorScheme.primaryContainer,
-                    backgroundImage: _photoUrl != null
-                        ? CachedNetworkImageProvider(_photoUrl!)
-                        : null,
+                    backgroundImage: _imageFile != null
+                        ? FileImage(_imageFile!)
+                        : (_photoUrl != null
+                              ? CachedNetworkImageProvider(_photoUrl!)
+                              : null as ImageProvider?),
                     child: _photoUrl == null
                         ? Icon(
                             Icons.person,
@@ -190,27 +202,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 32),
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Display Name',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.person),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.displayName,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.person),
               ),
             ),
             const SizedBox(height: 16),
             TextFormField(
               initialValue: user?.email,
               readOnly: true,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.email),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.email,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.email),
               ),
             ),
             const SizedBox(height: 32),
 
             _ThemeSelector(
-              currentMode: themeService.themeMode,
-              onChanged: (mode) => themeService.setThemeMode(mode),
+              currentMode: _selectedThemeMode ?? ThemeMode.system,
+              onChanged: (mode) => setState(() => _selectedThemeMode = mode),
+            ),
+            const SizedBox(height: 16),
+            _LanguageSelector(
+              currentLocale: _selectedLocale ?? const Locale('en'),
+              onChanged: (locale) => setState(() => _selectedLocale = locale),
             ),
             const SizedBox(height: 32),
 
@@ -227,9 +244,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'Save Profile',
-                        style: TextStyle(fontSize: 18, color: Colors.white),
+                    : Text(
+                        AppLocalizations.of(context)!.saveProfile,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          color: Colors.white,
+                        ),
                       ),
               ),
             ),
@@ -243,9 +263,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Provider.of<AuthService>(context, listen: false).signOut();
                 },
                 icon: const Icon(Icons.logout, color: Colors.red),
-                label: const Text(
-                  'Logout',
-                  style: TextStyle(color: Colors.red),
+                label: Text(
+                  AppLocalizations.of(context)!.logout,
+                  style: const TextStyle(color: Colors.red),
                 ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.red),
@@ -274,7 +294,7 @@ class _ThemeSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Appearance',
+          AppLocalizations.of(context)!.appearance,
           style: Theme.of(
             context,
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -291,19 +311,19 @@ class _ThemeSelector extends StatelessWidget {
           child: Row(
             children: [
               _ThemeOption(
-                label: 'System',
+                label: AppLocalizations.of(context)!.system,
                 icon: Icons.brightness_auto,
                 isSelected: currentMode == ThemeMode.system,
                 onTap: () => onChanged(ThemeMode.system),
               ),
               _ThemeOption(
-                label: 'Light',
+                label: AppLocalizations.of(context)!.light,
                 icon: Icons.light_mode,
                 isSelected: currentMode == ThemeMode.light,
                 onTap: () => onChanged(ThemeMode.light),
               ),
               _ThemeOption(
-                label: 'Dark',
+                label: AppLocalizations.of(context)!.dark,
                 icon: Icons.dark_mode,
                 isSelected: currentMode == ThemeMode.dark,
                 onTap: () => onChanged(ThemeMode.dark),
@@ -377,6 +397,68 @@ class _ThemeOption extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _LanguageSelector extends StatelessWidget {
+  final Locale currentLocale;
+  final ValueChanged<Locale> onChanged;
+
+  const _LanguageSelector({
+    required this.currentLocale,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AppLocalizations.of(context)!.language,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<Locale>(
+              value: currentLocale,
+              isExpanded: true,
+              items: [
+                DropdownMenuItem(
+                  value: const Locale('en'),
+                  child: Row(
+                    children: [
+                      const Text('🇺🇸 '),
+                      Text(AppLocalizations.of(context)!.english),
+                    ],
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: const Locale('tr'),
+                  child: Row(
+                    children: [
+                      const Text('🇹🇷 '),
+                      Text(AppLocalizations.of(context)!.turkish),
+                    ],
+                  ),
+                ),
+              ],
+              onChanged: (locale) {
+                if (locale != null) {
+                  onChanged(locale);
+                }
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
