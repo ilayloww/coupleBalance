@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:couple_balance/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+
+import '../services/auth_service.dart';
 import '../viewmodels/add_expense_viewmodel.dart';
 
 class AddExpenseScreen extends StatelessWidget {
@@ -119,6 +121,15 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                         ),
                         icon: Icons.arrow_upward,
                         isPartner: true,
+                      ),
+                      const SizedBox(height: 8),
+                      // More Options / Custom Split
+                      _SplitOptionCard(
+                        title: AppLocalizations.of(context)!.moreOptions,
+                        isSelected:
+                            viewModel.selectedOption == SplitOption.custom,
+                        onTap: () => _showCustomSplitSheet(context, viewModel),
+                        icon: Icons.tune,
                       ),
                     ],
                   ),
@@ -346,6 +357,149 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showCustomSplitSheet(
+    BuildContext context,
+    AddExpenseViewModel viewModel,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final isMePayer =
+                viewModel.customPayerUid == null ||
+                viewModel.customPayerUid ==
+                    Provider.of<AuthService>(
+                      context,
+                      listen: false,
+                    ).currentUser?.uid;
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                top: 20,
+                left: 20,
+                right: 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    AppLocalizations.of(context)!.custom,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Section 1: Who Paid?
+                  Text(
+                    AppLocalizations.of(context)!.whoPaid,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ChoiceChip(
+                          label: Text(AppLocalizations.of(context)!.me),
+                          selected: isMePayer,
+                          onSelected: (selected) {
+                            if (selected) {
+                              setSheetState(() {
+                                viewModel.setCustomPayer(null); // Me
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ChoiceChip(
+                          label: Text(viewModel.partnerName),
+                          selected: !isMePayer,
+                          onSelected: (selected) {
+                            if (selected) {
+                              setSheetState(() {
+                                viewModel.setCustomPayer(widget.partnerUid);
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Section 2: Input Amount Owed
+                  Text(
+                    AppLocalizations.of(context)!.enterAmountOwed,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.customAmount,
+                      suffixText: '₺',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onChanged: (val) {
+                      viewModel.setCustomOwedAmount(double.tryParse(val) ?? 0);
+                    },
+                    controller:
+                        TextEditingController(
+                            text: viewModel.customOwedAmount == 0
+                                ? ''
+                                : viewModel.customOwedAmount.toString(),
+                          )
+                          ..selection = TextSelection.fromPosition(
+                            TextPosition(
+                              offset: viewModel.customOwedAmount
+                                  .toString()
+                                  .length,
+                            ),
+                          ),
+                  ),
+
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      viewModel.setSplitOption(SplitOption.custom);
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.pinkAccent,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      AppLocalizations.of(context)!.confirm,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

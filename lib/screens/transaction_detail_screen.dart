@@ -22,15 +22,15 @@ class TransactionDetailScreen extends StatelessWidget {
     ).format(transaction.timestamp);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      // backgroundColor: Colors.white, // Removed: defaults to theme
       appBar: AppBar(
         title: Text(
           AppLocalizations.of(context)!.details,
-          style: const TextStyle(color: Colors.black),
+          // style: const TextStyle(color: Colors.black), // Removed: defaults to theme
         ),
-        backgroundColor: Colors.white,
+        // backgroundColor: Colors.white, // Removed: defaults to theme
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        // iconTheme: const IconThemeData(color: Colors.black), // Removed: defaults to theme
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -79,18 +79,24 @@ class TransactionDetailScreen extends StatelessWidget {
                           fit: BoxFit.cover,
                           placeholder: (context, url) => Container(
                             height: 200,
-                            color: Colors.grey[100],
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
                             child: const Center(
                               child: CircularProgressIndicator(),
                             ),
                           ),
                           errorWidget: (context, url, error) => Container(
                             height: 200,
-                            color: Colors.grey[100],
-                            child: const Icon(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                            child: Icon(
                               Icons.broken_image,
                               size: 50,
-                              color: Colors.grey,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         );
@@ -102,7 +108,7 @@ class TransactionDetailScreen extends StatelessWidget {
             else
               Container(
                 height: 150,
-                color: Colors.grey[50],
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -110,12 +116,16 @@ class TransactionDetailScreen extends StatelessWidget {
                       Icon(
                         Icons.receipt_long,
                         size: 48,
-                        color: Colors.grey[300],
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         AppLocalizations.of(context)!.noReceiptPhoto,
-                        style: TextStyle(color: Colors.grey[400]),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
@@ -145,7 +155,9 @@ class TransactionDetailScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.w900,
-                            color: isMe ? Colors.pink : Colors.blue,
+                            color: isMe
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.secondary,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -155,7 +167,13 @@ class TransactionDetailScreen extends StatelessWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: isMe ? Colors.pink[50] : Colors.blue[50],
+                            color:
+                                (isMe
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Theme.of(
+                                            context,
+                                          ).colorScheme.secondary)
+                                    .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -163,7 +181,9 @@ class TransactionDetailScreen extends StatelessWidget {
                                 ? AppLocalizations.of(context)!.youPaid
                                 : AppLocalizations.of(context)!.partnerPaid,
                             style: TextStyle(
-                              color: isMe ? Colors.pink : Colors.blue,
+                              color: isMe
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.secondary,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -228,10 +248,14 @@ class _DetailRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, size: 20, color: Colors.grey[600]),
+          child: Icon(
+            icon,
+            size: 20,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -240,14 +264,17 @@ class _DetailRow extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 12,
+                ),
               ),
               Text(
                 value,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 16,
-                  color: valueColor ?? Colors.black87,
+                  color: valueColor ?? Theme.of(context).colorScheme.onSurface,
                 ),
                 softWrap: true,
               ),

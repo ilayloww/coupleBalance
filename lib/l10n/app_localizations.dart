@@ -733,6 +733,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} transactions'**
   String transactionCount(int count);
+
+  /// No description provided for @moreOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'More options...'**
+  String get moreOptions;
+
+  /// No description provided for @whoPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Who paid?'**
+  String get whoPaid;
+
+  /// No description provided for @howToSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'How to split?'**
+  String get howToSplit;
+
+  /// No description provided for @customAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Amount'**
+  String get customAmount;
+
+  /// No description provided for @me.
+  ///
+  /// In en, this message translates to:
+  /// **'Me'**
+  String get me;
+
+  /// No description provided for @partner.
+  ///
+  /// In en, this message translates to:
+  /// **'Partner'**
+  String get partner;
+
+  /// No description provided for @splitEqually.
+  ///
+  /// In en, this message translates to:
+  /// **'Equally'**
+  String get splitEqually;
+
+  /// No description provided for @fullAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Amount'**
+  String get fullAmount;
+
+  /// No description provided for @custom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get custom;
+
+  /// No description provided for @enterAmountOwed.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter amount owed'**
+  String get enterAmountOwed;
 }
 
 class _AppLocalizationsDelegate

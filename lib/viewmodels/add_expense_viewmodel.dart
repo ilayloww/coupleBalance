@@ -11,6 +11,7 @@ enum SplitOption {
   youPaidFull,
   partnerPaidSplit,
   partnerPaidFull,
+  custom,
 }
 
 class AddExpenseViewModel extends ChangeNotifier {
@@ -19,6 +20,17 @@ class AddExpenseViewModel extends ChangeNotifier {
 
   SplitOption _selectedOption = SplitOption.youPaidSplit;
   SplitOption get selectedOption => _selectedOption;
+
+  // Custom Split State
+  String? _customPayerUid; // Null means "Me" (current user)
+  String? get customPayerUid => _customPayerUid;
+
+  // Who owes whom how much?
+  // We will store "how much the OTHER person owes".
+  // If I paid, this is how much Partner owes Me.
+  // If Partner paid, this is how much I owe Partner.
+  double _customOwedAmount = 0;
+  double get customOwedAmount => _customOwedAmount;
 
   String _partnerName = 'Partner';
   String get partnerName => _partnerName;
@@ -53,6 +65,17 @@ class AddExpenseViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Custom Split Setters
+  void setCustomPayer(String? uid) {
+    _customPayerUid = uid;
+    notifyListeners();
+  }
+
+  void setCustomOwedAmount(double amount) {
+    _customOwedAmount = amount;
+    notifyListeners();
+  }
+
   String getDescriptionText(double amount) {
     if (amount <= 0) return '';
 
@@ -65,6 +88,15 @@ class AddExpenseViewModel extends ChangeNotifier {
         return 'You owe $_partnerName ${(amount / 2).toStringAsFixed(2)} ₺';
       case SplitOption.partnerPaidFull:
         return 'You owe $_partnerName ${amount.toStringAsFixed(2)} ₺';
+      case SplitOption.custom:
+        final isMePayer =
+            _customPayerUid == null ||
+            _customPayerUid == _auth.currentUser?.uid;
+        if (isMePayer) {
+          return '$_partnerName owes you ${_customOwedAmount.toStringAsFixed(2)} ₺';
+        } else {
+          return 'You owe $_partnerName ${_customOwedAmount.toStringAsFixed(2)} ₺';
+        }
     }
   }
 
@@ -144,6 +176,21 @@ class AddExpenseViewModel extends ChangeNotifier {
           finalAmount = amount;
           finalSender = receiverUid;
           finalReceiver = _auth.currentUser!.uid;
+          break;
+        case SplitOption.custom:
+          finalAmount = _customOwedAmount;
+          // If I paid, I am sender, Partner is receiver (Partner owes me).
+          // If Partner paid, Partner is sender, I am receiver (I owe partner).
+          final isMePayer =
+              _customPayerUid == null ||
+              _customPayerUid == _auth.currentUser?.uid;
+          if (isMePayer) {
+            finalSender = _auth.currentUser!.uid;
+            finalReceiver = receiverUid;
+          } else {
+            finalSender = receiverUid;
+            finalReceiver = _auth.currentUser!.uid;
+          }
           break;
       }
 

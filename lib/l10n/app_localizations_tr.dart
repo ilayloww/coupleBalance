@@ -351,4 +351,34 @@ class AppLocalizationsTr extends AppLocalizations {
   String transactionCount(int count) {
     return '$count işlem';
   }
+
+  @override
+  String get moreOptions => 'Diğer seçenekler...';
+
+  @override
+  String get whoPaid => 'Kim ödedi?';
+
+  @override
+  String get howToSplit => 'Nasıl bölünecek?';
+
+  @override
+  String get customAmount => 'Özel Tutar';
+
+  @override
+  String get me => 'Ben';
+
+  @override
+  String get partner => 'Partnerim';
+
+  @override
+  String get splitEqually => 'Eşit';
+
+  @override
+  String get fullAmount => 'Tamamı';
+
+  @override
+  String get custom => 'Özel';
+
+  @override
+  String get enterAmountOwed => 'Borçlanılan tutarı girin';
 }

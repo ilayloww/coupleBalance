@@ -351,4 +351,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String transactionCount(int count) {
     return '$count transactions';
   }
+
+  @override
+  String get moreOptions => 'More options...';
+
+  @override
+  String get whoPaid => 'Who paid?';
+
+  @override
+  String get howToSplit => 'How to split?';
+
+  @override
+  String get customAmount => 'Custom Amount';
+
+  @override
+  String get me => 'Me';
+
+  @override
+  String get partner => 'Partner';
+
+  @override
+  String get splitEqually => 'Equally';
+
+  @override
+  String get fullAmount => 'Full Amount';
+
+  @override
+  String get custom => 'Custom';
+
+  @override
+  String get enterAmountOwed => 'Enter amount owed';
 }

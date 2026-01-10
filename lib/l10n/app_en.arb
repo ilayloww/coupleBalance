@@ -190,5 +190,15 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "moreOptions": "More options...",
+    "whoPaid": "Who paid?",
+    "howToSplit": "How to split?",
+    "customAmount": "Custom Amount",
+    "me": "Me",
+    "partner": "Partner",
+    "splitEqually": "Equally",
+    "fullAmount": "Full Amount",
+    "custom": "Custom",
+    "enterAmountOwed": "Enter amount owed"
 }

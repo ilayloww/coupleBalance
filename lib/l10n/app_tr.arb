@@ -104,5 +104,15 @@
     "noPastSettlements": "Geçmiş hesaplaşma yok",
     "youPaidPartner": "Sen Partnerine ödedin",
     "partnerPaidYou": "Partnerin sana ödedi",
-    "transactionCount": "{count} işlem"
+    "transactionCount": "{count} işlem",
+    "moreOptions": "Diğer seçenekler...",
+    "whoPaid": "Kim ödedi?",
+    "howToSplit": "Nasıl bölünecek?",
+    "customAmount": "Özel Tutar",
+    "me": "Ben",
+    "partner": "Partnerim",
+    "splitEqually": "Eşit",
+    "fullAmount": "Tamamı",
+    "custom": "Özel",
+    "enterAmountOwed": "Borçlanılan tutarı girin"
 }
