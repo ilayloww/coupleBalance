@@ -41,8 +41,10 @@ android {
 
     applicationVariants.all {
         outputs.all {
-            val output = this as? com.android.build.gradle.internal.api.ApkVariantOutputImpl
-            output?.outputFileName = output?.outputFileName?.replace("app-", "couplebalance-")
+            val output = this
+            if (output is com.android.build.gradle.api.ApkVariantOutput) {
+                output.outputFileName = "couplebalance-${output.baseName}-${buildType.name}.apk"
+            }
         }
     }
 }
