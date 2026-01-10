@@ -114,5 +114,10 @@
     "splitEqually": "Eşit",
     "fullAmount": "Tamamı",
     "custom": "Özel",
-    "enterAmountOwed": "Borçlanılan tutarı girin"
+    "enterAmountOwed": "Borçlanılan tutarı girin",
+    "splitBy": "Bölüşüm Tipi",
+    "byAmount": "Tutar",
+    "byPercentage": "Yüzde",
+    "enterPercentage": "Yüzde girin",
+    "percentage": "Yüzde"
 }

@@ -6,6 +6,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../models/transaction_model.dart';
 
+enum CustomSplitType { amount, percentage }
+
 enum SplitOption {
   youPaidSplit,
   youPaidFull,
@@ -27,10 +29,15 @@ class AddExpenseViewModel extends ChangeNotifier {
 
   // Who owes whom how much?
   // We will store "how much the OTHER person owes".
-  // If I paid, this is how much Partner owes Me.
-  // If Partner paid, this is how much I owe Partner.
   double _customOwedAmount = 0;
   double get customOwedAmount => _customOwedAmount;
+
+  // New: Split Type & Percentage
+  CustomSplitType _customSplitType = CustomSplitType.amount;
+  CustomSplitType get customSplitType => _customSplitType;
+
+  double _customPercentage = 50; // default 50%
+  double get customPercentage => _customPercentage;
 
   String _partnerName = 'Partner';
   String get partnerName => _partnerName;
@@ -71,9 +78,32 @@ class AddExpenseViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setCustomOwedAmount(double amount) {
+  void setCustomOwedAmount(double amount, {double? totalAmount}) {
     _customOwedAmount = amount;
+    // If totalAmount is provided, reverse calc percentage
+    if (totalAmount != null && totalAmount > 0) {
+      _customPercentage = (amount / totalAmount) * 100;
+    }
     notifyListeners();
+  }
+
+  void setCustomSplitType(CustomSplitType type) {
+    _customSplitType = type;
+    notifyListeners();
+  }
+
+  void setCustomPercentage(double rank, double totalAmount) {
+    _customPercentage = rank; // 0 to 100
+    // Recalculate amount
+    _customOwedAmount = (totalAmount * _customPercentage) / 100;
+    notifyListeners();
+  }
+
+  void recalculateCustomSplit(double totalAmount) {
+    if (_customSplitType == CustomSplitType.percentage) {
+      _customOwedAmount = (totalAmount * _customPercentage) / 100;
+      notifyListeners();
+    }
   }
 
   String getDescriptionText(double amount) {

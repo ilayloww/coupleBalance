@@ -1,0 +1,48 @@
+{
+    "project_info": {
+        "project_number": "1072177496116",
+        "project_id": "couple-balance-app",
+        "storage_bucket": "couple-balance-app.firebasestorage.app"
+    },
+    "client": [
+        {
+            "client_info": {
+                "mobilesdk_app_id": "1:1072177496116:android:bcaa3fb3725c4b4e320a61",
+                "android_client_info": {
+                    "package_name": "com.couplebalance.app"
+                }
+            },
+            "oauth_client": [],
+            "api_key": [
+                {
+                    "current_key": "AIzaSyDj8ZtcGRpWnQbX50KWQ3ef3-5LuzmpS9E"
+                }
+            ],
+            "services": {
+                "appinvite_service": {
+                    "other_platform_oauth_client": []
+                }
+            }
+        },
+        {
+            "client_info": {
+                "mobilesdk_app_id": "1:1072177496116:android:74162c2d033cebb0320a61",
+                "android_client_info": {
+                    "package_name": "com.example.couple_balance"
+                }
+            },
+            "oauth_client": [],
+            "api_key": [
+                {
+                    "current_key": "AIzaSyDj8ZtcGRpWnQbX50KWQ3ef3-5LuzmpS9E"
+                }
+            ],
+            "services": {
+                "appinvite_service": {
+                    "other_platform_oauth_client": []
+                }
+            }
+        }
+    ],
+    "configuration_version": "1"
+}

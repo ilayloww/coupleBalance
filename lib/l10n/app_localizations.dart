@@ -793,6 +793,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter amount owed'**
   String get enterAmountOwed;
+
+  /// No description provided for @splitBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Split by'**
+  String get splitBy;
+
+  /// No description provided for @byAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get byAmount;
+
+  /// No description provided for @byPercentage.
+  ///
+  /// In en, this message translates to:
+  /// **'Percentage'**
+  String get byPercentage;
+
+  /// No description provided for @enterPercentage.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter percentage'**
+  String get enterPercentage;
+
+  /// No description provided for @percentage.
+  ///
+  /// In en, this message translates to:
+  /// **'Percentage'**
+  String get percentage;
 }
 
 class _AppLocalizationsDelegate

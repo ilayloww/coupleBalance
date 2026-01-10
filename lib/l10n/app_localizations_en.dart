@@ -381,4 +381,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get enterAmountOwed => 'Enter amount owed';
+
+  @override
+  String get splitBy => 'Split by';
+
+  @override
+  String get byAmount => 'Amount';
+
+  @override
+  String get byPercentage => 'Percentage';
+
+  @override
+  String get enterPercentage => 'Enter percentage';
+
+  @override
+  String get percentage => 'Percentage';
 }

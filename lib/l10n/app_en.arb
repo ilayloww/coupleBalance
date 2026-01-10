@@ -200,5 +200,10 @@
     "splitEqually": "Equally",
     "fullAmount": "Full Amount",
     "custom": "Custom",
-    "enterAmountOwed": "Enter amount owed"
+    "enterAmountOwed": "Enter amount owed",
+    "splitBy": "Split by",
+    "byAmount": "Amount",
+    "byPercentage": "Percentage",
+    "enterPercentage": "Enter percentage",
+    "percentage": "Percentage"
 }

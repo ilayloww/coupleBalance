@@ -53,7 +53,12 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    onChanged: (_) => setState(() {}),
+                    onChanged: (val) {
+                      setState(() {});
+                      viewModel.recalculateCustomSplit(
+                        double.tryParse(val) ?? 0,
+                      );
+                    },
                     decoration: InputDecoration(
                       labelText: AppLocalizations.of(context)!.amount('₺'),
                       contentPadding: const EdgeInsets.symmetric(
@@ -128,7 +133,11 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                         title: AppLocalizations.of(context)!.moreOptions,
                         isSelected:
                             viewModel.selectedOption == SplitOption.custom,
-                        onTap: () => _showCustomSplitSheet(context, viewModel),
+                        onTap: () => _showCustomSplitSheet(
+                          context,
+                          viewModel,
+                          double.tryParse(_amountController.text) ?? 0,
+                        ),
                         icon: Icons.tune,
                       ),
                     ],
@@ -363,6 +372,7 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
   void _showCustomSplitSheet(
     BuildContext context,
     AddExpenseViewModel viewModel,
+    double totalAmount,
   ) {
     showModalBottomSheet(
       context: context,
@@ -438,40 +448,120 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Section 2: Input Amount Owed
+                  // Section 2: Split Type (Percentage vs Amount)
                   Text(
-                    AppLocalizations.of(context)!.enterAmountOwed,
+                    AppLocalizations.of(context)!.splitBy,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 10),
-                  TextField(
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ChoiceChip(
+                          label: Text(
+                            AppLocalizations.of(context)!.byPercentage,
+                          ),
+                          selected:
+                              viewModel.customSplitType ==
+                              CustomSplitType.percentage,
+                          onSelected: (selected) {
+                            if (selected) {
+                              setSheetState(() {
+                                viewModel.setCustomSplitType(
+                                  CustomSplitType.percentage,
+                                );
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ChoiceChip(
+                          label: Text(AppLocalizations.of(context)!.byAmount),
+                          selected:
+                              viewModel.customSplitType ==
+                              CustomSplitType.amount,
+                          onSelected: (selected) {
+                            if (selected) {
+                              setSheetState(() {
+                                viewModel.setCustomSplitType(
+                                  CustomSplitType.amount,
+                                );
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Section 3: Input (Slider or TextField)
+                  if (viewModel.customSplitType ==
+                      CustomSplitType.percentage) ...[
+                    Text(
+                      '${AppLocalizations.of(context)!.percentage}: ${viewModel.customPercentage.toStringAsFixed(0)}%',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context)!.customAmount,
-                      suffixText: '₺',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                    Slider(
+                      value: viewModel.customPercentage,
+                      min: 0,
+                      max: 100,
+                      divisions: 100,
+                      label: '${viewModel.customPercentage.round()}%',
+                      onChanged: (val) {
+                        setSheetState(() {
+                          viewModel.setCustomPercentage(val, totalAmount);
+                        });
+                      },
+                    ),
+                    Text(
+                      '${AppLocalizations.of(context)!.enterAmountOwed}: ${viewModel.customOwedAmount.toStringAsFixed(2)} ₺',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
                       ),
                     ),
-                    onChanged: (val) {
-                      viewModel.setCustomOwedAmount(double.tryParse(val) ?? 0);
-                    },
-                    controller:
-                        TextEditingController(
-                            text: viewModel.customOwedAmount == 0
-                                ? ''
-                                : viewModel.customOwedAmount.toString(),
-                          )
-                          ..selection = TextSelection.fromPosition(
-                            TextPosition(
-                              offset: viewModel.customOwedAmount
-                                  .toString()
-                                  .length,
-                            ),
+                  ] else ...[
+                    Text(
+                      AppLocalizations.of(context)!.enterAmountOwed,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)!.customAmount,
+                        suffixText: '₺',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onChanged: (val) {
+                        // Recalculate percentage if amount changes
+                        viewModel.setCustomOwedAmount(
+                          double.tryParse(val) ?? 0,
+                          totalAmount: totalAmount,
+                        );
+                      },
+                      controller: TextEditingController.fromValue(
+                        TextEditingValue(
+                          text: viewModel.customOwedAmount == 0
+                              ? ''
+                              : viewModel.customOwedAmount.toString(),
+                          selection: TextSelection.collapsed(
+                            offset: viewModel.customOwedAmount == 0
+                                ? 0
+                                : viewModel.customOwedAmount.toString().length,
                           ),
-                  ),
+                        ),
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: 20),
                   ElevatedButton(

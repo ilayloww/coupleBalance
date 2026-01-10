@@ -663,7 +663,7 @@ class _TransactionList extends StatelessWidget {
                   ),
                 ),
                 trailing: Text(
-                  '${isMe ? '+' : '-'}${tx.amount.toStringAsFixed(2)} ${tx.currency}',
+                  '${isMe ? '+' : '-'}${tx.amount % 1 == 0 ? tx.amount.toInt().toString() : tx.amount.toString()} ${tx.currency}',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,

@@ -381,4 +381,19 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get enterAmountOwed => 'Borçlanılan tutarı girin';
+
+  @override
+  String get splitBy => 'Bölüşüm Tipi';
+
+  @override
+  String get byAmount => 'Tutar';
+
+  @override
+  String get byPercentage => 'Yüzde';
+
+  @override
+  String get enterPercentage => 'Yüzde girin';
+
+  @override
+  String get percentage => 'Yüzde';
 }

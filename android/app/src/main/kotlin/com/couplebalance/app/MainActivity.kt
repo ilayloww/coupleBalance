@@ -1,4 +1,4 @@
-package com.example.couple_balance
+package com.couplebalance.app
 
 import io.flutter.embedding.android.FlutterActivity
 
