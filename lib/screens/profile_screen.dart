@@ -23,6 +23,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _photoUrl;
   File? _imageFile;
   ThemeMode? _selectedThemeMode;
+  int? _selectedColorIndex;
   Locale? _selectedLocale;
 
   @override
@@ -38,6 +39,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
       setState(() {
         _selectedThemeMode = themeService.themeMode;
+        _selectedColorIndex = themeService.themeColorIndex;
         _selectedLocale = localizationService.locale;
       });
     });
@@ -112,6 +114,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             context,
             listen: false,
           ).setThemeMode(_selectedThemeMode!);
+        }
+
+        // Apply Color Change
+        if (_selectedColorIndex != null && mounted) {
+          Provider.of<ThemeService>(
+            context,
+            listen: false,
+          ).setThemeColor(_selectedColorIndex!);
         }
 
         // Apply Language Change
@@ -223,6 +233,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _ThemeSelector(
               currentMode: _selectedThemeMode ?? ThemeMode.system,
               onChanged: (mode) => setState(() => _selectedThemeMode = mode),
+            ),
+            const SizedBox(height: 16),
+            _ColorSelector(
+              selectedColorIndex:
+                  _selectedColorIndex ??
+                  Provider.of<ThemeService>(
+                    context,
+                    listen: false,
+                  ).themeColorIndex,
+              onChanged: (index) => setState(() => _selectedColorIndex = index),
             ),
             const SizedBox(height: 16),
             _LanguageSelector(
@@ -457,6 +477,67 @@ class _LanguageSelector extends StatelessWidget {
               },
             ),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ColorSelector extends StatelessWidget {
+  final int selectedColorIndex;
+  final ValueChanged<int> onChanged;
+
+  const _ColorSelector({
+    required this.selectedColorIndex,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AppLocalizations.of(context)!.themeColor,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: List.generate(ThemeService.availableColors.length, (index) {
+            final color = ThemeService.availableColors[index];
+            final isSelected = selectedColorIndex == index;
+            return GestureDetector(
+              onTap: () => onChanged(index),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  border: isSelected
+                      ? Border.all(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black,
+                          width: 3,
+                        )
+                      : null,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: isSelected
+                    ? const Icon(Icons.check, color: Colors.white, size: 24)
+                    : null,
+              ),
+            );
+          }),
         ),
       ],
     );

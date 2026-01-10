@@ -396,4 +396,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get percentage => 'Yüzde';
+
+  @override
+  String get themeColor => 'Tema Rengi';
 }

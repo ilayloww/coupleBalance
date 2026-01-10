@@ -16,6 +16,7 @@ import '../viewmodels/settlement_viewmodel.dart';
 import 'transaction_detail_screen.dart';
 
 import '../services/notification_service.dart';
+import '../services/theme_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Provider.of<ThemeService>(context); // Listen to Theme changes
     final user = Provider.of<AuthService>(context).currentUser;
     if (user == null) {
       return const SizedBox(); // Should not happen due to AuthWrapper
@@ -619,7 +621,6 @@ class _TransactionList extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
               elevation: 0,
-              color: Theme.of(context).cardColor,
               child: ListTile(
                 onTap: () {
                   Navigator.push(
@@ -658,7 +659,7 @@ class _TransactionList extends StatelessWidget {
                 subtitle: Text(
                   DateFormat.MMMd().add_jm().format(tx.timestamp),
                   style: TextStyle(
-                    color: Theme.of(context).hintColor,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
                     fontSize: 12,
                   ),
                 ),

@@ -205,5 +205,6 @@
     "byAmount": "Amount",
     "byPercentage": "Percentage",
     "enterPercentage": "Enter percentage",
-    "percentage": "Percentage"
+    "percentage": "Percentage",
+    "themeColor": "Theme Color"
 }

@@ -823,6 +823,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Percentage'**
   String get percentage;
+
+  /// No description provided for @themeColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme Color'**
+  String get themeColor;
 }
 
 class _AppLocalizationsDelegate

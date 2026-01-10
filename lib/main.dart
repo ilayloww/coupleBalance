@@ -107,8 +107,8 @@ class MyApp extends StatelessWidget {
           return MaterialApp(
             title: 'CoupleBalance',
             debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
+            theme: AppTheme.lightTheme(themeService.selectedColor),
+            darkTheme: AppTheme.darkTheme(themeService.selectedColor),
             themeMode: themeService.themeMode,
             locale: localizationService.locale,
             localizationsDelegates: const [

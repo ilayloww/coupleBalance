@@ -119,5 +119,6 @@
     "byAmount": "Tutar",
     "byPercentage": "Yüzde",
     "enterPercentage": "Yüzde girin",
-    "percentage": "Yüzde"
+    "percentage": "Yüzde",
+    "themeColor": "Tema Rengi"
 }

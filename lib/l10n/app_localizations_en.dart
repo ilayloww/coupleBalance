@@ -396,4 +396,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get percentage => 'Percentage';
+
+  @override
+  String get themeColor => 'Theme Color';
 }
