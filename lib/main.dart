@@ -4,6 +4,7 @@ import 'package:couple_balance/l10n/app_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Add this import
 import 'services/auth_service.dart';
 import 'services/theme_service.dart';
 import 'services/localization_service.dart';
@@ -30,10 +31,13 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
+    // Initialize SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+
     // Set the background messaging handler early on, as a named top-level function
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-    runApp(const MyApp());
+    runApp(MyApp(prefs: prefs));
   } catch (e) {
     debugPrint("Firebase Initialization Error: $e");
     // Run an error app if Firebase fails, so the user sees something other than a black screen
@@ -92,21 +96,25 @@ class InitializationErrorApp extends StatelessWidget {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final SharedPreferences prefs;
+
+  const MyApp({super.key, required this.prefs});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthService()),
-        ChangeNotifierProvider(create: (_) => ThemeService()),
-        ChangeNotifierProvider(create: (_) => LocalizationService()),
+        ChangeNotifierProvider(create: (_) => ThemeService(prefs)),
+        ChangeNotifierProvider(create: (_) => LocalizationService(prefs)),
       ],
       child: Consumer2<ThemeService, LocalizationService>(
         builder: (context, themeService, localizationService, child) {
           return MaterialApp(
-            title: 'CoupleBalance',
             debugShowCheckedModeBanner: false,
+            title: 'CoupleBalance',
+            themeAnimationDuration: Duration
+                .zero, // Disable animation to prevent color interpolation issues
             theme: AppTheme.lightTheme(themeService.selectedColor),
             darkTheme: AppTheme.darkTheme(themeService.selectedColor),
             themeMode: themeService.themeMode,
@@ -122,6 +130,10 @@ class MyApp extends StatelessWidget {
               Locale('tr'), // Turkish
             ],
             home: const AuthWrapper(),
+            routes: {
+              '/login': (context) => const LoginScreen(),
+              '/home': (context) => const HomeScreen(),
+            },
           );
         },
       ),

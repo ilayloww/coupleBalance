@@ -5,8 +5,9 @@ class ThemeService extends ChangeNotifier {
   static const String keyThemeMode = 'theme_mode';
   static const String keyThemeColor = 'theme_color';
 
-  ThemeMode _themeMode = ThemeMode.system;
-  int _themeColorIndex = 0; // Default to first color (Pink)
+  final SharedPreferences _prefs;
+  late ThemeMode _themeMode;
+  late int _themeColorIndex;
 
   ThemeMode get themeMode => _themeMode;
   int get themeColorIndex => _themeColorIndex;
@@ -22,45 +23,45 @@ class ThemeService extends ChangeNotifier {
     Colors.redAccent,
   ];
 
-  ThemeService() {
-    _loadTheme();
+  ThemeService(this._prefs) {
+    _loadSync();
   }
 
-  Future<void> _loadTheme() async {
-    final prefs = await SharedPreferences.getInstance();
-
+  void _loadSync() {
     // Load Mode
-    final themeIndex = prefs.getInt(keyThemeMode);
-    if (themeIndex != null) {
-      if (themeIndex >= 0 && themeIndex < ThemeMode.values.length) {
-        _themeMode = ThemeMode.values[themeIndex];
-      }
+    final themeIndex = _prefs.getInt(keyThemeMode);
+    if (themeIndex != null &&
+        themeIndex >= 0 &&
+        themeIndex < ThemeMode.values.length) {
+      _themeMode = ThemeMode.values[themeIndex];
+    } else {
+      _themeMode = ThemeMode.system;
     }
 
     // Load Color
-    final colorIndex = prefs.getInt(keyThemeColor);
-    if (colorIndex != null) {
-      if (colorIndex >= 0 && colorIndex < availableColors.length) {
-        _themeColorIndex = colorIndex;
-      }
+    final colorIndex = _prefs.getInt(keyThemeColor);
+    if (colorIndex != null &&
+        colorIndex >= 0 &&
+        colorIndex < availableColors.length) {
+      _themeColorIndex = colorIndex;
+    } else {
+      _themeColorIndex = 0; // Default to first color
     }
-
-    notifyListeners();
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
+    if (_themeMode == mode) return;
     _themeMode = mode;
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(keyThemeMode, mode.index);
+    await _prefs.setInt(keyThemeMode, mode.index);
   }
 
   Future<void> setThemeColor(int index) async {
     if (index >= 0 && index < availableColors.length) {
+      if (_themeColorIndex == index) return;
       _themeColorIndex = index;
       notifyListeners();
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(keyThemeColor, index);
+      await _prefs.setInt(keyThemeColor, index);
     }
   }
 }

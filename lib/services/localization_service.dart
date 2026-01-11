@@ -3,20 +3,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalizationService extends ChangeNotifier {
   static const String _keyLocale = 'locale';
-  Locale _locale = const Locale('en');
+  final SharedPreferences _prefs;
+  late Locale _locale;
 
   Locale get locale => _locale;
 
-  LocalizationService() {
-    _loadLocale();
+  LocalizationService(this._prefs) {
+    _loadSync();
   }
 
-  Future<void> _loadLocale() async {
-    final prefs = await SharedPreferences.getInstance();
-    final languageCode = prefs.getString(_keyLocale);
+  void _loadSync() {
+    final languageCode = _prefs.getString(_keyLocale);
     if (languageCode != null) {
       _locale = Locale(languageCode);
-      notifyListeners();
+    } else {
+      _locale = const Locale('en');
     }
   }
 
@@ -24,7 +25,6 @@ class LocalizationService extends ChangeNotifier {
     if (_locale == locale) return;
     _locale = locale;
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyLocale, locale.languageCode);
+    await _prefs.setString(_keyLocale, locale.languageCode);
   }
 }

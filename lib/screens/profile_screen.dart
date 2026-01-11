@@ -81,6 +81,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isLoading = true);
     final user = Provider.of<AuthService>(context, listen: false).currentUser;
 
+    // Apply Settings Changes Immediately for UI responsiveness
+    if (mounted) {
+      if (_selectedThemeMode != null) {
+        Provider.of<ThemeService>(
+          context,
+          listen: false,
+        ).setThemeMode(_selectedThemeMode!);
+      }
+
+      if (_selectedColorIndex != null) {
+        Provider.of<ThemeService>(
+          context,
+          listen: false,
+        ).setThemeColor(_selectedColorIndex!);
+      }
+
+      if (_selectedLocale != null) {
+        Provider.of<LocalizationService>(
+          context,
+          listen: false,
+        ).setLocale(_selectedLocale!);
+      }
+    }
+
     try {
       if (user != null) {
         String? newPhotoUrl = _photoUrl;
@@ -106,30 +130,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Update local state helpers
         if (newPhotoUrl != null) {
           setState(() => _photoUrl = newPhotoUrl);
-        }
-
-        // Apply Theme Change
-        if (_selectedThemeMode != null && mounted) {
-          Provider.of<ThemeService>(
-            context,
-            listen: false,
-          ).setThemeMode(_selectedThemeMode!);
-        }
-
-        // Apply Color Change
-        if (_selectedColorIndex != null && mounted) {
-          Provider.of<ThemeService>(
-            context,
-            listen: false,
-          ).setThemeColor(_selectedColorIndex!);
-        }
-
-        // Apply Language Change
-        if (_selectedLocale != null && mounted) {
-          Provider.of<LocalizationService>(
-            context,
-            listen: false,
-          ).setLocale(_selectedLocale!);
         }
 
         if (mounted) {

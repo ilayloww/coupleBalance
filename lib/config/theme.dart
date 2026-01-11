@@ -10,7 +10,7 @@ class AppTheme {
         seedColor: seedColor,
         brightness: Brightness.light,
         primary: seedColor,
-        secondary: Colors.blueAccent,
+        secondary: seedColor,
         surface: Colors.white,
         onSurface: Colors.black87,
         surfaceContainerHighest: Colors.grey[100],
@@ -63,9 +63,8 @@ class AppTheme {
       colorScheme: ColorScheme.fromSeed(
         seedColor: seedColor,
         brightness: Brightness.dark,
-        primary:
-            seedColor, // Potentially lighter for dark mode? Let Material3 handle it mostly.
-        secondary: Colors.blueAccent[200]!,
+        primary: seedColor, // Force saturation for primary
+        secondary: seedColor, // Force saturation for secondary
         surface: const Color(0xFF121212),
         onSurface: Colors.white,
         surfaceContainerHighest: const Color(0xFF1E1E1E),

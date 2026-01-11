@@ -43,7 +43,7 @@ android {
         outputs.all {
             val output = this
             if (output is com.android.build.gradle.api.ApkVariantOutput) {
-                output.outputFileName = "couplebalance-${output.baseName}-${buildType.name}.apk"
+                output.outputFileName = "couplebalance-${output.baseName}.apk"
             }
         }
     }
