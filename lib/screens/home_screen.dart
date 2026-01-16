@@ -676,16 +676,51 @@ class _TransactionList extends StatelessWidget {
               ),
             );
 
-            final canDelete = tx.addedByUid != null
+            // Logic for Deletion capability
+            final canModify = tx.addedByUid != null
                 ? tx.addedByUid == userUid
                 : tx.senderUid == userUid;
 
-            if (!canDelete) return cardWidget;
+            // Logic for Settlement capability (Swipe Right)
+            // Any unsettled transaction can generally be settled by either party,
+            // or maybe restrict to who owes? The prompt implies broadly "swiping the item".
+            // Let's allow swipe-to-settle for both.
+            // But checking 'canDelete' for swipe left might disable swipe right if we wrap existing check.
+
+            // We need to conditionally enable/disable directions.
+            // DismissDirection.horizontal allows both.
+            // If !canDelete, maybe only allow startToEnd (Settle)?
+
+            if (!canModify) return cardWidget;
 
             return Dismissible(
               key: Key(docId),
-              direction: DismissDirection.endToStart,
+              direction: DismissDirection.horizontal,
+              // Swipe Right (Start to End) -> Settle
               background: Container(
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.only(left: 20),
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(
+                      AppLocalizations.of(context)!.settleUp,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Swipe Left (End to Start) -> Delete
+              secondaryBackground: Container(
                 alignment: Alignment.centerRight,
                 padding: const EdgeInsets.only(right: 20),
                 margin: const EdgeInsets.only(bottom: 12),
@@ -696,41 +731,64 @@ class _TransactionList extends StatelessWidget {
                 child: const Icon(Icons.delete, color: Colors.white),
               ),
               confirmDismiss: (direction) async {
-                return await showDialog(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: Text(
-                      AppLocalizations.of(context)!.deleteTransactionTitle,
-                    ),
-                    content: Text(
-                      AppLocalizations.of(context)!.deleteTransactionContent,
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        child: Text(AppLocalizations.of(context)!.cancel),
+                if (direction == DismissDirection.endToStart) {
+                  // Delete Logic
+                  if (!canModify) return false;
+                  return await showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text(
+                        AppLocalizations.of(context)!.deleteTransactionTitle,
                       ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        child: Text(
-                          AppLocalizations.of(context)!.delete,
-                          style: TextStyle(color: Colors.red),
+                      content: Text(
+                        AppLocalizations.of(context)!.deleteTransactionContent,
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text(AppLocalizations.of(context)!.cancel),
                         ),
-                      ),
-                    ],
-                  ),
-                );
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: Text(
+                            AppLocalizations.of(context)!.delete,
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                } else {
+                  // Settle Logic (Start to End)
+                  return await _showSettleSingleTransactionDialog(
+                    context,
+                    tx,
+                    userUid,
+                    // If IS_ME (sender is me), I paid. Partner needs to pay me. Partner is payer. I am Receiver.
+                    // If NOT_ME (sender is partner), Partner paid. I need to pay partner. I am Payer.
+                    // iAmPayer logic:
+                    // tx.senderUid == userUid => I paid => Partner owes => iAmPayer = false
+                    // tx.senderUid != userUid => Partner paid => I owe => iAmPayer = true
+                    tx.senderUid != userUid,
+                  );
+                }
               },
               onDismissed: (direction) {
-                final myUid = Provider.of<AuthService>(
-                  context,
-                  listen: false,
-                ).currentUser?.uid;
-                if (myUid != null) {
-                  FirebaseFirestore.instance
-                      .collection('transactions')
-                      .doc(docId)
-                      .update({'isDeleted': true, 'deletedBy': myUid});
+                if (direction == DismissDirection.endToStart) {
+                  final myUid = Provider.of<AuthService>(
+                    context,
+                    listen: false,
+                  ).currentUser?.uid;
+                  if (myUid != null) {
+                    FirebaseFirestore.instance
+                        .collection('transactions')
+                        .doc(docId)
+                        .update({'isDeleted': true, 'deletedBy': myUid});
+                  }
+                } else {
+                  // Already handled in confirmDismiss or we can just let it animate away
+                  // If confirmDismiss returns true, it animates out.
+                  // The Firestore update in confirmDismiss will cause a stream rebuild.
                 }
               },
               child: cardWidget,
@@ -738,6 +796,68 @@ class _TransactionList extends StatelessWidget {
           },
         );
       },
+    );
+  }
+
+  Future<bool?> _showSettleSingleTransactionDialog(
+    BuildContext context,
+    TransactionModel tx,
+    String myUid,
+    bool iAmPayer,
+  ) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(AppLocalizations.of(context)!.settleUpTitle),
+        content: Text(
+          // Reusing existing localization logic or generic message
+          // "Are you sure you want to settle this transaction of X?"
+          "${AppLocalizations.of(context)!.settleUp}?\n${tx.note}: ${tx.amount} ${tx.currency}",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => SettlementViewModel(),
+            child: Consumer<SettlementViewModel>(
+              builder: (context, viewModel, child) {
+                if (viewModel.isLoading) {
+                  return const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  );
+                }
+                return TextButton(
+                  onPressed: () async {
+                    final success = await viewModel.settleSingleTransaction(
+                      myUid: myUid,
+                      partnerUid: iAmPayer
+                          ? tx.senderUid
+                          : tx.receiverUid, // derived
+                      transactionId: tx.id,
+                      amount: tx.amount,
+                      iAmPayer: iAmPayer,
+                    );
+                    if (context.mounted) {
+                      Navigator.pop(context, success);
+                    }
+                  },
+                  child: Text(
+                    AppLocalizations.of(context)!.confirm,
+                    style: const TextStyle(
+                      color: Colors.green, // Differentiate settle
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

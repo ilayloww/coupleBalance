@@ -95,6 +95,61 @@ class SettlementViewModel extends ChangeNotifier {
     }
   }
 
+  Future<bool> settleSingleTransaction({
+    required String myUid,
+    required String partnerUid,
+    required String transactionId,
+    required double amount,
+    required bool
+    iAmPayer, // true if myUid is paying (transaction sender was partner)
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final batch = firestore.batch();
+
+      // 1. Create Settlement Document for Single Transaction
+      final settlementRef = firestore.collection('settlements').doc();
+      final settlement = SettlementModel(
+        id: settlementRef.id,
+        startDate: DateTime.now(),
+        endDate: DateTime.now(),
+        totalAmount: amount,
+        payerUid: iAmPayer ? myUid : partnerUid,
+        receiverUid: iAmPayer ? partnerUid : myUid,
+        transactionIds: [transactionId],
+        timestamp: DateTime.now(),
+      );
+
+      final settlementMap = settlement.toMap();
+      settlementMap['settledByUid'] = myUid;
+      batch.set(settlementRef, settlementMap);
+
+      // 2. Update Transaction
+      final transactionRef = firestore
+          .collection('transactions')
+          .doc(transactionId);
+
+      batch.update(transactionRef, {
+        'isSettled': true,
+        'settlementId': settlement.id,
+      });
+
+      await batch.commit();
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Error settling single transaction: $e');
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Stream<List<SettlementModel>> getSettlementHistory(
     String myUid,
     String partnerUid,
