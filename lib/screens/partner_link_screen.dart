@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:couple_balance/l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 
@@ -15,54 +14,6 @@ class PartnerLinkScreen extends StatefulWidget {
 class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
   final _partnerEmailController = TextEditingController();
   bool _isLoading = false;
-
-  Future<void> _pickContact() async {
-    // Request permission
-    if (await FlutterContacts.requestPermission()) {
-      try {
-        final contact = await FlutterContacts.openExternalPick();
-        if (contact != null) {
-          if (contact.emails.isNotEmpty) {
-            final email = contact.emails.first.address;
-            if (!mounted) return;
-
-            _partnerEmailController.text = email;
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  AppLocalizations.of(
-                    context,
-                  )!.contactSelected(contact.displayName, email),
-                ),
-              ),
-            );
-          } else {
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(AppLocalizations.of(context)!.noEmailContact),
-              ),
-            );
-          }
-        }
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context)!.contactPickError(e.toString()),
-            ),
-          ),
-        );
-      }
-    } else {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.permissionDenied)),
-      );
-    }
-  }
 
   Future<void> _linkPartner() async {
     final email = _partnerEmailController.text.trim();
@@ -161,12 +112,6 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
                   border: const OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: _pickContact,
-                icon: const Icon(Icons.contacts),
-                label: Text(AppLocalizations.of(context)!.pickFromContacts),
               ),
               const Spacer(),
               SizedBox(

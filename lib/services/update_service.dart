@@ -4,8 +4,36 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
-
 import 'package:device_info_plus/device_info_plus.dart';
+
+// Simple state class to manage the dialog UI
+class UpdateProgressState {
+  final double progress; // 0.0 to 1.0
+  final bool isDone;
+  final String? error;
+  final String? filePath;
+
+  const UpdateProgressState({
+    this.progress = 0.0,
+    this.isDone = false,
+    this.error,
+    this.filePath,
+  });
+
+  UpdateProgressState copyWith({
+    double? progress,
+    bool? isDone,
+    String? error,
+    String? filePath,
+  }) {
+    return UpdateProgressState(
+      progress: progress ?? this.progress,
+      isDone: isDone ?? this.isDone,
+      error: error, // Nullable override
+      filePath: filePath ?? this.filePath,
+    );
+  }
+}
 
 class UpdateService {
   static const String _owner = 'ilayloww';
@@ -15,20 +43,16 @@ class UpdateService {
 
   Future<void> checkForUpdate(BuildContext context) async {
     try {
-      // Get current version
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
       String currentVersion = packageInfo.version;
 
-      // Get latest release info from GitHub
       var response = await Dio().get(_latestReleaseUrl);
       if (response.statusCode == 200) {
         Map<String, dynamic> releaseData = response.data;
         String tagName = releaseData['tag_name'];
-        // Remove 'v' prefix if present
         String latestVersion = tagName.replaceAll('v', '');
 
         if (_isNewerVersion(currentVersion, latestVersion)) {
-          // Find APK asset
           List<dynamic> assets = releaseData['assets'];
           String? downloadUrl = await _findCorrectApk(assets);
 
@@ -43,45 +67,33 @@ class UpdateService {
   }
 
   Future<String?> _findCorrectApk(List<dynamic> assets) async {
-    // If only one APK, just use it
     List<dynamic> apkAssets = assets
         .where((a) => a['name'].toString().endsWith('.apk'))
         .toList();
     if (apkAssets.isEmpty) return null;
     if (apkAssets.length == 1) return apkAssets.first['browser_download_url'];
 
-    // If multiple, try to match ABI
     if (Platform.isAndroid) {
       DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
       AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
       List<String> supportedAbis = androidInfo.supportedAbis;
 
-      debugPrint('Device Supported ABIs: $supportedAbis');
-
-      // Try to find match in order of preference (most preferred first)
       for (String abi in supportedAbis) {
         for (var asset in apkAssets) {
           String name = asset['name'].toString().toLowerCase();
-          // Standard Flutter split names often contain the ABI
-          // e.g. app-arm64-v8a-release.apk
           if (name.contains(abi.toLowerCase())) {
-            debugPrint('Found matching APK for ABI $abi: $name');
             return asset['browser_download_url'];
           }
         }
       }
     }
 
-    // Fallback: If no specific match, maybe prefer arm64-v8a if available as user suggested,
-    // or just take the first one (risky but better than nothing).
-    // Let's try to find 'universal' if exists, otherwise first.
     var universal = apkAssets.firstWhere(
       (a) => a['name'].toString().toLowerCase().contains('universal'),
       orElse: () => null,
     );
     if (universal != null) return universal['browser_download_url'];
 
-    // Last resort: Just return the first one (or maybe the largest one? usually universal is larger)
     return apkAssets.first['browser_download_url'];
   }
 
@@ -117,7 +129,7 @@ class UpdateService {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _downloadAndInstall(context, downloadUrl);
+              _startDownloadProcess(context, downloadUrl);
             },
             child: Text('Update Now'),
           ),
@@ -126,64 +138,172 @@ class UpdateService {
     );
   }
 
-  Future<void> _downloadAndInstall(BuildContext context, String url) async {
-    final progressNotifier = ValueNotifier<double>(0.0);
+  Future<void> _startDownloadProcess(BuildContext context, String url) async {
+    final stateNotifier = ValueNotifier<UpdateProgressState>(
+      const UpdateProgressState(),
+    );
+    final cancelToken = CancelToken();
 
-    // Show progress dialog
-    // We use a PopScope (or WillPopScope for older Flutter) to prevent back button
-    // But PopScope is correctly available in newer Flutter versions.
-    showDialog(
+    // Trigger download in background
+    _performDownload(url, stateNotifier, cancelToken);
+
+    await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => PopScope(
-        canPop: false,
-        child: ValueListenableBuilder<double>(
-          valueListenable: progressNotifier,
-          builder: (context, value, child) {
-            return AlertDialog(
-              title: const Text('Downloading Update...'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  LinearProgressIndicator(value: value),
-                  const SizedBox(height: 10),
-                  Text('${(value * 100).toStringAsFixed(0)}%'),
+      builder: (context) {
+        return PopScope(
+          canPop: false,
+          child: ValueListenableBuilder<UpdateProgressState>(
+            valueListenable: stateNotifier,
+            builder: (context, state, child) {
+              return AlertDialog(
+                title: Text(
+                  state.isDone
+                      ? 'Download Complete'
+                      : state.error != null
+                      ? 'Download Failed'
+                      : 'Downloading Update...',
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (state.error != null)
+                      Text(
+                        'Error: ${state.error}',
+                        style: const TextStyle(color: Colors.red),
+                      )
+                    else if (state.isDone)
+                      const Text('The update is ready to install.')
+                    else ...[
+                      LinearProgressIndicator(
+                        value: state.progress,
+                        backgroundColor: Colors.grey[200],
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).primaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        '${(state.progress * 100).clamp(0, 100).toStringAsFixed(0)}%',
+                      ),
+                    ],
+                  ],
+                ),
+                actions: [
+                  // Cancel/Close button
+                  if (!state.isDone)
+                    TextButton(
+                      onPressed: () {
+                        if (!cancelToken.isCancelled) {
+                          cancelToken.cancel('User canceled');
+                        }
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Cancel'),
+                    ),
+
+                  // Install button appears when done
+                  if (state.isDone)
+                    ElevatedButton(
+                      onPressed: () {
+                        if (state.filePath != null) {
+                          _installApk(context, state.filePath!);
+                        }
+                      },
+                      child: const Text('Install'),
+                    ),
+
+                  if (state.error != null)
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close'),
+                    ),
                 ],
-              ),
-            );
-          },
-        ),
-      ),
+              );
+            },
+          ),
+        );
+      },
     );
 
+    // Ensure cancellation if dialog is closed by other means (though barrierDismissible is false)
+    if (!cancelToken.isCancelled && !stateNotifier.value.isDone) {
+      cancelToken.cancel('Dialog closed');
+    }
+
+    stateNotifier.dispose();
+  }
+
+  Future<void> _performDownload(
+    String url,
+    ValueNotifier<UpdateProgressState> notifier,
+    CancelToken cancelToken,
+  ) async {
     try {
       Directory? tempDir = await getExternalStorageDirectory();
-      String savePath = '${tempDir?.path}/update.apk';
+      String fileName = 'update_${DateTime.now().millisecondsSinceEpoch}.apk';
+      String savePath = '${tempDir?.path}/$fileName';
+      debugPrint('Downloading to: $savePath');
 
       await Dio().download(
         url,
         savePath,
+        cancelToken: cancelToken,
         onReceiveProgress: (received, total) {
           if (total != -1) {
-            progressNotifier.value = received / total;
+            double progress = (received / total).clamp(0.0, 1.0);
+            notifier.value = notifier.value.copyWith(progress: progress);
           }
         },
       );
 
-      if (context.mounted) {
-        Navigator.pop(context); // Close progress dialog
-        await OpenFilex.open(savePath);
+      // Verify
+      if (await File(savePath).exists()) {
+        notifier.value = notifier.value.copyWith(
+          progress: 1.0,
+          isDone: true,
+          filePath: savePath,
+        );
+      } else {
+        throw Exception('File downloaded but not found at path');
       }
     } catch (e) {
-      debugPrint('Download error: $e');
-      if (context.mounted) {
-        Navigator.pop(context); // Close progress dialog
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Update failed: $e')));
+      if (CancelToken.isCancel(e as DioException)) {
+        debugPrint('Download canceled');
+        // We might not need to update state if dialog is closing,
+        // but if the dialog is still open (e.g. error view), we can show it.
+        // Usually if canceled, the dialog is already popping.
+      } else {
+        debugPrint('Download error: $e');
+        notifier.value = notifier.value.copyWith(error: e.toString());
       }
-    } finally {
-      progressNotifier.dispose();
+    }
+  }
+
+  Future<void> _installApk(BuildContext context, String filePath) async {
+    try {
+      debugPrint('Installing from: $filePath');
+      final result = await OpenFilex.open(
+        filePath,
+        type: 'application/vnd.android.package-archive',
+      );
+      debugPrint('Install result: ${result.type} - ${result.message}');
+
+      if (result.type != ResultType.done) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Installation attempt finished: ${result.message}'),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error launching installer: $e')),
+        );
+      }
     }
   }
 }
