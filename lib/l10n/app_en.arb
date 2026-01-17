@@ -224,5 +224,20 @@
             }
         }
     },
-    "noPartnersLinkedYet": "No partners linked yet."
+    "noPartnersLinkedYet": "No partners linked yet.",
+    "emailVerification": "Email Verification",
+    "verifyEmailMessage": "Please verify your email address. A verification link has been sent to {email}.",
+    "@verifyEmailMessage": {
+        "placeholders": {
+            "email": {
+                "type": "String"
+            }
+        }
+    },
+    "resendVerificationEmail": "Resend Verification Email",
+    "iHaveVerified": "I have verified",
+    "emailVerifiedSuccess": "Email verified successfully!",
+    "emailNotVerifiedYet": "Email not verified yet.",
+    "verificationEmailSent": "Verification email sent!",
+    "checkSpamFolder": "Please also check your spam folder."
 }

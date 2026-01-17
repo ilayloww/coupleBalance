@@ -415,4 +415,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noPartnersLinkedYet => 'No partners linked yet.';
+
+  @override
+  String get emailVerification => 'Email Verification';
+
+  @override
+  String verifyEmailMessage(String email) {
+    return 'Please verify your email address. A verification link has been sent to $email.';
+  }
+
+  @override
+  String get resendVerificationEmail => 'Resend Verification Email';
+
+  @override
+  String get iHaveVerified => 'I have verified';
+
+  @override
+  String get emailVerifiedSuccess => 'Email verified successfully!';
+
+  @override
+  String get emailNotVerifiedYet => 'Email not verified yet.';
+
+  @override
+  String get verificationEmailSent => 'Verification email sent!';
+
+  @override
+  String get checkSpamFolder => 'Please also check your spam folder.';
 }

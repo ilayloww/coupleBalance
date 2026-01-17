@@ -124,5 +124,13 @@
     "partnerAlreadyLinked": "Partner zaten bağlı ({partnerInfo})",
     "partnersTitle": "Partnerler",
     "unlinkPartnerContent": "{name} ile bağlantıyı kesmek istediğine emin misin?",
-    "noPartnersLinkedYet": "Henüz bağlı partner yok."
+    "noPartnersLinkedYet": "Henüz bağlı partner yok.",
+    "emailVerification": "E-posta Doğrulama",
+    "verifyEmailMessage": "Lütfen e-posta adresinizi doğrulayın. {email} adresine bir doğrulama bağlantısı gönderildi.",
+    "resendVerificationEmail": "Doğrulama E-postasını Tekrar Gönder",
+    "iHaveVerified": "Doğruladım",
+    "emailVerifiedSuccess": "E-posta başarıyla doğrulandı!",
+    "emailNotVerifiedYet": "E-posta henüz doğrulanmadı.",
+    "verificationEmailSent": "Doğrulama e-postası gönderildi!",
+    "checkSpamFolder": "Lütfen spam klasörünüzü de kontrol edin."
 }

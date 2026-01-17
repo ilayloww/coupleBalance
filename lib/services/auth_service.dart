@@ -12,6 +12,7 @@ class AuthService extends ChangeNotifier {
   User? get currentUser => _auth.currentUser;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
+  Stream<User?> get userChanges => _auth.userChanges();
 
   // State for multiple partners
   String? _selectedPartnerId;
@@ -172,6 +173,9 @@ class AuthService extends ChangeNotifier {
               'partnerUids': [],
             });
 
+        // Send verification email
+        await credential.user!.sendEmailVerification();
+
         // Trigger fetch
         await _fetchCurrentUserDetails(credential.user!.uid);
       }
@@ -182,6 +186,21 @@ class AuthService extends ChangeNotifier {
     } catch (e) {
       debugPrint("Unknown error registering: $e");
       rethrow;
+    }
+  }
+
+  Future<void> sendVerificationEmail() async {
+    final user = _auth.currentUser;
+    if (user != null && !user.emailVerified) {
+      await user.sendEmailVerification();
+    }
+  }
+
+  Future<void> reloadUser() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      await user.reload();
+      notifyListeners();
     }
   }
 

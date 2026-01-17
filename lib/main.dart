@@ -11,6 +11,7 @@ import 'services/localization_service.dart';
 import 'config/theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/email_verification_screen.dart';
 
 // UNCOMMENT the following line after running `flutterfire configure`
 import 'firebase_options.dart';
@@ -146,14 +147,26 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Listen directly to user changes stream (handles reload/token refreshes)
+    // Don't listen to AuthService notifications to avoid rebuild loops on loading state changes
     final authService = Provider.of<AuthService>(context, listen: false);
 
     return StreamBuilder(
-      stream: authService.authStateChanges,
+      stream: authService.userChanges,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.active) {
           final user = snapshot.data;
-          return user == null ? const LoginScreen() : const HomeScreen();
+
+          if (user == null) {
+            return const LoginScreen();
+          }
+
+          // Check verification status
+          if (!user.emailVerified) {
+            return const EmailVerificationScreen();
+          }
+
+          return const HomeScreen();
         }
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
       },

@@ -415,4 +415,30 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get noPartnersLinkedYet => 'Henüz bağlı partner yok.';
+
+  @override
+  String get emailVerification => 'E-posta Doğrulama';
+
+  @override
+  String verifyEmailMessage(String email) {
+    return 'Lütfen e-posta adresinizi doğrulayın. $email adresine bir doğrulama bağlantısı gönderildi.';
+  }
+
+  @override
+  String get resendVerificationEmail => 'Doğrulama E-postasını Tekrar Gönder';
+
+  @override
+  String get iHaveVerified => 'Doğruladım';
+
+  @override
+  String get emailVerifiedSuccess => 'E-posta başarıyla doğrulandı!';
+
+  @override
+  String get emailNotVerifiedYet => 'E-posta henüz doğrulanmadı.';
+
+  @override
+  String get verificationEmailSent => 'Doğrulama e-postası gönderildi!';
+
+  @override
+  String get checkSpamFolder => 'Lütfen spam klasörünüzü de kontrol edin.';
 }
