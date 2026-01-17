@@ -1,0 +1,189 @@
+﻿> Task :gradle:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle:compileKotlin UP-TO-DATE
+> Task :gradle:compileJava NO-SOURCE
+> Task :gradle:compileGroovy NO-SOURCE
+> Task :gradle:pluginDescriptors UP-TO-DATE
+> Task :gradle:processResources UP-TO-DATE
+> Task :gradle:classes UP-TO-DATE
+> Task :gradle:jar UP-TO-DATE
+
+> Task :app:signingReport
+Variant: debug
+Config: debug
+Store: C:\Users\umuta\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: C8:A0:54:41:A3:4A:BF:1C:99:B9:DB:55:97:D2:65:BC
+SHA1: B6:15:26:46:E0:AB:EF:0F:59:F1:E9:CD:B8:38:F8:E1:A7:80:F4:AA
+SHA-256: 46:AE:29:42:B4:4A:44:84:A7:1E:8F:74:2A:B3:9F:98:DB:3C:B9:6A:1D:35:7E:D8:8A:3F:62:46:60:B7:87:13
+Valid until: Wednesday, December 15, 2055
+----------
+Variant: release
+Config: debug
+Store: C:\Users\umuta\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: C8:A0:54:41:A3:4A:BF:1C:99:B9:DB:55:97:D2:65:BC
+SHA1: B6:15:26:46:E0:AB:EF:0F:59:F1:E9:CD:B8:38:F8:E1:A7:80:F4:AA
+SHA-256: 46:AE:29:42:B4:4A:44:84:A7:1E:8F:74:2A:B3:9F:98:DB:3C:B9:6A:1D:35:7E:D8:8A:3F:62:46:60:B7:87:13
+Valid until: Wednesday, December 15, 2055
+----------
+Variant: profile
+Config: debug
+Store: C:\Users\umuta\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: C8:A0:54:41:A3:4A:BF:1C:99:B9:DB:55:97:D2:65:BC
+SHA1: B6:15:26:46:E0:AB:EF:0F:59:F1:E9:CD:B8:38:F8:E1:A7:80:F4:AA
+SHA-256: 46:AE:29:42:B4:4A:44:84:A7:1E:8F:74:2A:B3:9F:98:DB:3C:B9:6A:1D:35:7E:D8:8A:3F:62:46:60:B7:87:13
+Valid until: Wednesday, December 15, 2055
+----------
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\umuta\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: C8:A0:54:41:A3:4A:BF:1C:99:B9:DB:55:97:D2:65:BC
+SHA1: B6:15:26:46:E0:AB:EF:0F:59:F1:E9:CD:B8:38:F8:E1:A7:80:F4:AA
+SHA-256: 46:AE:29:42:B4:4A:44:84:A7:1E:8F:74:2A:B3:9F:98:DB:3C:B9:6A:1D:35:7E:D8:8A:3F:62:46:60:B7:87:13
+Valid until: Wednesday, December 15, 2055
+----------
+
+> Task :cloud_firestore:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\umuta\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: C8:A0:54:41:A3:4A:BF:1C:99:B9:DB:55:97:D2:65:BC
+SHA1: B6:15:26:46:E0:AB:EF:0F:59:F1:E9:CD:B8:38:F8:E1:A7:80:F4:AA
+SHA-256: 46:AE:29:42:B4:4A:44:84:A7:1E:8F:74:2A:B3:9F:98:DB:3C:B9:6A:1D:35:7E:D8:8A:3F:62:46:60:B7:87:13
+Valid until: Wednesday, December 15, 2055
+----------
+
+> Task :firebase_auth:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\umuta\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: C8:A0:54:41:A3:4A:BF:1C:99:B9:DB:55:97:D2:65:BC
+SHA1: B6:15:26:46:E0:AB:EF:0F:59:F1:E9:CD:B8:38:F8:E1:A7:80:F4:AA
+SHA-256: 46:AE:29:42:B4:4A:44:84:A7:1E:8F:74:2A:B3:9F:98:DB:3C:B9:6A:1D:35:7E:D8:8A:3F:62:46:60:B7:87:13
+Valid until: Wednesday, December 15, 2055
+----------
+
+> Task :firebase_core:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\umuta\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: C8:A0:54:41:A3:4A:BF:1C:99:B9:DB:55:97:D2:65:BC
+SHA1: B6:15:26:46:E0:AB:EF:0F:59:F1:E9:CD:B8:38:F8:E1:A7:80:F4:AA
+SHA-256: 46:AE:29:42:B4:4A:44:84:A7:1E:8F:74:2A:B3:9F:98:DB:3C:B9:6A:1D:35:7E:D8:8A:3F:62:46:60:B7:87:13
+Valid until: Wednesday, December 15, 2055
+----------
+
+> Task :firebase_messaging:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\umuta\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: C8:A0:54:41:A3:4A:BF:1C:99:B9:DB:55:97:D2:65:BC
+SHA1: B6:15:26:46:E0:AB:EF:0F:59:F1:E9:CD:B8:38:F8:E1:A7:80:F4:AA
+SHA-256: 46:AE:29:42:B4:4A:44:84:A7:1E:8F:74:2A:B3:9F:98:DB:3C:B9:6A:1D:35:7E:D8:8A:3F:62:46:60:B7:87:13
+Valid until: Wednesday, December 15, 2055
+----------
+
+> Task :firebase_storage:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\umuta\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: C8:A0:54:41:A3:4A:BF:1C:99:B9:DB:55:97:D2:65:BC
+SHA1: B6:15:26:46:E0:AB:EF:0F:59:F1:E9:CD:B8:38:F8:E1:A7:80:F4:AA
+SHA-256: 46:AE:29:42:B4:4A:44:84:A7:1E:8F:74:2A:B3:9F:98:DB:3C:B9:6A:1D:35:7E:D8:8A:3F:62:46:60:B7:87:13
+Valid until: Wednesday, December 15, 2055
+----------
+
+> Task :flutter_contacts:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\umuta\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: C8:A0:54:41:A3:4A:BF:1C:99:B9:DB:55:97:D2:65:BC
+SHA1: B6:15:26:46:E0:AB:EF:0F:59:F1:E9:CD:B8:38:F8:E1:A7:80:F4:AA
+SHA-256: 46:AE:29:42:B4:4A:44:84:A7:1E:8F:74:2A:B3:9F:98:DB:3C:B9:6A:1D:35:7E:D8:8A:3F:62:46:60:B7:87:13
+Valid until: Wednesday, December 15, 2055
+----------
+
+> Task :flutter_plugin_android_lifecycle:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\umuta\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: C8:A0:54:41:A3:4A:BF:1C:99:B9:DB:55:97:D2:65:BC
+SHA1: B6:15:26:46:E0:AB:EF:0F:59:F1:E9:CD:B8:38:F8:E1:A7:80:F4:AA
+SHA-256: 46:AE:29:42:B4:4A:44:84:A7:1E:8F:74:2A:B3:9F:98:DB:3C:B9:6A:1D:35:7E:D8:8A:3F:62:46:60:B7:87:13
+Valid until: Wednesday, December 15, 2055
+----------
+
+> Task :geocoding_android:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\umuta\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: C8:A0:54:41:A3:4A:BF:1C:99:B9:DB:55:97:D2:65:BC
+SHA1: B6:15:26:46:E0:AB:EF:0F:59:F1:E9:CD:B8:38:F8:E1:A7:80:F4:AA
+SHA-256: 46:AE:29:42:B4:4A:44:84:A7:1E:8F:74:2A:B3:9F:98:DB:3C:B9:6A:1D:35:7E:D8:8A:3F:62:46:60:B7:87:13
+Valid until: Wednesday, December 15, 2055
+----------
+
+> Task :image_picker_android:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\umuta\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: C8:A0:54:41:A3:4A:BF:1C:99:B9:DB:55:97:D2:65:BC
+SHA1: B6:15:26:46:E0:AB:EF:0F:59:F1:E9:CD:B8:38:F8:E1:A7:80:F4:AA
+SHA-256: 46:AE:29:42:B4:4A:44:84:A7:1E:8F:74:2A:B3:9F:98:DB:3C:B9:6A:1D:35:7E:D8:8A:3F:62:46:60:B7:87:13
+Valid until: Wednesday, December 15, 2055
+----------
+
+> Task :path_provider_android:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\umuta\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: C8:A0:54:41:A3:4A:BF:1C:99:B9:DB:55:97:D2:65:BC
+SHA1: B6:15:26:46:E0:AB:EF:0F:59:F1:E9:CD:B8:38:F8:E1:A7:80:F4:AA
+SHA-256: 46:AE:29:42:B4:4A:44:84:A7:1E:8F:74:2A:B3:9F:98:DB:3C:B9:6A:1D:35:7E:D8:8A:3F:62:46:60:B7:87:13
+Valid until: Wednesday, December 15, 2055
+----------
+
+> Task :shared_preferences_android:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\umuta\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: C8:A0:54:41:A3:4A:BF:1C:99:B9:DB:55:97:D2:65:BC
+SHA1: B6:15:26:46:E0:AB:EF:0F:59:F1:E9:CD:B8:38:F8:E1:A7:80:F4:AA
+SHA-256: 46:AE:29:42:B4:4A:44:84:A7:1E:8F:74:2A:B3:9F:98:DB:3C:B9:6A:1D:35:7E:D8:8A:3F:62:46:60:B7:87:13
+Valid until: Wednesday, December 15, 2055
+----------
+
+> Task :sqflite_android:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\umuta\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: C8:A0:54:41:A3:4A:BF:1C:99:B9:DB:55:97:D2:65:BC
+SHA1: B6:15:26:46:E0:AB:EF:0F:59:F1:E9:CD:B8:38:F8:E1:A7:80:F4:AA
+SHA-256: 46:AE:29:42:B4:4A:44:84:A7:1E:8F:74:2A:B3:9F:98:DB:3C:B9:6A:1D:35:7E:D8:8A:3F:62:46:60:B7:87:13
+Valid until: Wednesday, December 15, 2055
+----------
+
+[Incubating] Problems report is available at: file:///C:/Users/umuta/OneDrive/Desktop/coupleBalance/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 2s
+17 actionable tasks: 13 executed, 4 up-to-date
