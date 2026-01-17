@@ -127,14 +127,33 @@ class UpdateService {
   }
 
   Future<void> _downloadAndInstall(BuildContext context, String url) async {
-    // Request permission (mostly for Android < 8, but good practice)
-    // On Android 8+, the system handles the install permission prompt flow
+    final progressNotifier = ValueNotifier<double>(0.0);
 
     // Show progress dialog
+    // We use a PopScope (or WillPopScope for older Flutter) to prevent back button
+    // But PopScope is correctly available in newer Flutter versions.
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+      builder: (context) => PopScope(
+        canPop: false,
+        child: ValueListenableBuilder<double>(
+          valueListenable: progressNotifier,
+          builder: (context, value, child) {
+            return AlertDialog(
+              title: const Text('Downloading Update...'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  LinearProgressIndicator(value: value),
+                  const SizedBox(height: 10),
+                  Text('${(value * 100).toStringAsFixed(0)}%'),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
     );
 
     try {
@@ -145,24 +164,26 @@ class UpdateService {
         url,
         savePath,
         onReceiveProgress: (received, total) {
-          // Could update progress here
+          if (total != -1) {
+            progressNotifier.value = received / total;
+          }
         },
       );
 
-      // Close progress dialog
       if (context.mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context); // Close progress dialog
+        await OpenFilex.open(savePath);
       }
-
-      // Install
-      await OpenFilex.open(savePath);
     } catch (e) {
+      debugPrint('Download error: $e');
       if (context.mounted) {
-        Navigator.pop(context); // Close progress dialog if open
+        Navigator.pop(context); // Close progress dialog
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Update failed: $e')));
       }
+    } finally {
+      progressNotifier.dispose();
     }
   }
 }
