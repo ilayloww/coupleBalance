@@ -213,8 +213,40 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // Placeholder for Google Sign In - requires platform specific setup
-  // Future<void> signInWithGoogle() async { ... }
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      debugPrint("Error sending password reset email: ${e.message}");
+      rethrow;
+    }
+  }
+
+  Future<void> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('No user logged in');
+
+    final email = user.email;
+    if (email == null) throw Exception('User email not found');
+
+    try {
+      // Re-authenticate
+      final credential = EmailAuthProvider.credential(
+        email: email,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+
+      // Update password
+      await user.updatePassword(newPassword);
+    } on FirebaseAuthException catch (e) {
+      debugPrint("Error changing password: ${e.message}");
+      rethrow;
+    }
+  }
 
   Future<void> signOut() async {
     await _auth.signOut();

@@ -239,5 +239,21 @@
     "emailVerifiedSuccess": "Email verified successfully!",
     "emailNotVerifiedYet": "Email not verified yet.",
     "verificationEmailSent": "Verification email sent!",
-    "checkSpamFolder": "Please also check your spam folder."
+    "checkSpamFolder": "Please also check your spam folder.",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Reset Password",
+    "enterEmailToReset": "Enter your email to reset password",
+    "sendResetLink": "Send Reset Link",
+    "resetEmailSent": "Password reset email sent!",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password",
+    "passwordUpdated": "Password updated successfully",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "invalidEmail": "Please enter a valid email",
+    "error": "Error",
+    "incorrectPassword": "Incorrect password entered",
+    "weakPassword": "Password is too weak",
+    "reauthRequired": "Please log in again to change password"
 }

@@ -132,5 +132,21 @@
     "emailVerifiedSuccess": "E-posta başarıyla doğrulandı!",
     "emailNotVerifiedYet": "E-posta henüz doğrulanmadı.",
     "verificationEmailSent": "Doğrulama e-postası gönderildi!",
-    "checkSpamFolder": "Lütfen spam klasörünüzü de kontrol edin."
+    "checkSpamFolder": "Lütfen spam klasörünüzü de kontrol edin.",
+    "forgotPassword": "Şifremi Unuttum?",
+    "resetPassword": "Şifre Sıfırla",
+    "enterEmailToReset": "Şifrenizi sıfırlamak için e-postanızı girin",
+    "sendResetLink": "Sıfırlama Bağlantısı Gönder",
+    "resetEmailSent": "Şifre sıfırlama e-postası gönderildi!",
+    "changePassword": "Şifre Değiştir",
+    "currentPassword": "Mevcut Şifre",
+    "newPassword": "Yeni Şifre",
+    "confirmNewPassword": "Yeni Şifre (Tekrar)",
+    "passwordUpdated": "Şifre başarıyla güncellendi",
+    "passwordsDoNotMatch": "Şifreler eşleşmiyor",
+    "invalidEmail": "Lütfen geçerli bir e-posta girin",
+    "error": "Hata",
+    "incorrectPassword": "Girdiğiniz şifre yanlış",
+    "weakPassword": "Şifre çok zayıf",
+    "reauthRequired": "Şifrenizi değiştirmek için lütfen tekrar giriş yapın"
 }

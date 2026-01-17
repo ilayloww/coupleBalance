@@ -441,4 +441,53 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get checkSpamFolder => 'Lütfen spam klasörünüzü de kontrol edin.';
+
+  @override
+  String get forgotPassword => 'Şifremi Unuttum?';
+
+  @override
+  String get resetPassword => 'Şifre Sıfırla';
+
+  @override
+  String get enterEmailToReset => 'Şifrenizi sıfırlamak için e-postanızı girin';
+
+  @override
+  String get sendResetLink => 'Sıfırlama Bağlantısı Gönder';
+
+  @override
+  String get resetEmailSent => 'Şifre sıfırlama e-postası gönderildi!';
+
+  @override
+  String get changePassword => 'Şifre Değiştir';
+
+  @override
+  String get currentPassword => 'Mevcut Şifre';
+
+  @override
+  String get newPassword => 'Yeni Şifre';
+
+  @override
+  String get confirmNewPassword => 'Yeni Şifre (Tekrar)';
+
+  @override
+  String get passwordUpdated => 'Şifre başarıyla güncellendi';
+
+  @override
+  String get passwordsDoNotMatch => 'Şifreler eşleşmiyor';
+
+  @override
+  String get invalidEmail => 'Lütfen geçerli bir e-posta girin';
+
+  @override
+  String get error => 'Hata';
+
+  @override
+  String get incorrectPassword => 'Girdiğiniz şifre yanlış';
+
+  @override
+  String get weakPassword => 'Şifre çok zayıf';
+
+  @override
+  String get reauthRequired =>
+      'Şifrenizi değiştirmek için lütfen tekrar giriş yapın';
 }

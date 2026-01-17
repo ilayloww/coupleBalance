@@ -441,4 +441,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkSpamFolder => 'Please also check your spam folder.';
+
+  @override
+  String get forgotPassword => 'Forgot Password?';
+
+  @override
+  String get resetPassword => 'Reset Password';
+
+  @override
+  String get enterEmailToReset => 'Enter your email to reset password';
+
+  @override
+  String get sendResetLink => 'Send Reset Link';
+
+  @override
+  String get resetEmailSent => 'Password reset email sent!';
+
+  @override
+  String get changePassword => 'Change Password';
+
+  @override
+  String get currentPassword => 'Current Password';
+
+  @override
+  String get newPassword => 'New Password';
+
+  @override
+  String get confirmNewPassword => 'Confirm New Password';
+
+  @override
+  String get passwordUpdated => 'Password updated successfully';
+
+  @override
+  String get passwordsDoNotMatch => 'Passwords do not match';
+
+  @override
+  String get invalidEmail => 'Please enter a valid email';
+
+  @override
+  String get error => 'Error';
+
+  @override
+  String get incorrectPassword => 'Incorrect password entered';
+
+  @override
+  String get weakPassword => 'Password is too weak';
+
+  @override
+  String get reauthRequired => 'Please log in again to change password';
 }
