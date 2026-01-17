@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:couple_balance/l10n/app_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Add this import
@@ -142,34 +143,62 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Listen directly to user changes stream (handles reload/token refreshes)
-    // Don't listen to AuthService notifications to avoid rebuild loops on loading state changes
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  User? _user;
+  bool _isInit = true;
+
+  @override
+  void initState() {
+    super.initState();
     final authService = Provider.of<AuthService>(context, listen: false);
 
-    return StreamBuilder(
-      stream: authService.userChanges,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.active) {
-          final user = snapshot.data;
+    // Listen to the stream manually to handle transitions
+    authService.userChanges.listen((User? user) async {
+      if (!mounted) return;
 
-          if (user == null) {
-            return const LoginScreen();
-          }
+      // If this is the FIRST load, don't delay.
+      // If transitioning from NULL (logged out) to USER (logged in), delay for animation.
+      if (!_isInit && _user == null && user != null) {
+        // Login Success! Wait for animation to play.
+        await Future.delayed(const Duration(seconds: 2));
+      }
 
-          // Check verification status
-          if (!user.emailVerified) {
-            return const EmailVerificationScreen();
-          }
+      if (mounted) {
+        setState(() {
+          _user = user;
+          _isInit = false;
+        });
+      }
+    });
+  }
 
-          return const HomeScreen();
-        }
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
-      },
-    );
+  @override
+  Widget build(BuildContext context) {
+    // If identifying initial state (and user is unknown), show loader or fallback
+    if (_isInit && _user == null) {
+      // We can temporarily check the current sync value if possible,
+      // or just show a loader until the stream emits first event.
+      // However, Stream.listen usually emits quickly.
+      // Let's rely on the stream callback.
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_user == null) {
+      return const LoginScreen();
+    }
+
+    // Check verification status
+    if (!_user!.emailVerified) {
+      return const EmailVerificationScreen();
+    }
+
+    return const HomeScreen();
   }
 }

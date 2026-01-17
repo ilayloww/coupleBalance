@@ -3,6 +3,8 @@ import 'package:couple_balance/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:rive/rive.dart';
+import '../widgets/login_animation.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,16 +13,56 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
+enum ValidationStatus { none, success, fail }
+
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLogin = true;
   bool _isLoading = false;
+  bool _isPasswordVisible = false;
+  ValidationStatus _validationStatus = ValidationStatus.none;
   String? _errorMessage;
+
+  final _emailFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
+
+  // Rive inputs
+  SMIBool? _isFocus;
+  SMIBool? _isPrivateField;
+  SMIBool? _isPrivateFieldShow; // For peeking
+  SMITrigger? _successTrigger;
+  SMITrigger? _failTrigger;
+  SMINumber? _numLook;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailFocusNode.addListener(_emailFocusChanged);
+    _passwordFocusNode.addListener(_passwordFocusChanged);
+  }
+
+  void _emailFocusChanged() {
+    _isFocus?.change(_emailFocusNode.hasFocus);
+  }
+
+  void _passwordFocusChanged() {
+    // When password has focus, raise hands (isPrivateField)
+    _isPrivateField?.change(_passwordFocusNode.hasFocus);
+
+    // Also sync the "peek" state (isPrivateFieldShow) immediately if we gain focus
+    if (_passwordFocusNode.hasFocus) {
+      _isPrivateFieldShow?.change(_isPasswordVisible);
+    }
+  }
 
   @override
   void dispose() {
+    _emailFocusNode.removeListener(_emailFocusChanged);
+    _passwordFocusNode.removeListener(_passwordFocusChanged);
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -29,9 +71,13 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Unfocus keyboard immediately to let hands start dropping naturally
+    FocusScope.of(context).unfocus();
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _validationStatus = ValidationStatus.none;
     });
 
     final authService = Provider.of<AuthService>(context, listen: false);
@@ -44,13 +90,48 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         await authService.registerWithEmailAndPassword(email, password);
       }
-      // Navigation is handled by the StreamBuilder in AuthWrapper
+
+      // Reset internal hands state so Success animation can play
+      _isPrivateField?.change(false);
+      _isPrivateFieldShow?.change(false);
+      _isFocus?.change(false); // Also stop looking
+
+      // Trigger success animation
+      _successTrigger?.fire();
+
+      if (mounted) {
+        setState(() {
+          _validationStatus = ValidationStatus.success;
+        });
+      }
     } on FirebaseAuthException catch (e) {
+      // Reset internal hands state so Fail animation can play
+      // Reset internal hands state so Fail animation can play
+      _isPrivateField?.change(false);
+      _isPrivateFieldShow?.change(false);
+      _isFocus?.change(false);
+
+      // Wait for "Hands Down" animation to complete
+      if (mounted) await Future.delayed(const Duration(milliseconds: 1000));
+
+      _failTrigger?.fire();
       setState(() {
-        _errorMessage = e.message ?? AppLocalizations.of(context)!.authFailed;
+        _validationStatus = ValidationStatus.fail;
+        _errorMessage = _getErrorMessage(e);
       });
     } catch (e) {
+      // Reset internal hands state so Fail animation can play
+      // Reset internal hands state so Fail animation can play
+      _isPrivateField?.change(false);
+      _isPrivateFieldShow?.change(false);
+      _isFocus?.change(false);
+
+      // Wait for "Hands Down" animation to complete
+      if (mounted) await Future.delayed(const Duration(milliseconds: 1000));
+
+      _failTrigger?.fire();
       setState(() {
+        _validationStatus = ValidationStatus.fail;
         _errorMessage = AppLocalizations.of(context)!.unexpectedError;
       });
     } finally {
@@ -67,7 +148,27 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLogin = !_isLogin;
       _errorMessage = null;
       _formKey.currentState?.reset();
+      // Reset animation states
+      _isFocus?.change(false);
+      _isPrivateField?.change(false);
+      _isPrivateFieldShow?.change(false);
     });
+  }
+
+  void _onRiveInit(
+    SMIBool? isFocus,
+    SMIBool? isPrivateField,
+    SMIBool? isPrivateFieldShow,
+    SMITrigger? successTrigger,
+    SMITrigger? failTrigger,
+    SMINumber? numLook,
+  ) {
+    _isFocus = isFocus;
+    _isPrivateField = isPrivateField;
+    _isPrivateFieldShow = isPrivateFieldShow;
+    _successTrigger = successTrigger;
+    _failTrigger = failTrigger;
+    _numLook = numLook;
   }
 
   @override
@@ -83,8 +184,13 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.favorite, size: 80, color: Colors.pinkAccent),
-                const SizedBox(height: 24),
+                const SizedBox(height: 50), // Move teddy down a bit
+                // Login Animation
+                Center(child: LoginAnimation(onInit: _onRiveInit)),
+                // const Icon(Icons.favorite, size: 80, color: Colors.pinkAccent), // Replaced by animation
+                const SizedBox(
+                  height: 5,
+                ), // Reduce space below teddy since it is bigger now
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
                   transitionBuilder: (child, animation) =>
@@ -124,12 +230,42 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Email Field
                 TextFormField(
                   controller: _emailController,
+                  focusNode: _emailFocusNode,
                   keyboardType: TextInputType.emailAddress,
+                  onChanged: (value) {
+                    _numLook?.change(value.length.toDouble());
+                    if (_validationStatus != ValidationStatus.none) {
+                      setState(() {
+                        _validationStatus = ValidationStatus.none;
+                      });
+                    }
+                  },
                   decoration: InputDecoration(
                     labelText: AppLocalizations.of(context)!.email,
                     prefixIcon: const Icon(Icons.email_outlined),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: _validationStatus == ValidationStatus.success
+                            ? Colors.green
+                            : _validationStatus == ValidationStatus.fail
+                            ? Colors.red
+                            : Colors.grey,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: _validationStatus == ValidationStatus.success
+                            ? Colors.green
+                            : _validationStatus == ValidationStatus.fail
+                            ? Colors.red
+                            : Colors.pinkAccent,
+                        width: 2,
+                      ),
                     ),
                   ),
                   validator: (value) {
@@ -147,12 +283,57 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Password Field
                 TextFormField(
                   controller: _passwordController,
-                  obscureText: true,
+                  focusNode: _passwordFocusNode,
+                  obscureText: !_isPasswordVisible,
+                  onChanged: (value) {
+                    if (_validationStatus != ValidationStatus.none) {
+                      setState(() {
+                        _validationStatus = ValidationStatus.none;
+                      });
+                    }
+                  },
                   decoration: InputDecoration(
                     labelText: AppLocalizations.of(context)!.password,
                     prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                        // If password field has focus, toggle the peek state (isPrivateFieldShow)
+                        if (_passwordFocusNode.hasFocus) {
+                          _isPrivateFieldShow?.change(_isPasswordVisible);
+                        }
+                      },
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: _validationStatus == ValidationStatus.success
+                            ? Colors.green
+                            : _validationStatus == ValidationStatus.fail
+                            ? Colors.red
+                            : Colors.grey,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: _validationStatus == ValidationStatus.success
+                            ? Colors.green
+                            : _validationStatus == ValidationStatus.fail
+                            ? Colors.red
+                            : Colors.pinkAccent,
+                        width: 2,
+                      ),
                     ),
                   ),
                   validator: (value) {
@@ -312,5 +493,28 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
     );
+  }
+
+  String _getErrorMessage(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'user-not-found':
+        return AppLocalizations.of(context)!.userNotFound;
+      case 'wrong-password':
+        return AppLocalizations.of(context)!.incorrectPassword;
+      case 'weak-password':
+        return AppLocalizations.of(context)!.weakPassword;
+      case 'email-already-in-use':
+        return AppLocalizations.of(context)!.emailAlreadyInUse;
+      case 'invalid-email':
+        return AppLocalizations.of(context)!.invalidEmail;
+      case 'invalid-credential':
+        return AppLocalizations.of(context)!.invalidCredential;
+      case 'too-many-requests':
+        return AppLocalizations.of(context)!.tooManyRequests;
+      case 'network-request-failed':
+        return AppLocalizations.of(context)!.networkRequestFailed;
+      default:
+        return AppLocalizations.of(context)!.authFailed;
+    }
   }
 }

@@ -490,4 +490,21 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get reauthRequired =>
       'Şifrenizi değiştirmek için lütfen tekrar giriş yapın';
+
+  @override
+  String get userNotFound => 'Bu e-posta ile kayıtlı hesap bulunamadı';
+
+  @override
+  String get emailAlreadyInUse => 'Bu e-posta zaten kullanımda';
+
+  @override
+  String get invalidCredential => 'E-posta veya şifre hatalı';
+
+  @override
+  String get tooManyRequests =>
+      'Çok fazla deneme yaptınız. Lütfen daha sonra tekrar deneyin.';
+
+  @override
+  String get networkRequestFailed =>
+      'Ağ hatası. Lütfen bağlantınızı kontrol edin.';
 }

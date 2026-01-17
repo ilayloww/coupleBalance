@@ -255,5 +255,10 @@
     "error": "Error",
     "incorrectPassword": "Incorrect password entered",
     "weakPassword": "Password is too weak",
-    "reauthRequired": "Please log in again to change password"
+    "reauthRequired": "Please log in again to change password",
+    "userNotFound": "No account found with this email",
+    "emailAlreadyInUse": "Email is already registered",
+    "invalidCredential": "Incorrect email or password",
+    "tooManyRequests": "Too many attempts. Please try again later.",
+    "networkRequestFailed": "Network error. Please check your connection."
 }

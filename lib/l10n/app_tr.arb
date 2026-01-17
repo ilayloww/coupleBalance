@@ -148,5 +148,10 @@
     "error": "Hata",
     "incorrectPassword": "Girdiğiniz şifre yanlış",
     "weakPassword": "Şifre çok zayıf",
-    "reauthRequired": "Şifrenizi değiştirmek için lütfen tekrar giriş yapın"
+    "reauthRequired": "Şifrenizi değiştirmek için lütfen tekrar giriş yapın",
+    "userNotFound": "Bu e-posta ile kayıtlı hesap bulunamadı",
+    "emailAlreadyInUse": "Bu e-posta zaten kullanımda",
+    "invalidCredential": "E-posta veya şifre hatalı",
+    "tooManyRequests": "Çok fazla deneme yaptınız. Lütfen daha sonra tekrar deneyin.",
+    "networkRequestFailed": "Ağ hatası. Lütfen bağlantınızı kontrol edin."
 }

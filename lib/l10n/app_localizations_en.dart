@@ -489,4 +489,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reauthRequired => 'Please log in again to change password';
+
+  @override
+  String get userNotFound => 'No account found with this email';
+
+  @override
+  String get emailAlreadyInUse => 'Email is already registered';
+
+  @override
+  String get invalidCredential => 'Incorrect email or password';
+
+  @override
+  String get tooManyRequests => 'Too many attempts. Please try again later.';
+
+  @override
+  String get networkRequestFailed =>
+      'Network error. Please check your connection.';
 }
