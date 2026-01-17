@@ -53,9 +53,16 @@ class _PartnerProfileScreenState extends State<PartnerProfileScreen> {
             .collection('users')
             .doc(widget.partnerUid);
 
-        // Remove field using FieldValue.delete()
-        batch.update(myRef, {'partnerUid': FieldValue.delete()});
-        batch.update(partnerRef, {'partnerUid': FieldValue.delete()});
+        // Remove from list and legacy field
+        batch.set(myRef, {
+          'partnerUids': FieldValue.arrayRemove([widget.partnerUid]),
+          'partnerUid': FieldValue.delete(),
+        }, SetOptions(merge: true));
+
+        batch.set(partnerRef, {
+          'partnerUids': FieldValue.arrayRemove([myUid]),
+          'partnerUid': FieldValue.delete(),
+        }, SetOptions(merge: true));
 
         await batch.commit();
 

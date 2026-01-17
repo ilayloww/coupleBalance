@@ -13,7 +13,9 @@ import 'profile_screen.dart';
 import 'partner_profile_screen.dart';
 import 'settlement_history_screen.dart';
 import '../viewmodels/settlement_viewmodel.dart';
+import 'partner_list_screen.dart';
 import 'transaction_detail_screen.dart';
+import '../models/user_model.dart';
 
 import '../services/notification_service.dart';
 import '../services/theme_service.dart';
@@ -39,133 +41,177 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     Provider.of<ThemeService>(context); // Listen to Theme changes
-    final user = Provider.of<AuthService>(context).currentUser;
-    if (user == null) {
-      return const SizedBox(); // Should not happen due to AuthWrapper
-    }
 
-    return Scaffold(
-      // backgroundColor: handled by Theme
-      appBar: AppBar(
-        leading: StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .snapshots(),
-          builder: (context, snapshot) {
-            final userData = snapshot.data?.data() as Map<String, dynamic>?;
-            final partnerUid = userData?['partnerUid'];
+    return Consumer<AuthService>(
+      builder: (context, authService, child) {
+        final user = authService.currentUser;
+        if (user == null) {
+          return const SizedBox(); // Should not happen due to AuthWrapper
+        }
 
-            if (partnerUid == null) return const SizedBox();
+        // Use selected partner ID managed by AuthService
+        final selectedPartnerId = authService.selectedPartnerId;
+        final selectedPartner = authService.partners.firstWhere(
+          (p) => p.uid == selectedPartnerId,
+          orElse: () =>
+              UserModel(uid: '', displayName: '', partnerUids: []), // Dummy
+        );
+        final hasPartner =
+            selectedPartnerId != null && selectedPartner.uid.isNotEmpty;
 
-            return _AnimatedHeartButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        PartnerProfileScreen(partnerUid: partnerUid),
-                  ),
-                );
-              },
-            );
-          },
-        ),
-        title: const Text('CoupleBalance'),
-        centerTitle: true,
-        // backgroundColor: handled by Theme
-        elevation: 0,
-        actions: [
-          StreamBuilder<DocumentSnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('users')
-                .doc(user.uid)
-                .snapshots(),
-            builder: (context, snapshot) {
-              final userData = snapshot.data?.data() as Map<String, dynamic>?;
-              final displayName = userData?['displayName'] as String? ?? '';
-              final email = userData?['email'] as String? ?? '';
-              final photoUrl = userData?['photoUrl'] as String?;
+        if (authService.isLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-              String initials = 'U';
-              if (displayName.isNotEmpty) {
-                initials = displayName[0].toUpperCase();
-              } else if (email.isNotEmpty) {
-                initials = email[0].toUpperCase();
-              }
-
-              return Padding(
-                padding: const EdgeInsets.only(right: 16.0),
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                    );
-                  },
-                  child: CircleAvatar(
-                    backgroundColor: Colors.pinkAccent,
-                    backgroundImage: photoUrl != null
-                        ? CachedNetworkImageProvider(photoUrl)
-                        : null,
-                    child: photoUrl == null
-                        ? Text(
-                            initials,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          )
-                        : null,
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Balance Card
-          _BalanceCard(userUid: user.uid),
-
-          // Transaction Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  AppLocalizations.of(context)!.recentTransactions,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+        return Scaffold(
+          // backgroundColor: handled by Theme
+          appBar: AppBar(
+            leading: hasPartner
+                ? _AnimatedHeartButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PartnerProfileScreen(
+                            partnerUid: selectedPartnerId,
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                : const SizedBox(),
+            title: InkWell(
+              onTap: authService.partners.length > 1
+                  ? () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PartnerListScreen(),
+                        ),
+                      );
+                    }
+                  : null,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('CoupleBalance'),
+                  if (hasPartner && authService.partners.length > 1) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      '(${selectedPartner.displayName.isNotEmpty ? selectedPartner.displayName : 'Partner'})',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    const Icon(Icons.arrow_drop_down),
+                  ],
+                ],
+              ),
             ),
+            centerTitle: true,
+            // backgroundColor: handled by Theme
+            elevation: 0,
+            actions: [
+              StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user.uid)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  final userData =
+                      snapshot.data?.data() as Map<String, dynamic>?;
+                  final displayName = userData?['displayName'] as String? ?? '';
+                  final email = userData?['email'] as String? ?? '';
+                  final photoUrl = userData?['photoUrl'] as String?;
+
+                  String initials = 'U';
+                  if (displayName.isNotEmpty) {
+                    initials = displayName[0].toUpperCase();
+                  } else if (email.isNotEmpty) {
+                    initials = email[0].toUpperCase();
+                  }
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 16.0),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ProfileScreen(),
+                          ),
+                        );
+                      },
+                      child: CircleAvatar(
+                        backgroundColor: Colors.pinkAccent,
+                        backgroundImage: photoUrl != null
+                            ? CachedNetworkImageProvider(photoUrl)
+                            : null,
+                        child: photoUrl == null
+                            ? Text(
+                                initials,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                            : null,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
+          body: Column(
+            children: [
+              // Balance Card
+              _BalanceCard(userUid: user.uid, partnerUid: selectedPartnerId),
 
-          // Transaction List
-          Expanded(child: _TransactionList(userUid: user.uid)),
-        ],
-      ),
-      floatingActionButton: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .snapshots(),
-        builder: (context, snapshot) {
-          final userData = snapshot.data?.data() as Map<String, dynamic>?;
-          final partnerUid = userData?['partnerUid'];
+              // Transaction Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      AppLocalizations.of(context)!.recentTransactions,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
-          return FloatingActionButton(
+              // Transaction List
+              Expanded(
+                child: _TransactionList(
+                  userUid: user.uid,
+                  partnerUid: selectedPartnerId,
+                ),
+              ),
+            ],
+          ),
+          floatingActionButton: FloatingActionButton(
             onPressed: () {
-              if (partnerUid == null) {
+              if (selectedPartnerId == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
                       AppLocalizations.of(context)!.pleaseLinkPartnerFirst,
+                    ),
+                    action: SnackBarAction(
+                      label: AppLocalizations.of(context)!.linkPartner,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PartnerListScreen(),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 );
@@ -174,37 +220,80 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => AddExpenseScreen(partnerUid: partnerUid),
+                  builder: (_) =>
+                      AddExpenseScreen(partnerUid: selectedPartnerId),
                 ),
               );
             },
             backgroundColor: Colors.pinkAccent,
             child: const Icon(Icons.add),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
 
-class _BalanceCard extends StatelessWidget {
+class _BalanceCard extends StatefulWidget {
   final String userUid;
-  const _BalanceCard({required this.userUid});
+  final String? partnerUid;
+  const _BalanceCard({required this.userUid, this.partnerUid});
+
+  @override
+  State<_BalanceCard> createState() => _BalanceCardState();
+}
+
+class _BalanceCardState extends State<_BalanceCard> {
+  late Stream<DocumentSnapshot> _userStream;
+  late Stream<QuerySnapshot> _transactionStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _initStreams();
+  }
+
+  @override
+  void didUpdateWidget(_BalanceCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.userUid != widget.userUid ||
+        oldWidget.partnerUid != widget.partnerUid) {
+      _initStreams();
+    }
+  }
+
+  void _initStreams() {
+    _userStream = FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.userUid)
+        .snapshots();
+
+    _transactionStream = FirebaseFirestore.instance
+        .collection('transactions')
+        .where(
+          Filter.or(
+            Filter('senderUid', isEqualTo: widget.userUid),
+            Filter('receiverUid', isEqualTo: widget.userUid),
+          ),
+        )
+        .orderBy('timestamp', descending: true)
+        .snapshots();
+  }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .doc(userUid)
-          .snapshots(),
+      stream: _userStream,
       builder: (context, userSnap) {
         if (!userSnap.hasData) return const SizedBox();
 
         final userData = userSnap.data!.data() as Map<String, dynamic>?;
-        final partnerUid = userData?['partnerUid'] as String?;
+        // Use the passed partnerUid (selected from AuthService) if available, otherwise fallback or null.
+        // If we want complete decoupling, we should rely solely on the passed partnerUid.
+        // However, the original code fetched it from userSnap.
+        // Let's prefer the passed one, but if it's null, we show the link screen.
 
-        if (partnerUid == null) {
+        if (widget.partnerUid == null) {
           return Container(
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(24),
@@ -238,16 +327,7 @@ class _BalanceCard extends StatelessWidget {
         }
 
         return StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('transactions')
-              .where(
-                Filter.or(
-                  Filter('senderUid', isEqualTo: userUid),
-                  Filter('receiverUid', isEqualTo: userUid),
-                ),
-              )
-              .orderBy('timestamp', descending: true)
-              .snapshots(),
+          stream: _transactionStream,
           builder: (context, txSnap) {
             if (txSnap.hasError) {
               debugPrint('BalanceCard Error: ${txSnap.error}');
@@ -266,9 +346,10 @@ class _BalanceCard extends StatelessWidget {
               final receiver = data['receiverUid'];
               final amount = (data['amount'] ?? 0).toDouble();
 
-              if (sender == userUid && receiver == partnerUid) {
+              if (sender == widget.userUid && receiver == widget.partnerUid) {
                 mySpends += amount;
-              } else if (sender == partnerUid && receiver == userUid) {
+              } else if (sender == widget.partnerUid &&
+                  receiver == widget.userUid) {
                 partnerSpends += amount;
               }
             }
@@ -336,8 +417,8 @@ class _BalanceCard extends StatelessWidget {
                   InkWell(
                     onTap: () => _selectSettlementDay(
                       context,
-                      userUid,
-                      partnerUid,
+                      widget.userUid,
+                      widget.partnerUid,
                       settlementDay,
                     ),
                     child: Container(
@@ -388,8 +469,8 @@ class _BalanceCard extends StatelessWidget {
                         ElevatedButton.icon(
                           onPressed: () => _showSettleUpDialog(
                             context,
-                            userUid,
-                            partnerUid,
+                            widget.userUid,
+                            widget.partnerUid!,
                             absBalance,
                             !isPositive, // I am payer if balance is negative (partner owes me is positive) -> Wait.
                             // isPositive = (mySpends - partnerSpends) >= 0.
@@ -425,8 +506,8 @@ class _BalanceCard extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder: (_) => SettlementHistoryScreen(
-                                myUid: userUid,
-                                partnerUid: partnerUid,
+                                myUid: widget.userUid,
+                                partnerUid: widget.partnerUid!,
                               ),
                             ),
                           );
@@ -435,7 +516,7 @@ class _BalanceCard extends StatelessWidget {
                         tooltip: AppLocalizations.of(context)!.history,
                         style: IconButton.styleFrom(
                           backgroundColor: Colors.white.withValues(
-                            alpha: isDark ? 0.1 : 0.15,
+                            alpha: isDark ? 0.1 : 0.2,
                           ),
                           padding: const EdgeInsets.all(12),
                         ),
@@ -569,23 +650,50 @@ class _BalanceCard extends StatelessWidget {
   }
 }
 
-class _TransactionList extends StatelessWidget {
+class _TransactionList extends StatefulWidget {
   final String userUid;
-  const _TransactionList({required this.userUid});
+  final String? partnerUid;
+  const _TransactionList({required this.userUid, this.partnerUid});
+
+  @override
+  State<_TransactionList> createState() => _TransactionListState();
+}
+
+class _TransactionListState extends State<_TransactionList> {
+  late Stream<QuerySnapshot> _transactionStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _transactionStream = _createStream();
+  }
+
+  @override
+  void didUpdateWidget(_TransactionList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.userUid != widget.userUid ||
+        oldWidget.partnerUid != widget.partnerUid) {
+      _transactionStream = _createStream();
+    }
+  }
+
+  Stream<QuerySnapshot> _createStream() {
+    return FirebaseFirestore.instance
+        .collection('transactions')
+        .where(
+          Filter.or(
+            Filter('senderUid', isEqualTo: widget.userUid),
+            Filter('receiverUid', isEqualTo: widget.userUid),
+          ),
+        )
+        .orderBy('timestamp', descending: true)
+        .snapshots();
+  }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('transactions')
-          .where(
-            Filter.or(
-              Filter('senderUid', isEqualTo: userUid),
-              Filter('receiverUid', isEqualTo: userUid),
-            ),
-          )
-          .orderBy('timestamp', descending: true)
-          .snapshots(),
+      stream: _transactionStream,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           debugPrint('TransactionList Error: ${snapshot.error}');
@@ -596,10 +704,21 @@ class _TransactionList extends StatelessWidget {
         }
 
         final allDocs = snapshot.data?.docs ?? [];
-        // Filter out deleted and settled transactions
+        // Filter out deleted, settled, and irrelevant transactions
         final docs = allDocs.where((d) {
           final data = d.data() as Map<String, dynamic>;
-          return data['isDeleted'] != true && data['isSettled'] != true;
+          if (data['isDeleted'] == true || data['isSettled'] == true) {
+            return false;
+          }
+
+          // Strict filtering: If no partner selected, show nothing
+          if (widget.partnerUid == null) return false;
+
+          final sender = data['senderUid'];
+          final receiver = data['receiverUid'];
+
+          // Must involve the selected partner
+          return sender == widget.partnerUid || receiver == widget.partnerUid;
         }).toList();
 
         if (docs.isEmpty) {
@@ -615,7 +734,7 @@ class _TransactionList extends StatelessWidget {
             final data = docs[index].data() as Map<String, dynamic>;
 
             final tx = TransactionModel.fromMap(data, docs[index].id);
-            final isMe = tx.senderUid == userUid;
+            final isMe = tx.senderUid == widget.userUid;
 
             final docId = docs[index].id;
 
@@ -632,7 +751,7 @@ class _TransactionList extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (_) => TransactionDetailScreen(
                         transaction: tx,
-                        currentUserId: userUid,
+                        currentUserId: widget.userUid,
                       ),
                     ),
                   );
@@ -682,18 +801,8 @@ class _TransactionList extends StatelessWidget {
 
             // Logic for Deletion capability
             final canModify = tx.addedByUid != null
-                ? tx.addedByUid == userUid
-                : tx.senderUid == userUid;
-
-            // Logic for Settlement capability (Swipe Right)
-            // Any unsettled transaction can generally be settled by either party,
-            // or maybe restrict to who owes? The prompt implies broadly "swiping the item".
-            // Let's allow swipe-to-settle for both.
-            // But checking 'canDelete' for swipe left might disable swipe right if we wrap existing check.
-
-            // We need to conditionally enable/disable directions.
-            // DismissDirection.horizontal allows both.
-            // If !canDelete, maybe only allow startToEnd (Settle)?
+                ? tx.addedByUid == widget.userUid
+                : tx.senderUid == widget.userUid;
 
             if (!canModify) return cardWidget;
 
@@ -767,13 +876,13 @@ class _TransactionList extends StatelessWidget {
                   return await _showSettleSingleTransactionDialog(
                     context,
                     tx,
-                    userUid,
+                    widget.userUid,
                     // If IS_ME (sender is me), I paid. Partner needs to pay me. Partner is payer. I am Receiver.
                     // If NOT_ME (sender is partner), Partner paid. I need to pay partner. I am Payer.
                     // iAmPayer logic:
                     // tx.senderUid == userUid => I paid => Partner owes => iAmPayer = false
                     // tx.senderUid != userUid => Partner paid => I owe => iAmPayer = true
-                    tx.senderUid != userUid,
+                    tx.senderUid != widget.userUid,
                   );
                 }
               },

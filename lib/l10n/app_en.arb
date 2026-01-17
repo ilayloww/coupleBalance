@@ -206,5 +206,23 @@
     "byPercentage": "Percentage",
     "enterPercentage": "Enter percentage",
     "percentage": "Percentage",
-    "themeColor": "Theme Color"
+    "themeColor": "Theme Color",
+    "partnerAlreadyLinked": "Partner already linked ({partnerInfo})",
+    "@partnerAlreadyLinked": {
+        "placeholders": {
+            "partnerInfo": {
+                "type": "String"
+            }
+        }
+    },
+    "partnersTitle": "Partners",
+    "unlinkPartnerContent": "Are you sure you want to unlink {name}?",
+    "@unlinkPartnerContent": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "noPartnersLinkedYet": "No partners linked yet."
 }

@@ -399,4 +399,20 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get themeColor => 'Tema Rengi';
+
+  @override
+  String partnerAlreadyLinked(String partnerInfo) {
+    return 'Partner zaten bağlı ($partnerInfo)';
+  }
+
+  @override
+  String get partnersTitle => 'Partnerler';
+
+  @override
+  String unlinkPartnerContent(String name) {
+    return '$name ile bağlantıyı kesmek istediğine emin misin?';
+  }
+
+  @override
+  String get noPartnersLinkedYet => 'Henüz bağlı partner yok.';
 }

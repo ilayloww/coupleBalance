@@ -120,5 +120,9 @@
     "byPercentage": "Yüzde",
     "enterPercentage": "Yüzde girin",
     "percentage": "Yüzde",
-    "themeColor": "Tema Rengi"
+    "themeColor": "Tema Rengi",
+    "partnerAlreadyLinked": "Partner zaten bağlı ({partnerInfo})",
+    "partnersTitle": "Partnerler",
+    "unlinkPartnerContent": "{name} ile bağlantıyı kesmek istediğine emin misin?",
+    "noPartnersLinkedYet": "Henüz bağlı partner yok."
 }

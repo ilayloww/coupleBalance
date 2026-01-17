@@ -399,4 +399,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themeColor => 'Theme Color';
+
+  @override
+  String partnerAlreadyLinked(String partnerInfo) {
+    return 'Partner already linked ($partnerInfo)';
+  }
+
+  @override
+  String get partnersTitle => 'Partners';
+
+  @override
+  String unlinkPartnerContent(String name) {
+    return 'Are you sure you want to unlink $name?';
+  }
+
+  @override
+  String get noPartnersLinkedYet => 'No partners linked yet.';
 }

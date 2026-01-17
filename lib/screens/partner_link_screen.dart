@@ -21,11 +21,11 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final currentUser = Provider.of<AuthService>(
-        context,
-        listen: false,
-      ).currentUser;
-      if (currentUser == null) return;
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final currentUser = authService.currentUser;
+      final currentUserModel = authService.currentUserModel;
+
+      if (currentUser == null || currentUserModel == null) return;
 
       // 1. Verify partner exists by Email
       final querySnapshot = await FirebaseFirestore.instance
@@ -55,8 +55,20 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
         return;
       }
 
-      // 2. Update my profile
-      // 2. Update my profile
+      // 2. Check if already linked
+      if (currentUserModel.partnerUids.contains(partnerUid)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Partner already linked (${partnerDoc['displayName'] ?? email})',
+            ),
+          ),
+        );
+        return;
+      }
+
+      // 3. Update my profile (Array Union)
       final batch = FirebaseFirestore.instance.batch();
 
       final myDocRef = FirebaseFirestore.instance
@@ -66,18 +78,27 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
           .collection('users')
           .doc(partnerUid);
 
-      batch.set(myDocRef, {'partnerUid': partnerUid}, SetOptions(merge: true));
-      // 3. Update partner's profile to link back immediately (Two-way link)
+      batch.set(myDocRef, {
+        'partnerUids': FieldValue.arrayUnion([partnerUid]),
+        // Update legacy field for backward compatibility on my side
+        'partnerUid': partnerUid,
+      }, SetOptions(merge: true));
+
+      // 4. Update partner's profile to link back (Two-way link)
+      // We ONLY update the list on their side to avoid breaking their existing active partner.
       batch.set(partnerDocRef, {
-        'partnerUid': currentUser.uid,
+        'partnerUids': FieldValue.arrayUnion([currentUser.uid]),
       }, SetOptions(merge: true));
 
       await batch.commit();
 
-      // 3. (Optional) Update partner's profile to link back?
-      // Usually better to have request/accept flow, but direct link for POC.
-
+      // 5. Select this partner immediately in local app state
       if (!mounted) return;
+      Provider.of<AuthService>(
+        context,
+        listen: false,
+      ).selectPartner(partnerUid);
+
       Navigator.pop(context); // Go back to Home
     } catch (e) {
       if (!mounted) return;

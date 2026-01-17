@@ -9,21 +9,39 @@ service cloud.firestore {
       allow update: if isAuthenticated() && (
         request.auth.uid == userId || 
         (
-          // Allow linking
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['partnerUid']) &&
-          (!('partnerUid' in resource.data) || resource.data.partnerUid == null) &&
-          request.resource.data.partnerUid == request.auth.uid
-        ) ||
-        (
-          // Allow unlinking: Only if I am currently the partner
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['partnerUid']) &&
-          resource.data.partnerUid == request.auth.uid &&
-          (!('partnerUid' in request.resource.data) || request.resource.data.partnerUid == null)
+          // Allow linking/unlinking partnerUids (Multi-partner support)
+          // We allow touching 'partnerUids' and legacy 'partnerUid'
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['partnerUids', 'partnerUid']) &&
+          (
+             // Case 1: Linking (Adding myself)
+             // Ensure existing partners are kept, I am added, and size increases by exactly 1.
+             (
+               request.resource.data.partnerUids.hasAll(resource.data.get('partnerUids', [])) &&
+               request.resource.data.partnerUids.hasAny([request.auth.uid]) &&
+               request.resource.data.partnerUids.size() == resource.data.get('partnerUids', []).size() + 1
+             )
+             ||
+             // Case 2: Unlinking (Removing myself)
+             // Covers both standard unlink (I was present) and cleanup (I was missing).
+             (
+               // Resulting list must NOT contain me
+               !request.resource.data.partnerUids.hasAny([request.auth.uid]) &&
+               // New list must be subset of old (no additions)
+               resource.data.get('partnerUids', []).hasAll(request.resource.data.partnerUids) &&
+               // Size check:
+               // If I was there: size decreases by 1
+               // If I wasn't there: size stays same
+               (
+                 (resource.data.get('partnerUids', []).hasAny([request.auth.uid]) && request.resource.data.partnerUids.size() == resource.data.get('partnerUids', []).size() - 1) ||
+                 (!resource.data.get('partnerUids', []).hasAny([request.auth.uid]) && request.resource.data.partnerUids.size() == resource.data.get('partnerUids', []).size())
+               )
+             )
+          )
         ) ||
         (
           // Allow syncing settlement day with partner
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['settlementDay']) &&
-          resource.data.partnerUid == request.auth.uid
+          resource.data.get('partnerUids', []).hasAny([request.auth.uid])
         )
       );
       allow delete: if isAuthenticated() && request.auth.uid == userId;

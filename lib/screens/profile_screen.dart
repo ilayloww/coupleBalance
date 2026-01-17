@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/auth_service.dart';
 import '../services/theme_service.dart';
+import '../screens/partner_list_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -226,6 +227,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 labelText: AppLocalizations.of(context)!.email,
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.email),
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PartnerListScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.group, color: Colors.pinkAccent),
+                label: Text(
+                  AppLocalizations.of(context)!.partnersTitle,
+                  style: const TextStyle(color: Colors.pinkAccent),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.pinkAccent),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 32),

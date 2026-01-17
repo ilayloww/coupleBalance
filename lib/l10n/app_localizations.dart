@@ -829,6 +829,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Theme Color'**
   String get themeColor;
+
+  /// No description provided for @partnerAlreadyLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Partner already linked ({partnerInfo})'**
+  String partnerAlreadyLinked(String partnerInfo);
+
+  /// No description provided for @partnersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Partners'**
+  String get partnersTitle;
+
+  /// No description provided for @unlinkPartnerContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to unlink {name}?'**
+  String unlinkPartnerContent(String name);
+
+  /// No description provided for @noPartnersLinkedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No partners linked yet.'**
+  String get noPartnersLinkedYet;
 }
 
 class _AppLocalizationsDelegate

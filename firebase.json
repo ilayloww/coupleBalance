@@ -8,5 +8,8 @@
       "firebase-debug.log",
       "firebase-debug.*.log"
     ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
   }
 }
