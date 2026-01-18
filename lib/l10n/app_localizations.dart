@@ -1027,6 +1027,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Network error. Please check your connection.'**
   String get networkRequestFailed;
+
+  /// No description provided for @removeAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Account'**
+  String get removeAccount;
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccountTitle;
+
+  /// No description provided for @deleteAccountWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This action is irreversible. All your data including transactions, settlements, and profile information will be permanently deleted.'**
+  String get deleteAccountWarning;
+
+  /// No description provided for @enterEmailToConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email to confirm'**
+  String get enterEmailToConfirm;
+
+  /// No description provided for @deleteForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Forever'**
+  String get deleteForever;
+
+  /// No description provided for @accountDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Account deleted successfully.'**
+  String get accountDeleted;
 }
 
 class _AppLocalizationsDelegate

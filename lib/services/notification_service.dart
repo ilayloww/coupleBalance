@@ -60,11 +60,19 @@ class NotificationService {
     final user = _auth.currentUser;
     if (user != null) {
       try {
-        await _firestore.collection('users').doc(user.uid).set({
-          'fcmToken': token,
-          'lastTokenUpdate': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-        debugPrint("FCM Token saved: $token");
+        final docRef = _firestore.collection('users').doc(user.uid);
+        final doc = await docRef.get();
+        if (doc.exists) {
+          await docRef.set({
+            'fcmToken': token,
+            'lastTokenUpdate': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+          debugPrint("FCM Token saved: $token");
+        } else {
+          debugPrint(
+            "Skipping FCM Token save: User doc does not exist (account likely deleted).",
+          );
+        }
       } catch (e) {
         debugPrint("Error saving FCM token: $e");
       }

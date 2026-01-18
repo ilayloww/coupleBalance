@@ -695,7 +695,7 @@ class _TransactionListState extends State<_TransactionList> {
 
         return ListView.builder(
           itemCount: docs.length,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.only(left: 16, right: 16, bottom: 100),
           itemBuilder: (context, index) {
             final data = docs[index].data() as Map<String, dynamic>;
 

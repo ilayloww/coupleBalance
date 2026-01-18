@@ -153,5 +153,11 @@
     "emailAlreadyInUse": "Bu e-posta zaten kullanımda",
     "invalidCredential": "E-posta veya şifre hatalı",
     "tooManyRequests": "Çok fazla deneme yaptınız. Lütfen daha sonra tekrar deneyin.",
-    "networkRequestFailed": "Ağ hatası. Lütfen bağlantınızı kontrol edin."
+    "networkRequestFailed": "Ağ hatası. Lütfen bağlantınızı kontrol edin.",
+    "removeAccount": "Hesabımı Sil",
+    "deleteAccountTitle": "Hesabı Sil",
+    "deleteAccountWarning": "Bu işlem geri alınamaz. İşlemler, hesaplaşmalar ve profil bilgileri dahil tüm verileriniz kalıcı olarak silinecektir.",
+    "enterEmailToConfirm": "Onaylamak için e-postanızı girin",
+    "deleteForever": "Kalıcı Olarak Sil",
+    "accountDeleted": "Hesap başarıyla silindi."
 }

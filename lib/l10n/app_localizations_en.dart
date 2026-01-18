@@ -505,4 +505,23 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get networkRequestFailed =>
       'Network error. Please check your connection.';
+
+  @override
+  String get removeAccount => 'Remove Account';
+
+  @override
+  String get deleteAccountTitle => 'Delete Account';
+
+  @override
+  String get deleteAccountWarning =>
+      'This action is irreversible. All your data including transactions, settlements, and profile information will be permanently deleted.';
+
+  @override
+  String get enterEmailToConfirm => 'Enter your email to confirm';
+
+  @override
+  String get deleteForever => 'Delete Forever';
+
+  @override
+  String get accountDeleted => 'Account deleted successfully.';
 }

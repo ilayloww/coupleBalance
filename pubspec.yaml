@@ -57,6 +57,7 @@ dependencies:
   device_info_plus: ^12.3.0
   rive: ^0.13.0
   table_calendar: ^3.2.0
+  cloud_functions: ^6.0.5
 
 dev_dependencies:
   flutter_test:

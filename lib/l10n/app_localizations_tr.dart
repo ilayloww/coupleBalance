@@ -507,4 +507,23 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get networkRequestFailed =>
       'Ağ hatası. Lütfen bağlantınızı kontrol edin.';
+
+  @override
+  String get removeAccount => 'Hesabımı Sil';
+
+  @override
+  String get deleteAccountTitle => 'Hesabı Sil';
+
+  @override
+  String get deleteAccountWarning =>
+      'Bu işlem geri alınamaz. İşlemler, hesaplaşmalar ve profil bilgileri dahil tüm verileriniz kalıcı olarak silinecektir.';
+
+  @override
+  String get enterEmailToConfirm => 'Onaylamak için e-postanızı girin';
+
+  @override
+  String get deleteForever => 'Kalıcı Olarak Sil';
+
+  @override
+  String get accountDeleted => 'Hesap başarıyla silindi.';
 }

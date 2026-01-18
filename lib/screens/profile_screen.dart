@@ -11,6 +11,7 @@ import '../services/auth_service.dart';
 import '../services/theme_service.dart';
 import '../screens/partner_list_screen.dart';
 import '../screens/change_password_screen.dart';
+import '../screens/delete_account_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -349,6 +350,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.red),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const DeleteAccountScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.delete_forever, color: Colors.red),
+                label: Text(
+                  AppLocalizations.of(context)!.removeAccount,
+                  style: const TextStyle(color: Colors.red),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.red, width: 2),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

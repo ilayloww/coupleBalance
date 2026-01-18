@@ -223,15 +223,28 @@ exports.sendPartnerRequestNotification = functions.firestore
     .document("friend_requests/{requestId}")
     .onCreate(async (snap, context) => {
         const data = snap.data();
-        const fromName = data.fromName || "Someone";
-        const fromEmail = data.fromEmail;
+        const fromUid = data.fromUid;
+        const fromEmail = data.fromEmail || "(No Email)";
         const toUid = data.toUid;
 
-        console.log(`[FriendRequest] Id: ${context.params.requestId} From: ${fromEmail} To: ${toUid}`);
+        console.log(`[FriendRequest] Id: ${context.params.requestId} From: ${fromUid} To: ${toUid}`);
 
         if (!toUid) return null;
 
         try {
+            // 1. Get Sender Info (Name)
+            let fromName = "Someone";
+            if (fromUid) {
+                const senderDoc = await admin.firestore().collection("users").doc(fromUid).get();
+                if (senderDoc.exists) {
+                    const userData = senderDoc.data();
+                    if (userData.displayName) {
+                        fromName = userData.displayName;
+                    }
+                }
+            }
+
+            // 2. Get Target Info (Token)
             const targetDoc = await admin.firestore().collection("users").doc(toUid).get();
             if (!targetDoc.exists) {
                 console.log(`[FriendRequest] Target user not found: ${toUid}`);
@@ -265,3 +278,95 @@ exports.sendPartnerRequestNotification = functions.firestore
             return null;
         }
     });
+
+/**
+ * Callable function to delete a user account and all associated data.
+ * MUST be called from the app after re-authentication.
+ */
+exports.deleteAccount = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError(
+            "unauthenticated",
+            "The function must be called while authenticated."
+        );
+    }
+
+    const uid = context.auth.uid;
+    console.log(`[DeleteAccount] Starting deletion for user: ${uid}`);
+
+    try {
+        const db = admin.firestore();
+        const batch = db.batch();
+
+        // 0. Remove user from partners' lists
+        const userDocRef = db.collection("users").doc(uid);
+        const userDoc = await userDocRef.get();
+
+        if (userDoc.exists) {
+            const userData = userDoc.data();
+            const partnerUids = userData.partnerUids || [];
+
+            partnerUids.forEach((partnerUid) => {
+                const partnerRef = db.collection("users").doc(partnerUid);
+                batch.update(partnerRef, {
+                    partnerUids: admin.firestore.FieldValue.arrayRemove(uid)
+                });
+            });
+            console.log(`[DeleteAccount] Removing user ${uid} from ${partnerUids.length} partners.`);
+        }
+
+        // Helper to collect references from a query
+        const collectRefs = async (query) => {
+            const snapshot = await query.get();
+            return snapshot.docs.map((doc) => doc.ref);
+        };
+
+        // 1. Transactions
+        const txSenderRefs = await collectRefs(db.collection("transactions").where("senderUid", "==", uid));
+        const txReceiverRefs = await collectRefs(db.collection("transactions").where("receiverUid", "==", uid));
+
+        // 2. Settlements
+        const settlementPayerRefs = await collectRefs(db.collection("settlements").where("payerUid", "==", uid));
+        const settlementReceiverRefs = await collectRefs(db.collection("settlements").where("receiverUid", "==", uid));
+
+        // 3. Friend Requests
+        const reqFromRefs = await collectRefs(db.collection("friend_requests").where("fromUid", "==", uid));
+        const reqToRefs = await collectRefs(db.collection("friend_requests").where("toUid", "==", uid));
+
+        // deduplicate refs just in case (though unlikely to overlap in this schema)
+        const allRefs = [
+            ...txSenderRefs, ...txReceiverRefs,
+            ...settlementPayerRefs, ...settlementReceiverRefs,
+            ...reqFromRefs, ...reqToRefs
+        ];
+
+        // Use a Set of paths to ensure uniqueness
+        const uniqueRefPaths = new Set();
+
+        allRefs.forEach((ref) => {
+            if (!uniqueRefPaths.has(ref.path)) {
+                uniqueRefPaths.add(ref.path);
+                batch.delete(ref);
+            }
+        });
+
+        // 4. Delete User Data
+        const userRef = db.collection("users").doc(uid);
+        batch.delete(userRef);
+
+        console.log(`[DeleteAccount] Deleting ${uniqueRefPaths.size} documents for user ${uid}`);
+
+        await batch.commit();
+
+        // 5. Delete Auth Account
+        await admin.auth().deleteUser(uid);
+
+        console.log(`[DeleteAccount] Successfully deleted account for ${uid}`);
+        return { success: true };
+
+    } catch (error) {
+        console.error("[DeleteAccount] Error deleting account:", error);
+        // Return the error message to the client for better debugging
+        throw new functions.https.HttpsError("internal", `Unable to delete account: ${error.message}`);
+    }
+});

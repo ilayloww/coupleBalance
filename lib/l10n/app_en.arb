@@ -260,5 +260,11 @@
     "emailAlreadyInUse": "Email is already registered",
     "invalidCredential": "Incorrect email or password",
     "tooManyRequests": "Too many attempts. Please try again later.",
-    "networkRequestFailed": "Network error. Please check your connection."
+    "networkRequestFailed": "Network error. Please check your connection.",
+    "removeAccount": "Remove Account",
+    "deleteAccountTitle": "Delete Account",
+    "deleteAccountWarning": "This action is irreversible. All your data including transactions, settlements, and profile information will be permanently deleted.",
+    "enterEmailToConfirm": "Enter your email to confirm",
+    "deleteForever": "Delete Forever",
+    "accountDeleted": "Account deleted successfully."
 }

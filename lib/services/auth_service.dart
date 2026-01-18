@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'dart:async';
 import '../models/user_model.dart';
 
@@ -256,5 +257,28 @@ class AuthService extends ChangeNotifier {
     _partners = [];
     _selectedPartnerId = null;
     notifyListeners();
+  }
+
+  Future<void> deleteAccount() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('No user');
+
+      // Call Cloud Function
+      debugPrint(
+        "AuthService: Calling deleteAccount cloud function for ${user.uid}",
+      );
+      final functions =
+          FirebaseFunctions.instance; // Uses default region 'us-central1'
+      // functions.useFunctionsEmulator('localhost', 5001); // Uncomment for local testing
+
+      final callable = functions.httpsCallable('deleteAccount');
+      await callable.call();
+
+      await signOut();
+    } catch (e) {
+      debugPrint("Error deleting account: $e");
+      rethrow;
+    }
   }
 }
