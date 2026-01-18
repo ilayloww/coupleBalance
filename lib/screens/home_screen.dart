@@ -16,6 +16,7 @@ import '../viewmodels/settlement_viewmodel.dart';
 import 'partner_list_screen.dart';
 import 'transaction_detail_screen.dart';
 import '../models/user_model.dart';
+import 'calendar_screen.dart'; // Add import
 
 import '../services/notification_service.dart';
 import '../services/theme_service.dart';
@@ -99,9 +100,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   const Text('CoupleBalance'),
                   if (hasPartner && authService.partners.length > 1) ...[
                     const SizedBox(width: 4),
-                    Text(
-                      '(${selectedPartner.displayName.isNotEmpty ? selectedPartner.displayName : 'Partner'})',
-                      style: const TextStyle(fontSize: 12),
+                    Flexible(
+                      child: Text(
+                        '(${selectedPartner.displayName.isNotEmpty ? selectedPartner.displayName : 'Partner'})',
+                        style: const TextStyle(fontSize: 12),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     const Icon(Icons.arrow_drop_down),
                   ],
@@ -112,6 +116,22 @@ class _HomeScreenState extends State<HomeScreen> {
             // backgroundColor: handled by Theme
             elevation: 0,
             actions: [
+              if (hasPartner)
+                IconButton(
+                  icon: const Icon(Icons.calendar_month),
+                  tooltip: 'Calendar',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CalendarScreen(
+                          userUid: user.uid,
+                          partnerUid: selectedPartnerId,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               StreamBuilder<DocumentSnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('users')
@@ -225,7 +245,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               );
             },
-            backgroundColor: Colors.pinkAccent,
+            backgroundColor: Theme.of(
+              context,
+            ).floatingActionButtonTheme.backgroundColor,
             child: const Icon(Icons.add),
           ),
         );
