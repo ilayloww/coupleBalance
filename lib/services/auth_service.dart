@@ -94,7 +94,7 @@ class AuthService extends ChangeNotifier {
       final snapshots = await FirebaseFirestore.instance
           .collection('users')
           .where(FieldPath.documentId, whereIn: _currentUserModel!.partnerUids)
-          .get();
+          .get(const GetOptions(source: Source.server));
 
       _partners = snapshots.docs
           .map((doc) => UserModel.fromSnapshot(doc))
