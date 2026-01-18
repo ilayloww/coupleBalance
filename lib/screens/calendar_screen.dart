@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -24,140 +25,129 @@ class _CalendarScreenState extends State<CalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   Map<DateTime, List<TransactionModel>> _events = {};
+  StreamSubscription? _sentSub;
+  StreamSubscription? _receivedSub;
+  List<DocumentSnapshot> _sentDocs = [];
+  List<DocumentSnapshot> _receivedDocs = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
-    _fetchTransactionsForMonth(_focusedDay);
+    _initStreams();
   }
 
-  void _fetchTransactionsForMonth(DateTime month) {
+  @override
+  void dispose() {
+    _sentSub?.cancel();
+    _receivedSub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(CalendarScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.partnerUid != oldWidget.partnerUid ||
+        widget.userUid != oldWidget.userUid) {
+      _sentSub?.cancel();
+      _receivedSub?.cancel();
+      _initStreams();
+    }
+  }
+
+  void _initStreams() {
     setState(() {
       _isLoading = true;
-      _events = {};
     });
 
-    final startOfMonth = DateTime.utc(month.year, month.month, 1);
-    final endOfMonth = DateTime.utc(month.year, month.month + 1, 0, 23, 59, 59);
-
-    debugPrint('Fetching transactions for: $startOfMonth to $endOfMonth');
-
-    // Strategy Update:
-    // Instead of using complex 'where' clauses that require specific composite indexes
-    // (which are failing), we fetch the most recent transactions for the user
-    // and filter them by date in Dart.
-    // This reuses the simple indexes that are likely already working for the Home Screen.
-
-    final sentQuery = FirebaseFirestore.instance
+    // Stream 1: Sent by me
+    _sentSub = FirebaseFirestore.instance
         .collection('transactions')
         .where('senderUid', isEqualTo: widget.userUid)
         .orderBy('timestamp', descending: true)
-        .limit(200) // Fetch reasonable history depth
-        .get();
+        .limit(200)
+        .snapshots()
+        .listen((snapshot) {
+          _sentDocs = snapshot.docs;
+          _processUpdates();
+        }, onError: _handleError);
 
-    final receivedQuery = FirebaseFirestore.instance
+    // Stream 2: Received by me
+    _receivedSub = FirebaseFirestore.instance
         .collection('transactions')
         .where('receiverUid', isEqualTo: widget.userUid)
         .orderBy('timestamp', descending: true)
-        .limit(200) // Fetch reasonable history depth
-        .get();
+        .limit(200)
+        .snapshots()
+        .listen((snapshot) {
+          _receivedDocs = snapshot.docs;
+          _processUpdates();
+        }, onError: _handleError);
+  }
 
-    Future.wait([sentQuery, receivedQuery])
-        .then((snapshots) {
-          final Map<DateTime, List<TransactionModel>> newEvents = {};
-          final allDocs = [...snapshots[0].docs, ...snapshots[1].docs];
+  void _handleError(dynamic e) {
+    debugPrint('Calendar Stream Error: $e');
+    if (!mounted) return;
 
-          debugPrint(
-            'Found ${allDocs.length} raw transactions (limit 400 total)',
-          );
+    if (e.toString().contains('failed-precondition') ||
+        e.toString().contains('index')) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Missing Database Index'),
+          content: const Text(
+            'The app is missing a required database index.\n\n'
+            'Please check your terminal logs for the creation link.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
 
-          // Deduplicate by ID
-          final uniqueDocs = {for (var doc in allDocs) doc.id: doc}.values;
-          int matchedCount = 0;
+  void _processUpdates() {
+    if (!mounted) return;
 
-          for (var doc in uniqueDocs) {
-            final data = doc.data();
+    final allDocs = [..._sentDocs, ..._receivedDocs];
+    final Map<DateTime, List<TransactionModel>> newEvents = {};
 
-            // Filter for partner AND deleted status
-            if ((data['senderUid'] == widget.partnerUid ||
-                    data['receiverUid'] == widget.partnerUid) &&
-                data['isDeleted'] != true) {
-              final tx = TransactionModel.fromMap(data, doc.id);
+    // Deduplicate by ID
+    final uniqueDocs = {for (var doc in allDocs) doc.id: doc}.values;
 
-              // CLIENT-SIDE DATE FILTER
-              // Check if transaction falls within the requested month
-              final txDate = tx.timestamp; // Local time from model
-              // Convert only for comparison logic if needed, but model has local time usually.
-              // Let's filter:
-              if (txDate.year == month.year && txDate.month == month.month) {
-                matchedCount++;
+    for (var doc in uniqueDocs) {
+      final data = doc.data() as Map<String, dynamic>;
 
-                // USE UTC for keys to match TableCalendar's recommendation
-                final date = DateTime.utc(
-                  tx.timestamp.year,
-                  tx.timestamp.month,
-                  tx.timestamp.day,
-                );
+      final sender = data['senderUid'];
+      final receiver = data['receiverUid'];
 
-                if (newEvents[date] == null) {
-                  newEvents[date] = [];
-                }
-                newEvents[date]!.add(tx);
-                debugPrint('Added event for date: $date - ${tx.note}');
-              }
-            }
-          }
+      if ((sender == widget.partnerUid || receiver == widget.partnerUid) &&
+          data['isDeleted'] != true) {
+        final tx = TransactionModel.fromMap(data, doc.id);
 
-          debugPrint(
-            'Events map populated with ${newEvents.length} dates. Matched: $matchedCount',
-          );
+        // Normalize date to UTC for TableCalendar
+        final date = DateTime.utc(
+          tx.timestamp.year,
+          tx.timestamp.month,
+          tx.timestamp.day,
+        );
 
-          if (mounted) {
-            setState(() {
-              _events = newEvents;
-              _isLoading = false;
-            });
-          }
-        })
-        .catchError((e) {
-          debugPrint('Error fetching transactions: $e');
-          if (mounted) {
-            String errorMessage = 'Error: $e';
-            if (e.toString().contains('failed-precondition') ||
-                e.toString().contains('index')) {
-              errorMessage =
-                  'Missing Database Index. Please check your terminal for the link to create it.';
-              // Show a more prominent dialog for this specific error
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Missing Database Index'),
-                  content: const Text(
-                    'The app is missing a required database index. \n\n'
-                    'Please check your terminal/debug console logs. There will be a link starting with "https://console.firebase.google.com...". \n\n'
-                    'Click that link to create the index automatically.',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('OK'),
-                    ),
-                  ],
-                ),
-              );
-            } else {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(errorMessage)));
-            }
+        if (newEvents[date] == null) {
+          newEvents[date] = [];
+        }
+        newEvents[date]!.add(tx);
+      }
+    }
 
-            setState(() {
-              _isLoading = false;
-            });
-          }
-        });
+    setState(() {
+      _events = newEvents;
+      _isLoading = false;
+    });
   }
 
   List<TransactionModel> _getEventsForDay(DateTime day) {
@@ -264,7 +254,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               },
               onPageChanged: (focusedDay) {
                 _focusedDay = focusedDay;
-                _fetchTransactionsForMonth(focusedDay);
+                // No need to fetch, we have streams.
               },
             ),
           ),
