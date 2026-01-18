@@ -284,13 +284,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 56,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _saveProfile,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.pinkAccent,
+                  elevation: 2,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
                 child: _isLoading
@@ -299,6 +300,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         AppLocalizations.of(context)!.saveProfile,
                         style: const TextStyle(
                           fontSize: 18,
+                          fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
                       ),
@@ -307,7 +309,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 56,
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.push(
@@ -318,18 +320,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey.shade200,
-                  foregroundColor: Colors.black87,
+                  backgroundColor:
+                      Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.grey.shade300, // Darker grey for better contrast
+                  foregroundColor: Theme.of(context).colorScheme.onSurface,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(
+                      color: Theme.of(context).dividerColor.withValues(
+                        alpha: Theme.of(context).brightness == Brightness.dark
+                            ? 0.3
+                            : 0.2, // Subtle border re-added for definition
+                      ),
+                    ),
                   ),
                 ),
                 child: Text(
                   AppLocalizations.of(context)!.changePassword,
                   style: const TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -337,7 +349,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 56,
               child: OutlinedButton.icon(
                 onPressed: () {
                   Navigator.pop(context); // Close profile screen first
@@ -346,21 +358,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: const Icon(Icons.logout, color: Colors.red),
                 label: Text(
                   AppLocalizations.of(context)!.logout,
-                  style: const TextStyle(color: Colors.red),
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.red),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 32),
+            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
-              height: 50,
-              child: OutlinedButton.icon(
+              height: 48,
+              child: TextButton.icon(
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -369,15 +386,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   );
                 },
-                icon: const Icon(Icons.delete_forever, color: Colors.red),
+                icon: Icon(
+                  Icons.delete_forever,
+                  size: 20,
+                  color: Colors.red.shade700.withValues(alpha: 0.8),
+                ),
                 label: Text(
                   AppLocalizations.of(context)!.removeAccount,
-                  style: const TextStyle(color: Colors.red),
+                  style: TextStyle(
+                    color: Colors.red.shade700.withValues(alpha: 0.8),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.red, width: 2),
+                style: TextButton.styleFrom(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
               ),
