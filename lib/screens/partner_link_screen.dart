@@ -68,36 +68,40 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
         return;
       }
 
-      // 3. Update my profile (Array Union)
-      final batch = FirebaseFirestore.instance.batch();
+      // 3. Check for existing pending request (to avoid spam)
+      final existingRequests = await FirebaseFirestore.instance
+          .collection('friend_requests')
+          .where('fromUid', isEqualTo: currentUser.uid)
+          .where('toUid', isEqualTo: partnerUid)
+          .where('status', isEqualTo: 'pending')
+          .get();
 
-      final myDocRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid);
-      final partnerDocRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(partnerUid);
+      if (existingRequests.docs.isNotEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Request already sent! Wait for approval.'),
+          ),
+        );
+        return;
+      }
 
-      batch.set(myDocRef, {
-        'partnerUids': FieldValue.arrayUnion([partnerUid]),
-        // Update legacy field for backward compatibility on my side
-        'partnerUid': partnerUid,
-      }, SetOptions(merge: true));
+      // 4. Create Friend Request
+      await FirebaseFirestore.instance.collection('friend_requests').add({
+        'fromUid': currentUser.uid,
+        'fromEmail': currentUser.email,
+        'fromName': currentUser.displayName ?? currentUser.email,
+        'toUid': partnerUid,
+        'toEmail': partnerDoc['email'], // Saved for "Sent Requests" list
+        'toName': partnerDoc['displayName'] ?? '', // Saved for display
+        'status': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
-      // 4. Update partner's profile to link back (Two-way link)
-      // We ONLY update the list on their side to avoid breaking their existing active partner.
-      batch.set(partnerDocRef, {
-        'partnerUids': FieldValue.arrayUnion([currentUser.uid]),
-      }, SetOptions(merge: true));
-
-      await batch.commit();
-
-      // 5. Select this partner immediately in local app state
       if (!mounted) return;
-      Provider.of<AuthService>(
+      ScaffoldMessenger.of(
         context,
-        listen: false,
-      ).selectPartner(partnerUid);
+      ).showSnackBar(const SnackBar(content: Text('Friend request sent!')));
 
       Navigator.pop(context); // Go back to Home
     } catch (e) {

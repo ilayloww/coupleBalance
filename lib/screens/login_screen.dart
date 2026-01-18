@@ -5,6 +5,7 @@ import '../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:rive/rive.dart';
 import '../widgets/login_animation.dart';
+import '../config/theme.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -175,245 +176,274 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       // backgroundColor: Colors.white, // Removed to use theme background
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 50), // Move teddy down a bit
-                // Login Animation
-                Center(child: LoginAnimation(onInit: _onRiveInit)),
-                // const Icon(Icons.favorite, size: 80, color: Colors.pinkAccent), // Replaced by animation
-                const SizedBox(
-                  height: 5,
-                ), // Reduce space below teddy since it is bigger now
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  transitionBuilder: (child, animation) =>
-                      FadeTransition(opacity: animation, child: child),
-                  child: Text(
-                    key: ValueKey<bool>(_isLogin),
-                    _isLogin
-                        ? AppLocalizations.of(context)!.welcomeBack
-                        : AppLocalizations.of(context)!.createAccount,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  AppLocalizations.of(context)!.trackExpensesTogether,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
-                ),
-                const SizedBox(height: 48),
-
-                // Error Message
-                if (_errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: Text(
-                      _errorMessage!,
-                      style: const TextStyle(color: Colors.red, fontSize: 14),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-
-                // Email Field
-                TextFormField(
-                  controller: _emailController,
-                  focusNode: _emailFocusNode,
-                  keyboardType: TextInputType.emailAddress,
-                  onChanged: (value) {
-                    _numLook?.change(value.length.toDouble());
-                    if (_validationStatus != ValidationStatus.none) {
-                      setState(() {
-                        _validationStatus = ValidationStatus.none;
-                      });
-                    }
-                  },
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context)!.email,
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: _validationStatus == ValidationStatus.success
-                            ? Colors.green
-                            : _validationStatus == ValidationStatus.fail
-                            ? Colors.red
-                            : Colors.grey,
+      body: Theme(
+        data: Theme.of(context).brightness == Brightness.dark
+            ? AppTheme.darkTheme(Colors.pinkAccent)
+            : AppTheme.lightTheme(Colors.pinkAccent),
+        child: Builder(
+          builder: (context) {
+            return Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 50), // Move teddy down a bit
+                      // Login Animation
+                      Center(child: LoginAnimation(onInit: _onRiveInit)),
+                      // const Icon(Icons.favorite, size: 80, color: Colors.pinkAccent), // Replaced by animation
+                      const SizedBox(
+                        height: 5,
+                      ), // Reduce space below teddy since it is bigger now
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        transitionBuilder: (child, animation) =>
+                            FadeTransition(opacity: animation, child: child),
+                        child: Text(
+                          key: ValueKey<bool>(_isLogin),
+                          _isLogin
+                              ? AppLocalizations.of(context)!.welcomeBack
+                              : AppLocalizations.of(context)!.createAccount,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
                       ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: _validationStatus == ValidationStatus.success
-                            ? Colors.green
-                            : _validationStatus == ValidationStatus.fail
-                            ? Colors.red
-                            : Colors.pinkAccent,
-                        width: 2,
+                      const SizedBox(height: 8),
+                      Text(
+                        AppLocalizations.of(context)!.trackExpensesTogether,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
                       ),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
+                      const SizedBox(height: 48),
 
-                // Password Field
-                TextFormField(
-                  controller: _passwordController,
-                  focusNode: _passwordFocusNode,
-                  obscureText: !_isPasswordVisible,
-                  onChanged: (value) {
-                    if (_validationStatus != ValidationStatus.none) {
-                      setState(() {
-                        _validationStatus = ValidationStatus.none;
-                      });
-                    }
-                  },
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context)!.password,
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                        // If password field has focus, toggle the peek state (isPrivateFieldShow)
-                        if (_passwordFocusNode.hasFocus) {
-                          _isPrivateFieldShow?.change(_isPasswordVisible);
-                        }
-                      },
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: _validationStatus == ValidationStatus.success
-                            ? Colors.green
-                            : _validationStatus == ValidationStatus.fail
-                            ? Colors.red
-                            : Colors.grey,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: _validationStatus == ValidationStatus.success
-                            ? Colors.green
-                            : _validationStatus == ValidationStatus.fail
-                            ? Colors.red
-                            : Colors.pinkAccent,
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    }
-                    if (!_isLogin && value.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
-                    return null;
-                  },
-                ),
-
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () => _showForgotPasswordDialog(context),
-                    child: Text(AppLocalizations.of(context)!.forgotPassword),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Submit Button
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    // backgroundColor: Colors.pinkAccent, // Removed to use theme
-                    // foregroundColor: Colors.white, // Removed to use theme
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    elevation: 2,
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                      // Error Message
+                      if (_errorMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 14,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                        )
-                      : AnimatedSwitcher(
+                        ),
+
+                      // Email Field
+                      TextFormField(
+                        controller: _emailController,
+                        focusNode: _emailFocusNode,
+                        keyboardType: TextInputType.emailAddress,
+                        cursorColor: Colors.pinkAccent, // Explicit pink cursor
+                        onChanged: (value) {
+                          _numLook?.change(value.length.toDouble());
+                          if (_validationStatus != ValidationStatus.none) {
+                            setState(() {
+                              _validationStatus = ValidationStatus.none;
+                            });
+                          }
+                        },
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context)!.email,
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color:
+                                  _validationStatus == ValidationStatus.success
+                                  ? Colors.green
+                                  : _validationStatus == ValidationStatus.fail
+                                  ? Colors.red
+                                  : Colors.grey,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color:
+                                  _validationStatus == ValidationStatus.success
+                                  ? Colors.green
+                                  : _validationStatus == ValidationStatus.fail
+                                  ? Colors.red
+                                  : Colors.pinkAccent,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          if (!value.contains('@')) {
+                            return 'Please enter a valid email';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Password Field
+                      TextFormField(
+                        controller: _passwordController,
+                        focusNode: _passwordFocusNode,
+                        obscureText: !_isPasswordVisible,
+                        cursorColor: Colors.pinkAccent, // Explicit pink cursor
+                        onChanged: (value) {
+                          if (_validationStatus != ValidationStatus.none) {
+                            setState(() {
+                              _validationStatus = ValidationStatus.none;
+                            });
+                          }
+                        },
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context)!.password,
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordVisible = !_isPasswordVisible;
+                              });
+                              // If password field has focus, toggle the peek state (isPrivateFieldShow)
+                              if (_passwordFocusNode.hasFocus) {
+                                _isPrivateFieldShow?.change(_isPasswordVisible);
+                              }
+                            },
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color:
+                                  _validationStatus == ValidationStatus.success
+                                  ? Colors.green
+                                  : _validationStatus == ValidationStatus.fail
+                                  ? Colors.red
+                                  : Colors.grey,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color:
+                                  _validationStatus == ValidationStatus.success
+                                  ? Colors.green
+                                  : _validationStatus == ValidationStatus.fail
+                                  ? Colors.red
+                                  : Colors.pinkAccent,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your password';
+                          }
+                          if (!_isLogin && value.length < 6) {
+                            return 'Password must be at least 6 characters';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () => _showForgotPasswordDialog(context),
+                          style: TextButton.styleFrom(
+                            foregroundColor:
+                                Colors.pinkAccent, // Explicit pink text
+                          ),
+                          child: Text(
+                            AppLocalizations.of(context)!.forgotPassword,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Submit Button
+                      ElevatedButton(
+                        onPressed: _isLoading ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Colors.pinkAccent, // Explicit pink background
+                          foregroundColor: Colors.white, // Explicit white text
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 300),
+                                transitionBuilder: (child, animation) =>
+                                    FadeTransition(
+                                      opacity: animation,
+                                      child: child,
+                                    ),
+                                child: Text(
+                                  key: ValueKey<bool>(_isLogin),
+                                  _isLogin
+                                      ? AppLocalizations.of(context)!.login
+                                      : AppLocalizations.of(context)!.signUp,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Toggle Button
+                      TextButton(
+                        onPressed: _isLoading ? null : _toggleAuthMode,
+                        child: AnimatedSwitcher(
                           duration: const Duration(milliseconds: 300),
                           transitionBuilder: (child, animation) =>
                               FadeTransition(opacity: animation, child: child),
                           child: Text(
                             key: ValueKey<bool>(_isLogin),
                             _isLogin
-                                ? AppLocalizations.of(context)!.login
-                                : AppLocalizations.of(context)!.signUp,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                                ? AppLocalizations.of(context)!.dontHaveAccount
+                                : AppLocalizations.of(
+                                    context,
+                                  )!.alreadyHaveAccount,
+                            style: const TextStyle(color: Colors.pinkAccent),
                           ),
                         ),
-                ),
-                const SizedBox(height: 16),
-
-                // Toggle Button
-                TextButton(
-                  onPressed: _isLoading ? null : _toggleAuthMode,
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    transitionBuilder: (child, animation) =>
-                        FadeTransition(opacity: animation, child: child),
-                    child: Text(
-                      key: ValueKey<bool>(_isLogin),
-                      _isLogin
-                          ? AppLocalizations.of(context)!.dontHaveAccount
-                          : AppLocalizations.of(context)!.alreadyHaveAccount,
-                      style: const TextStyle(color: Colors.pinkAccent),
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
