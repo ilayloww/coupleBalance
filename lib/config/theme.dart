@@ -52,6 +52,9 @@ class AppTheme {
           borderSide: BorderSide(color: seedColor, width: 2),
         ),
       ),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+      ),
       textTheme: const TextTheme(
         bodySmall: TextStyle(color: Colors.black54),
         bodyMedium: TextStyle(color: Colors.black87),
@@ -132,6 +135,7 @@ class AppTheme {
       snackBarTheme: const SnackBarThemeData(
         backgroundColor: Color(0xFF333333),
         contentTextStyle: TextStyle(color: Colors.white),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }

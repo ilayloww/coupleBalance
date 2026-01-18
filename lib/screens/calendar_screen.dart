@@ -124,9 +124,35 @@ class _CalendarScreenState extends State<CalendarScreen> {
         .catchError((e) {
           debugPrint('Error fetching transactions: $e');
           if (mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('Error: $e')));
+            String errorMessage = 'Error: $e';
+            if (e.toString().contains('failed-precondition') ||
+                e.toString().contains('index')) {
+              errorMessage =
+                  'Missing Database Index. Please check your terminal for the link to create it.';
+              // Show a more prominent dialog for this specific error
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Missing Database Index'),
+                  content: const Text(
+                    'The app is missing a required database index. \n\n'
+                    'Please check your terminal/debug console logs. There will be a link starting with "https://console.firebase.google.com...". \n\n'
+                    'Click that link to create the index automatically.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(errorMessage)));
+            }
+
             setState(() {
               _isLoading = false;
             });

@@ -11,6 +11,7 @@ import 'services/theme_service.dart';
 import 'services/localization_service.dart';
 import 'config/theme.dart';
 import 'screens/home_screen.dart';
+import 'screens/main_screen.dart'; // Add this
 import 'screens/login_screen.dart';
 import 'screens/email_verification_screen.dart';
 
@@ -199,6 +200,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
       return const EmailVerificationScreen();
     }
 
-    return const HomeScreen();
+    return const MainScreen();
   }
 }

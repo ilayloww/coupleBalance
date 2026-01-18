@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/transaction_model.dart';
 import '../services/auth_service.dart';
-import 'add_expense_screen.dart';
 import 'partner_link_screen.dart';
 import 'profile_screen.dart';
 import 'partner_profile_screen.dart';
@@ -16,8 +15,6 @@ import '../viewmodels/settlement_viewmodel.dart';
 import 'partner_list_screen.dart';
 import 'transaction_detail_screen.dart';
 import '../models/user_model.dart';
-import 'calendar_screen.dart'; // Add import
-
 import '../services/notification_service.dart';
 import '../services/theme_service.dart';
 import '../services/update_service.dart';
@@ -116,22 +113,6 @@ class _HomeScreenState extends State<HomeScreen> {
             // backgroundColor: handled by Theme
             elevation: 0,
             actions: [
-              if (hasPartner)
-                IconButton(
-                  icon: const Icon(Icons.calendar_month),
-                  tooltip: 'Calendar',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CalendarScreen(
-                          userUid: user.uid,
-                          partnerUid: selectedPartnerId,
-                        ),
-                      ),
-                    );
-                  },
-                ),
               StreamBuilder<DocumentSnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('users')
@@ -213,42 +194,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ],
-          ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              if (selectedPartnerId == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      AppLocalizations.of(context)!.pleaseLinkPartnerFirst,
-                    ),
-                    action: SnackBarAction(
-                      label: AppLocalizations.of(context)!.linkPartner,
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const PartnerListScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                );
-                return;
-              }
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      AddExpenseScreen(partnerUid: selectedPartnerId),
-                ),
-              );
-            },
-            backgroundColor: Theme.of(
-              context,
-            ).floatingActionButtonTheme.backgroundColor,
-            child: const Icon(Icons.add),
           ),
         );
       },
@@ -363,6 +308,7 @@ class _BalanceCardState extends State<_BalanceCard> {
             for (var doc in docs) {
               final data = doc.data() as Map<String, dynamic>;
               if (data['isSettled'] == true) continue; // Skip settled
+              if (data['isDeleted'] == true) continue; // Skip deleted
 
               final sender = data['senderUid'];
               final receiver = data['receiverUid'];
