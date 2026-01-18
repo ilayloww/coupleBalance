@@ -9,14 +9,18 @@ import 'package:shared_preferences/shared_preferences.dart'; // Add this import
 import 'services/auth_service.dart';
 import 'services/theme_service.dart';
 import 'services/localization_service.dart';
+import 'services/notification_service.dart'; // Add this
 import 'config/theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/main_screen.dart'; // Add this
 import 'screens/login_screen.dart';
 import 'screens/email_verification_screen.dart';
+import 'screens/partner_list_screen.dart'; // Add this
 
 // UNCOMMENT the following line after running `flutterfire configure`
 import 'firebase_options.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -132,10 +136,12 @@ class MyApp extends StatelessWidget {
               Locale('en'), // English
               Locale('tr'), // Turkish
             ],
+            navigatorKey: navigatorKey, // Add this
             home: const AuthWrapper(),
             routes: {
               '/login': (context) => const LoginScreen(),
               '/home': (context) => const HomeScreen(),
+              '/partners': (context) => const PartnerListScreen(), // Add this
             },
           );
         },
@@ -176,6 +182,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
           _user = user;
           _isInit = false;
         });
+      }
+
+      if (user != null) {
+        // Initialize notifications (request permission + save token)
+        NotificationService().initialize(navigatorKey);
       }
     });
   }

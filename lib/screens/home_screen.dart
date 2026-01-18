@@ -15,7 +15,6 @@ import '../viewmodels/settlement_viewmodel.dart';
 import 'partner_list_screen.dart';
 import 'transaction_detail_screen.dart';
 import '../models/user_model.dart';
-import '../services/notification_service.dart';
 import '../services/theme_service.dart';
 import '../services/update_service.dart';
 
@@ -30,7 +29,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    NotificationService().initialize();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       UpdateService().checkForUpdate(context);
     });

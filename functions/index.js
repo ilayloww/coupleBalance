@@ -214,3 +214,54 @@ exports.sendSettlementNotification = functions.firestore
             return null;
         }
     });
+
+/**
+ * Triggered when a new friend request is created.
+ * Sends a notification to the recipient.
+ */
+exports.sendPartnerRequestNotification = functions.firestore
+    .document("friend_requests/{requestId}")
+    .onCreate(async (snap, context) => {
+        const data = snap.data();
+        const fromName = data.fromName || "Someone";
+        const fromEmail = data.fromEmail;
+        const toUid = data.toUid;
+
+        console.log(`[FriendRequest] Id: ${context.params.requestId} From: ${fromEmail} To: ${toUid}`);
+
+        if (!toUid) return null;
+
+        try {
+            const targetDoc = await admin.firestore().collection("users").doc(toUid).get();
+            if (!targetDoc.exists) {
+                console.log(`[FriendRequest] Target user not found: ${toUid}`);
+                return null;
+            }
+
+            const fcmToken = targetDoc.data().fcmToken;
+            if (!fcmToken) {
+                console.log(`[FriendRequest] No FCM token for target: ${toUid}`);
+                return null;
+            }
+
+            const message = {
+                notification: {
+                    title: "New Partner Request",
+                    body: `${fromName} (${fromEmail}) wants to link with you.`,
+                },
+                data: {
+                    click_action: "FLUTTER_NOTIFICATION_CLICK",
+                    type: "friend_request",
+                },
+                token: fcmToken,
+            };
+
+            const response = await admin.messaging().send(message);
+            console.log("[FriendRequest] Notification sent:", response);
+            return response;
+
+        } catch (error) {
+            console.error("[FriendRequest] Error sending notification:", error);
+            return null;
+        }
+    });

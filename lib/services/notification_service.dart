@@ -8,7 +8,7 @@ class NotificationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  Future<void> initialize() async {
+  Future<void> initialize(GlobalKey<NavigatorState> navigatorKey) async {
     // 1. Request Permission
     NotificationSettings settings = await _fcm.requestPermission(
       alert: true,
@@ -27,9 +27,33 @@ class NotificationService {
 
       // 3. Listen for Token Refreshes
       _fcm.onTokenRefresh.listen(_saveTokenToFirestore);
+
+      // 4. Handle Notification Tap (Background -> Foreground)
+      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+        debugPrint('Notification clicked (background): ${message.data}');
+        _handleNotificationClick(message, navigatorKey);
+      });
+
+      // 5. Handle Notification Tap (Terminated -> Foreground)
+      _fcm.getInitialMessage().then((RemoteMessage? message) {
+        if (message != null) {
+          debugPrint('Notification clicked (terminated): ${message.data}');
+          _handleNotificationClick(message, navigatorKey);
+        }
+      });
     } else {
       debugPrint('User declined or has not accepted permission');
     }
+  }
+
+  void _handleNotificationClick(
+    RemoteMessage message,
+    GlobalKey<NavigatorState> navigatorKey,
+  ) {
+    if (message.data['type'] == 'friend_request') {
+      navigatorKey.currentState?.pushNamed('/partners');
+    }
+    // Add other types here if needed (e.g. new_expense -> /home)
   }
 
   Future<void> _saveTokenToFirestore(String token) async {
