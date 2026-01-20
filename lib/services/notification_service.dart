@@ -2,6 +2,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../screens/settlement_confirmation_screen.dart';
 
 class NotificationService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
@@ -52,8 +53,16 @@ class NotificationService {
   ) {
     if (message.data['type'] == 'friend_request') {
       navigatorKey.currentState?.pushNamed('/partners');
+    } else if (message.data['type'] == 'settlement_request') {
+      final requestId = message.data['requestId'];
+      if (requestId != null) {
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(
+            builder: (_) => SettlementConfirmationScreen(requestId: requestId),
+          ),
+        );
+      }
     }
-    // Add other types here if needed (e.g. new_expense -> /home)
   }
 
   Future<void> _saveTokenToFirestore(String token) async {

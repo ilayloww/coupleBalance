@@ -524,4 +524,68 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountDeleted => 'Account deleted successfully.';
+
+  @override
+  String get requestNotFound => 'Request not found or timed out.';
+
+  @override
+  String get partnerWantsToSettleUp => 'Partner wants to settle up';
+
+  @override
+  String get settlementConfirmationDescription =>
+      'Confirming this will clear selected transactions and update your balance.';
+
+  @override
+  String get goHome => 'Go Home';
+
+  @override
+  String get requestSentSuccess =>
+      'Request sent successfully! Waiting for confirmation...';
+
+  @override
+  String get pendingRequestExists =>
+      'A pending request already exists. Please wait for your partner to respond.';
+
+  @override
+  String get requestSendFailed => 'Failed to send request. Please try again.';
+
+  @override
+  String get sendRequest => 'Send Request';
+
+  @override
+  String get pendingSettlements => 'Pending Settlements';
+
+  @override
+  String get requestsWaiting => 'requests waiting';
+
+  @override
+  String get waitingFor => 'Waiting for...';
+
+  @override
+  String get settlementRequestTitle => 'Settlement Request';
+
+  @override
+  String get reject => 'Reject';
+
+  @override
+  String sendRequestDialogContent(String amount, String currency) {
+    return 'This will send a request to your partner to confirm the settlement of $amount $currency.';
+  }
+
+  @override
+  String get noTransactionsToday => 'No transactions for this day';
+
+  @override
+  String get settlementConfirmed => 'Settlement confirmed!';
+
+  @override
+  String get settlementRejected => 'Settlement rejected.';
+
+  @override
+  String get genericError => 'An error occurred. Please try again.';
+
+  @override
+  String requestAlreadyStatus(Object status) {
+    return 'This request is already $status.';
+  }
 }

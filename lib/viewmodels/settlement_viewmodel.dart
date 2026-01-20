@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/settlement_model.dart';
+import '../models/settlement_request_model.dart';
+import '../services/settlement_service.dart';
 
 class SettlementViewModel extends ChangeNotifier {
   bool _isLoading = false;
@@ -174,5 +176,78 @@ class SettlementViewModel extends ChangeNotifier {
               )
               .toList();
         });
+  }
+
+  // --- Request Logic ---
+
+  final SettlementService _settlementService = SettlementService();
+
+  Future<int> requestSettlement({
+    required String senderUid,
+    required String receiverUid,
+    required double amount,
+    required String currency,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _settlementService.requestSettlement(
+        senderUid: senderUid,
+        receiverUid: receiverUid,
+        amount: amount,
+        currency: currency,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return 0; // Success
+    } catch (e) {
+      debugPrint('Error requesting settlement: $e');
+      _isLoading = false;
+      notifyListeners();
+      if (e.toString().contains("PENDING_REQUEST_EXISTS")) {
+        return 2; // Duplicate
+      }
+      return 1; // Generic Error
+    }
+  }
+
+  Future<bool> respondToSettlementRequest({
+    required String requestId,
+    required bool response,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _settlementService.respondToSettlementRequest(
+        requestId: requestId,
+        response: response,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Error responding to settlement request: $e');
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<SettlementRequest?> fetchSettlementRequest(String requestId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final request = await _settlementService.fetchSettlementRequest(
+        requestId,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return request;
+    } catch (e) {
+      debugPrint('Error fetching settlement request from VM: $e');
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    }
   }
 }

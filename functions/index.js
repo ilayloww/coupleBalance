@@ -280,6 +280,151 @@ exports.sendPartnerRequestNotification = functions.firestore
     });
 
 /**
+ * Triggered when a new settlement request is created.
+ * Sends a notification to the receiver.
+ */
+exports.sendSettlementRequestNotification = functions.firestore
+    .document("settlement_requests/{requestId}")
+    .onCreate(async (snap, context) => {
+        const data = snap.data();
+        const senderUid = data.senderUid;
+        const receiverUid = data.receiverUid;
+        const amount = data.amount;
+        const currency = data.currency || "₺";
+
+        console.log(`[SettlementRequest] Id: ${context.params.requestId} From: ${senderUid} To: ${receiverUid}`);
+
+        if (!receiverUid) return null;
+
+        try {
+            // 1. Get Sender Info (Name)
+            let senderName = "Partner";
+            if (senderUid) {
+                const senderDoc = await admin.firestore().collection("users").doc(senderUid).get();
+                if (senderDoc.exists) {
+                    const userData = senderDoc.data();
+                    if (userData.displayName) {
+                        senderName = userData.displayName;
+                    }
+                }
+            }
+
+            // 2. Get Receiver Token
+            const targetDoc = await admin.firestore().collection("users").doc(receiverUid).get();
+            if (!targetDoc.exists) {
+                console.log(`[SettlementRequest] Target user not found: ${receiverUid}`);
+                return null;
+            }
+
+            const fcmToken = targetDoc.data().fcmToken;
+            if (!fcmToken) {
+                console.log(`[SettlementRequest] No FCM token for target: ${receiverUid}`);
+                return null;
+            }
+
+            const message = {
+                notification: {
+                    title: "Settle Up Request",
+                    body: `${senderName} wants to settle ${amount}${currency}. Tap to respond.`,
+                },
+                data: {
+                    click_action: "FLUTTER_NOTIFICATION_CLICK",
+                    type: "settlement_request",
+                    requestId: context.params.requestId,
+                    senderName: senderName,
+                },
+                token: fcmToken,
+            };
+
+            const response = await admin.messaging().send(message);
+            console.log("[SettlementRequest] Notification sent:", response);
+            return response;
+
+        } catch (error) {
+            console.error("[SettlementRequest] Error sending notification:", error);
+            return null;
+        }
+    });
+
+/**
+ * Triggered when a settlement request is updated (e.g. Rejected).
+ * Sends a notification to the sender.
+ */
+exports.sendSettlementUpdateNotification = functions.firestore
+    .document("settlement_requests/{requestId}")
+    .onUpdate(async (change, context) => {
+        const newData = change.after.data();
+        const oldData = change.before.data();
+        const status = newData.status;
+
+        // Only flow: status changed to REJECTED
+        // Note: COMPLETED is handled by 'sendSettlementNotification' via the new settlement doc.
+        if (status !== "REJECTED" || oldData.status === "REJECTED") {
+            return null;
+        }
+
+        const senderUid = newData.senderUid;
+        const receiverUid = newData.receiverUid;
+
+        console.log(`[SettlementUpdate] Id: ${context.params.requestId} Status: ${status}`);
+
+        // Notify the SENDER (the person who made the request)
+        const targetUid = senderUid;
+        const deciderUid = receiverUid;
+
+        if (!targetUid) return null;
+
+        try {
+            // 1. Get Decider Info (Name)
+            let deciderName = "Partner";
+            if (deciderUid) {
+                const userDoc = await admin.firestore().collection("users").doc(deciderUid).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    if (userData.displayName) {
+                        deciderName = userData.displayName;
+                    }
+                }
+            }
+
+            // 2. Get Target Token (Sender)
+            const targetDoc = await admin.firestore().collection("users").doc(targetUid).get();
+            if (!targetDoc.exists) {
+                console.log(`[SettlementUpdate] Target user not found: ${targetUid}`);
+                return null;
+            }
+
+            const fcmToken = targetDoc.data().fcmToken;
+            if (!fcmToken) {
+                console.log(`[SettlementUpdate] No FCM token for target: ${targetUid}`);
+                return null;
+            }
+
+            const message = {
+                notification: {
+                    title: "Settlement Declined",
+                    body: `${deciderName} declined your settlement request.`,
+                },
+                data: {
+                    click_action: "FLUTTER_NOTIFICATION_CLICK",
+                    type: "settlement_update",
+                    requestId: context.params.requestId,
+                    status: status,
+                },
+                token: fcmToken,
+            };
+
+            const response = await admin.messaging().send(message);
+            console.log("[SettlementUpdate] Notification sent:", response);
+            return response;
+
+        } catch (error) {
+            console.error("[SettlementUpdate] Error sending notification:", error);
+            return null;
+        }
+    });
+
+/**
  * Callable function to delete a user account and all associated data.
  * MUST be called from the app after re-authentication.
  */

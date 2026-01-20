@@ -16,6 +16,7 @@ import 'screens/main_screen.dart'; // Add this
 import 'screens/login_screen.dart';
 import 'screens/email_verification_screen.dart';
 import 'screens/partner_list_screen.dart'; // Add this
+import 'viewmodels/settlement_viewmodel.dart'; // Add this
 
 // UNCOMMENT the following line after running `flutterfire configure`
 import 'firebase_options.dart';
@@ -114,6 +115,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => ThemeService(prefs)),
         ChangeNotifierProvider(create: (_) => LocalizationService(prefs)),
+        ChangeNotifierProvider(
+          create: (_) => SettlementViewModel(),
+        ), // Add Global Provider
       ],
       child: Consumer2<ThemeService, LocalizationService>(
         builder: (context, themeService, localizationService, child) {

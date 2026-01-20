@@ -526,4 +526,67 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get accountDeleted => 'Hesap başarıyla silindi.';
+
+  @override
+  String get requestNotFound => 'İstek bulunamadı veya zaman aşımına uğradı.';
+
+  @override
+  String get partnerWantsToSettleUp => 'Partnerin hesaplaşmak istiyor';
+
+  @override
+  String get settlementConfirmationDescription =>
+      'Onayladığında seçilen işlemler temizlenecek ve bakiyen güncellenecektir.';
+
+  @override
+  String get goHome => 'Ana Sayfa';
+
+  @override
+  String get requestSentSuccess => 'İstek gönderildi! Onay bekleniyor...';
+
+  @override
+  String get pendingRequestExists =>
+      'Bekleyen bir istek zaten var. Lütfen partnerinin yanıt vermesini bekle.';
+
+  @override
+  String get requestSendFailed => 'İstek gönderilemedi. Lütfen tekrar dene.';
+
+  @override
+  String get sendRequest => 'İstek Gönder';
+
+  @override
+  String get pendingSettlements => 'Bekleyen Hesaplaşmalar';
+
+  @override
+  String get requestsWaiting => 'istek bekliyor';
+
+  @override
+  String get waitingFor => 'Bekleniyor...';
+
+  @override
+  String get settlementRequestTitle => 'Hesaplaşma İsteği';
+
+  @override
+  String get reject => 'Reddet';
+
+  @override
+  String sendRequestDialogContent(String amount, String currency) {
+    return 'Bu işlem, partnerine $amount $currency tutarındaki hesaplaşmayı onaylaması için bir istek gönderecektir.';
+  }
+
+  @override
+  String get noTransactionsToday => 'Bugün için işlem yok';
+
+  @override
+  String get settlementConfirmed => 'Hesaplaşma onaylandı!';
+
+  @override
+  String get settlementRejected => 'Hesaplaşma reddedildi.';
+
+  @override
+  String get genericError => 'Bir hata oluştu. Lütfen tekrar deneyin.';
+
+  @override
+  String requestAlreadyStatus(Object status) {
+    return 'Bu istek zaten $status.';
+  }
 }

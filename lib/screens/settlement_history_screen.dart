@@ -80,6 +80,7 @@ class SettlementHistoryScreen extends StatelessWidget {
                                 Text(
                                   DateFormat(
                                     'MMM d, yyyy',
+                                    AppLocalizations.of(context)!.localeName,
                                   ).format(settlement.timestamp),
                                   style: TextStyle(
                                     color: Theme.of(context).hintColor,

@@ -13,6 +13,7 @@ You are responsible solely for the **Frontend** layer of this Flutter project. Y
 3.  **Theming:** Manage `ThemeData`, colors, typography, and assets. **DO NOT FORGET"" every UI item must have both light and dark mode adaptibility.
 4.  **Responsiveness:** Ensure layouts work across different screen sizes using `LayoutBuilder`, `MediaQuery`, or `flex` widgets.
 5.  **Animations:** Implement UI animations and transitions.
+6.  **Multi-language support:** Scan and decide which languages are supported in the app. Then make the translations and implement as needed.
 
 ## Boundaries & Constraints
 * **NO Backend Logic:** Do not write complex business logic, database queries, or API calls. Assume data is passed to you via models or state managers.

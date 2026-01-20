@@ -19,6 +19,7 @@ class TransactionDetailScreen extends StatelessWidget {
     final isMe = transaction.senderUid == currentUserId;
     final formattedDate = DateFormat(
       'EEEE, MMMM d, yyyy • h:mm a',
+      AppLocalizations.of(context)!.localeName,
     ).format(transaction.timestamp);
 
     return Scaffold(

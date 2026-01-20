@@ -17,6 +17,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  int _refreshKey = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +33,7 @@ class _MainScreenState extends State<MainScreen> {
         final selectedPartnerId = authService.selectedPartnerId;
 
         final pages = [
-          const HomeScreen(),
+          HomeScreen(refreshTrigger: _refreshKey),
           CalendarScreen(
             userUid: user.uid,
             partnerUid: selectedPartnerId ?? '',
@@ -73,7 +74,11 @@ class _MainScreenState extends State<MainScreen> {
                   builder: (_) =>
                       AddExpenseScreen(partnerUid: selectedPartnerId),
                 ),
-              );
+              ).then((_) {
+                setState(() {
+                  _refreshKey++;
+                });
+              });
             },
             shape: const CircleBorder(), // Force circular shape
             // The FAB color is handled by the Theme (floatingActionButtonTheme)

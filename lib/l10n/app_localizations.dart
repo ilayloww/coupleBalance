@@ -1063,6 +1063,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Account deleted successfully.'**
   String get accountDeleted;
+
+  /// No description provided for @requestNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Request not found or timed out.'**
+  String get requestNotFound;
+
+  /// No description provided for @partnerWantsToSettleUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Partner wants to settle up'**
+  String get partnerWantsToSettleUp;
+
+  /// No description provided for @settlementConfirmationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirming this will clear selected transactions and update your balance.'**
+  String get settlementConfirmationDescription;
+
+  /// No description provided for @goHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Go Home'**
+  String get goHome;
+
+  /// No description provided for @requestSentSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent successfully! Waiting for confirmation...'**
+  String get requestSentSuccess;
+
+  /// No description provided for @pendingRequestExists.
+  ///
+  /// In en, this message translates to:
+  /// **'A pending request already exists. Please wait for your partner to respond.'**
+  String get pendingRequestExists;
+
+  /// No description provided for @requestSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send request. Please try again.'**
+  String get requestSendFailed;
+
+  /// No description provided for @sendRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Request'**
+  String get sendRequest;
+
+  /// No description provided for @pendingSettlements.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Settlements'**
+  String get pendingSettlements;
+
+  /// No description provided for @requestsWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'requests waiting'**
+  String get requestsWaiting;
+
+  /// No description provided for @waitingFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for...'**
+  String get waitingFor;
+
+  /// No description provided for @settlementRequestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settlement Request'**
+  String get settlementRequestTitle;
+
+  /// No description provided for @reject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get reject;
+
+  /// No description provided for @sendRequestDialogContent.
+  ///
+  /// In en, this message translates to:
+  /// **'This will send a request to your partner to confirm the settlement of {amount} {currency}.'**
+  String sendRequestDialogContent(String amount, String currency);
+
+  /// No description provided for @noTransactionsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'No transactions for this day'**
+  String get noTransactionsToday;
+
+  /// No description provided for @settlementConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Settlement confirmed!'**
+  String get settlementConfirmed;
+
+  /// No description provided for @settlementRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Settlement rejected.'**
+  String get settlementRejected;
+
+  /// No description provided for @genericError.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred. Please try again.'**
+  String get genericError;
+
+  /// No description provided for @requestAlreadyStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'This request is already {status}.'**
+  String requestAlreadyStatus(Object status);
 }
 
 class _AppLocalizationsDelegate

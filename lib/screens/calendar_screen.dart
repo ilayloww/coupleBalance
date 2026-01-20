@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:couple_balance/l10n/app_localizations.dart';
 import '../models/transaction_model.dart';
 import 'transaction_detail_screen.dart';
 
@@ -188,6 +189,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               focusedDay: _focusedDay,
               calendarFormat: _calendarFormat,
               eventLoader: _getEventsForDay,
+              locale: AppLocalizations.of(context)!.localeName,
               startingDayOfWeek: StartingDayOfWeek.monday,
               headerStyle: HeaderStyle(
                 formatButtonVisible: false,
@@ -292,7 +294,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No transactions for this day',
+              AppLocalizations.of(context)!.noTransactionsToday,
               style: TextStyle(
                 color: Theme.of(context).disabledColor,
                 fontSize: 16,
@@ -304,7 +306,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 100),
       itemCount: transactions.length,
       itemBuilder: (context, index) {
         final tx = transactions[index];
@@ -349,7 +351,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Text(
-              DateFormat.Hm().format(tx.timestamp), // Show Time
+              DateFormat.Hm(
+                AppLocalizations.of(context)!.localeName,
+              ).format(tx.timestamp), // Show Time
               style: TextStyle(
                 color: Theme.of(context).textTheme.bodySmall?.color,
                 fontSize: 12,

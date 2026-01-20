@@ -266,5 +266,34 @@
     "deleteAccountWarning": "This action is irreversible. All your data including transactions, settlements, and profile information will be permanently deleted.",
     "enterEmailToConfirm": "Enter your email to confirm",
     "deleteForever": "Delete Forever",
-    "accountDeleted": "Account deleted successfully."
+    "accountDeleted": "Account deleted successfully.",
+    "requestNotFound": "Request not found or timed out.",
+    "partnerWantsToSettleUp": "Partner wants to settle up",
+    "settlementConfirmationDescription": "Confirming this will clear selected transactions and update your balance.",
+    "goHome": "Go Home",
+    "requestSentSuccess": "Request sent successfully! Waiting for confirmation...",
+    "pendingRequestExists": "A pending request already exists. Please wait for your partner to respond.",
+    "requestSendFailed": "Failed to send request. Please try again.",
+    "sendRequest": "Send Request",
+    "pendingSettlements": "Pending Settlements",
+    "requestsWaiting": "requests waiting",
+    "waitingFor": "Waiting for...",
+    "settlementRequestTitle": "Settlement Request",
+    "reject": "Reject",
+    "sendRequestDialogContent": "This will send a request to your partner to confirm the settlement of {amount} {currency}.",
+    "@sendRequestDialogContent": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            },
+            "currency": {
+                "type": "String"
+            }
+        }
+    },
+    "noTransactionsToday": "No transactions for this day",
+    "settlementConfirmed": "Settlement confirmed!",
+    "settlementRejected": "Settlement rejected.",
+    "genericError": "An error occurred. Please try again.",
+    "requestAlreadyStatus": "This request is already {status}."
 }
