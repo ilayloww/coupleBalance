@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:couple_balance/l10n/app_localizations.dart';
 import '../models/settlement_request_model.dart';
+import '../models/transaction_model.dart'; // Added import
 import '../viewmodels/settlement_viewmodel.dart';
 
 class SettlementConfirmationScreen extends StatefulWidget {
@@ -17,6 +18,7 @@ class SettlementConfirmationScreen extends StatefulWidget {
 class _SettlementConfirmationScreenState
     extends State<SettlementConfirmationScreen> {
   SettlementRequest? _request;
+  TransactionModel? _transaction; // Store transaction details
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -27,9 +29,6 @@ class _SettlementConfirmationScreenState
   }
 
   Future<void> _fetchRequest() async {
-    // We use the viewmodel to fetch data.
-    // Ideally we should use a provider if available, or just create a local instance/listen to one.
-    // For simplicity, we can fetch it once.
     try {
       final viewModel = Provider.of<SettlementViewModel>(
         context,
@@ -50,6 +49,12 @@ class _SettlementConfirmationScreenState
 
       debugPrint("Fetch result: ${request?.toString() ?? 'NULL'}");
 
+      // Fetch transaction if needed
+      TransactionModel? transaction;
+      if (request != null && request.transactionId != null) {
+        transaction = await viewModel.fetchTransaction(request.transactionId!);
+      }
+
       if (mounted) {
         if (request == null) {
           setState(() {
@@ -59,6 +64,7 @@ class _SettlementConfirmationScreenState
         } else {
           setState(() {
             _request = request;
+            _transaction = transaction;
             _isLoading = false;
           });
         }
@@ -107,7 +113,6 @@ class _SettlementConfirmationScreenState
 
   @override
   Widget build(BuildContext context) {
-    // If we're loading or failed
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -119,10 +124,11 @@ class _SettlementConfirmationScreenState
       );
     }
 
-    // Check status
     if (_request!.status != SettlementRequest.statusPending) {
       return Scaffold(
-        appBar: AppBar(title: const Text("Settlement")),
+        appBar: AppBar(
+          title: Text(AppLocalizations.of(context)!.settlementRequestTitle),
+        ), // Fixed logic
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -149,25 +155,38 @@ class _SettlementConfirmationScreenState
     final amount = _request?.amount.toStringAsFixed(2) ?? "0.00";
     final currency = _request?.currency ?? "₺";
 
+    // Determine titles based on single transaction or full settlement
+    final isSingle = _request?.transactionId != null;
+    final title = isSingle
+        ? AppLocalizations.of(context)!.settleSingleTransactionTitle
+        : AppLocalizations.of(context)!.settlementRequestTitle;
+
+    final description = isSingle
+        ? AppLocalizations.of(
+            context,
+          )!.settleSingleTransactionContent(_transaction?.note ?? 'Transaction')
+        : AppLocalizations.of(context)!.settlementConfirmationDescription;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.settlementRequestTitle),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: Text(title), centerTitle: true),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
             const Spacer(),
-            const Icon(
-              Icons.monetization_on_outlined,
+            Icon(
+              isSingle ? Icons.receipt_long : Icons.monetization_on_outlined,
               size: 80,
               color: Colors.green,
             ),
             const SizedBox(height: 32),
             Text(
-              AppLocalizations.of(context)!.partnerWantsToSettleUp,
+              // Using existing key or fallback
+              isSingle
+                  ? (_transaction?.note ?? "Transaction")
+                  : AppLocalizations.of(context)!.partnerWantsToSettleUp,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             Text(
@@ -176,7 +195,7 @@ class _SettlementConfirmationScreenState
             ),
             const SizedBox(height: 32),
             Text(
-              AppLocalizations.of(context)!.settlementConfirmationDescription,
+              description,
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.grey),
             ),

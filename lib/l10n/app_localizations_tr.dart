@@ -589,4 +589,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String requestAlreadyStatus(Object status) {
     return 'Bu istek zaten $status.';
   }
+
+  @override
+  String get settleSingleTransactionTitle => 'İşlemi Öde';
+
+  @override
+  String settleSingleTransactionContent(String note) {
+    return '\'$note\' işlemi için hesaplaşmayı onaylıyor musun?';
+  }
 }

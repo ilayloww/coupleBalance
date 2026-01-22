@@ -178,5 +178,14 @@
     "settlementConfirmed": "Hesaplaşma onaylandı!",
     "settlementRejected": "Hesaplaşma reddedildi.",
     "genericError": "Bir hata oluştu. Lütfen tekrar deneyin.",
-    "requestAlreadyStatus": "Bu istek zaten {status}."
+    "requestAlreadyStatus": "Bu istek zaten {status}.",
+    "settleSingleTransactionTitle": "İşlemi Öde",
+    "settleSingleTransactionContent": "'{note}' işlemi için hesaplaşmayı onaylıyor musun?",
+    "@settleSingleTransactionContent": {
+        "placeholders": {
+            "note": {
+                "type": "String"
+            }
+        }
+    }
 }

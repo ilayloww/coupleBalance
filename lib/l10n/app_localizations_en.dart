@@ -588,4 +588,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String requestAlreadyStatus(Object status) {
     return 'This request is already $status.';
   }
+
+  @override
+  String get settleSingleTransactionTitle => 'Settle Transaction';
+
+  @override
+  String settleSingleTransactionContent(String note) {
+    return 'Do you want to accept the settlement for \'$note\'?';
+  }
 }

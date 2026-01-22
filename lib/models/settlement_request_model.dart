@@ -8,6 +8,8 @@ class SettlementRequest {
   final String currency;
   final DateTime timestamp;
   final String status; // 'PENDING', 'ACCEPTED', 'REJECTED', 'COMPLETED'
+  final String?
+  transactionId; // If null, settles all unsettled transactions. If set, settles only this one.
 
   static const String statusPending = 'PENDING';
   static const String statusAccepted = 'ACCEPTED';
@@ -22,6 +24,7 @@ class SettlementRequest {
     required this.currency,
     required this.timestamp,
     required this.status,
+    this.transactionId,
   });
 
   factory SettlementRequest.fromMap(
@@ -36,6 +39,7 @@ class SettlementRequest {
       currency: data['currency'] ?? '₺',
       timestamp: (data['timestamp'] as Timestamp).toDate(),
       status: data['status'] ?? statusPending,
+      transactionId: data['transactionId'],
     );
   }
 
@@ -47,6 +51,7 @@ class SettlementRequest {
       'currency': currency,
       'timestamp': Timestamp.fromDate(timestamp),
       'status': status,
+      'transactionId': transactionId,
     };
   }
 }

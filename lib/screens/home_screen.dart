@@ -916,7 +916,7 @@ class _TransactionListState extends State<_TransactionList> {
                   );
                 } else {
                   // Settle Logic (Start to End)
-                  return await _showSettleSingleTransactionDialog(
+                  await _showSettleSingleTransactionDialog(
                     context,
                     tx,
                     widget.userUid,
@@ -927,6 +927,8 @@ class _TransactionListState extends State<_TransactionList> {
                     // tx.senderUid != userUid => Partner paid => I owe => iAmPayer = true
                     tx.senderUid != widget.userUid,
                   );
+                  // Return false so the item is NOT dismissed from the list
+                  return false;
                 }
               },
               onDismissed: (direction) {
@@ -966,9 +968,13 @@ class _TransactionListState extends State<_TransactionList> {
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context)!.settleUpTitle),
         content: Text(
-          // Reusing existing localization logic or generic message
-          // "Are you sure you want to settle this transaction of X?"
-          "${AppLocalizations.of(context)!.settleUp}?\n${tx.note}: ${tx.amount} ${tx.currency}",
+          // "This will send a request to your partner to confirm the settlement of..."
+          // Reusing generic or custom string.
+          // Since I didn't add a new key yet, I'll use the one I used in the main dialog or construct it.
+          AppLocalizations.of(context)!.sendRequestDialogContent(
+            tx.amount.toStringAsFixed(2),
+            tx.currency,
+          ),
         ),
         actions: [
           TextButton(
@@ -988,23 +994,59 @@ class _TransactionListState extends State<_TransactionList> {
                 }
                 return TextButton(
                   onPressed: () async {
-                    final success = await viewModel.settleSingleTransaction(
-                      myUid: myUid,
-                      partnerUid: iAmPayer
-                          ? tx.senderUid
-                          : tx.receiverUid, // derived
-                      transactionId: tx.id,
-                      amount: tx.amount,
-                      iAmPayer: iAmPayer,
-                    );
+                    // Start Request
+                    final resultCode = await viewModel
+                        .requestSingleTransactionSettlement(
+                          myUid: myUid,
+                          partnerUid: iAmPayer
+                              ? tx.senderUid
+                              : tx.receiverUid, // derived logic from previous step
+                          transactionId: tx.id,
+                          amount: tx.amount,
+                          iAmPayer: iAmPayer,
+                        );
+
                     if (context.mounted) {
-                      Navigator.pop(context, success);
+                      Navigator.pop(
+                        context,
+                        resultCode == 0,
+                      ); // true if success
+
+                      if (resultCode == 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              AppLocalizations.of(context)!.requestSentSuccess,
+                            ),
+                          ),
+                        );
+                      } else if (resultCode == 2) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              AppLocalizations.of(
+                                context,
+                              )!.pendingRequestExists,
+                            ),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              AppLocalizations.of(context)!.requestSendFailed,
+                            ),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
                     }
                   },
                   child: Text(
-                    AppLocalizations.of(context)!.confirm,
+                    AppLocalizations.of(context)!.sendRequest,
                     style: const TextStyle(
-                      color: Colors.green, // Differentiate settle
+                      color: Colors.pinkAccent,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

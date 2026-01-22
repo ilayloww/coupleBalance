@@ -1177,6 +1177,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This request is already {status}.'**
   String requestAlreadyStatus(Object status);
+
+  /// No description provided for @settleSingleTransactionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settle Transaction'**
+  String get settleSingleTransactionTitle;
+
+  /// No description provided for @settleSingleTransactionContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to accept the settlement for \'{note}\'?'**
+  String settleSingleTransactionContent(String note);
 }
 
 class _AppLocalizationsDelegate

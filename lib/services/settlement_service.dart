@@ -12,6 +12,7 @@ class SettlementService {
     required String receiverUid,
     required double amount,
     required String currency,
+    String? transactionId,
   }) async {
     try {
       // Check for existing pending requests (Direction A -> B)
@@ -30,6 +31,10 @@ class SettlementService {
           .where('status', isEqualTo: SettlementRequest.statusPending)
           .get();
 
+      // Check if duplicate exists for THIS specific type (all vs single)
+      // For simplicity/current logic: If ANY pending request exists between these two, block it.
+      // We can refine later to allow multiple single-requests if needed, but for now block to avoid confusion.
+
       if (existingRequests.docs.isNotEmpty || reverseRequests.docs.isNotEmpty) {
         // Already pending in either direction
         throw Exception("PENDING_REQUEST_EXISTS");
@@ -44,6 +49,7 @@ class SettlementService {
         currency: currency,
         timestamp: DateTime.now(),
         status: SettlementRequest.statusPending,
+        transactionId: transactionId,
       );
 
       await docRef.set(request.toMap());
@@ -87,50 +93,66 @@ class SettlementService {
         throw Exception("Request is not in PENDING state.");
       }
 
-      // 1. Fetch all unsettled transactions between these two users
-      // Note: We are doing a query inside the transaction logic block but NOT using the transaction object for the query itself
-      // because Firestore transactions don't support queries on collections easily without knowing IDs.
-      // However, to ensure consistency, we should ideally use the transaction reads.
-      // But since we can't easily query, we query first.
-      // A common pattern is to read the docs we INTEND to update.
+      List<DocumentSnapshot> relevantDocs = [];
 
-      // 1. Fetch all unsettled transactions by querying both directions explicitly
-      // We use two separate queries to ensure compliance with security rules (which allow access if you are sender OR receiver).
-      // A single OR query on just one party (requestData.senderUid) is insecure/denied because it includes transactions with third parties.
+      if (requestData.transactionId != null) {
+        // --- Single Transaction Settlement ---
+        final txDoc = await transaction.get(
+          _firestore.collection('transactions').doc(requestData.transactionId),
+        );
+        if (!txDoc.exists) {
+          throw Exception("Transaction does not exist!");
+        }
+        if (txDoc['isSettled'] == true) {
+          // Already settled, maybe by another means?
+          // Just complete the request but don't re-settle? Or fail?
+          // Let's fail to be safe/clear.
+          throw Exception("Transaction is already settled.");
+        }
+        relevantDocs = [txDoc];
+      } else {
+        // --- All Unsettled Transactions Settlement ---
 
-      final query1 = _firestore
-          .collection('transactions')
-          .where('senderUid', isEqualTo: requestData.senderUid)
-          .where('receiverUid', isEqualTo: requestData.receiverUid)
-          .get();
+        // 1. Fetch all unsettled transactions by querying both directions explicitly
+        // We use two separate queries to ensure compliance with security rules (which allow access if you are sender OR receiver).
+        // A single OR query on just one party (requestData.senderUid) is insecure/denied because it includes transactions with third parties.
 
-      final query2 = _firestore
-          .collection('transactions')
-          .where('senderUid', isEqualTo: requestData.receiverUid)
-          .where('receiverUid', isEqualTo: requestData.senderUid)
-          .get();
+        final query1 = _firestore
+            .collection('transactions')
+            .where('senderUid', isEqualTo: requestData.senderUid)
+            .where('receiverUid', isEqualTo: requestData.receiverUid)
+            .get();
 
-      final results = await Future.wait([query1, query2]);
-      var allDocs = [...results[0].docs, ...results[1].docs];
+        final query2 = _firestore
+            .collection('transactions')
+            .where('senderUid', isEqualTo: requestData.receiverUid)
+            .where('receiverUid', isEqualTo: requestData.senderUid)
+            .get();
 
-      // Remove duplicates if any (unlikely with this specific logic but good practice when merging queries)
-      final seenIds = <String>{};
-      final relevantDocs = allDocs.where((doc) {
-        if (seenIds.contains(doc.id)) return false;
-        seenIds.add(doc.id);
+        final results = await Future.wait([query1, query2]);
+        var allDocs = [...results[0].docs, ...results[1].docs];
 
-        final data = doc.data();
-        // Filter strictly for unsettled
-        return data['isSettled'] != true;
-      }).toList();
+        // Remove duplicates if any (unlikely with this specific logic but good practice when merging queries)
+        final seenIds = <String>{};
+        relevantDocs = allDocs.where((doc) {
+          if (seenIds.contains(doc.id)) return false;
+          seenIds.add(doc.id);
+
+          final data = doc.data();
+          // Filter strictly for unsettled
+          return data['isSettled'] != true;
+        }).toList();
+      }
 
       // 2. Create Settlement Document
       final settlementRef = _firestore.collection('settlements').doc();
       final settlement = SettlementModel(
         id: settlementRef.id,
         startDate: relevantDocs.isNotEmpty
-            ? (relevantDocs.last.data()['timestamp'] as Timestamp).toDate()
-            : DateTime.now(), // Fallback if no transactions but still settling amount?
+            ? ((relevantDocs.last.data() as Map<String, dynamic>)['timestamp']
+                      as Timestamp)
+                  .toDate()
+            : DateTime.now(), // Fallback
         endDate: DateTime.now(),
         totalAmount: requestData.amount, // Use the agreed amount
         payerUid: requestData.senderUid, // Payer initiated the request

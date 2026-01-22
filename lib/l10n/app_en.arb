@@ -295,5 +295,14 @@
     "settlementConfirmed": "Settlement confirmed!",
     "settlementRejected": "Settlement rejected.",
     "genericError": "An error occurred. Please try again.",
-    "requestAlreadyStatus": "This request is already {status}."
+    "requestAlreadyStatus": "This request is already {status}.",
+    "settleSingleTransactionTitle": "Settle Transaction",
+    "settleSingleTransactionContent": "Do you want to accept the settlement for '{note}'?",
+    "@settleSingleTransactionContent": {
+        "placeholders": {
+            "note": {
+                "type": "String"
+            }
+        }
+    }
 }
