@@ -187,5 +187,20 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "goodMorning": "Günaydın",
+    "goodAfternoon": "Tünaydın",
+    "goodEvening": "İyi Akşamlar",
+    "goodNight": "İyi Geceler",
+    "settings": "Ayarlar",
+    "notifications": "Bildirimler",
+    "editProfile": "Düzenle",
+    "done": "Tamam",
+    "passwordMinLength8": "En az 8 karakter içermeli",
+    "updatePassword": "Şifreyi Güncelle",
+    "passwordDifferentNote": "Yeni şifreniz öncekilerden farklı olmalı",
+    "enterCurrentPassword": "Mevcut şifreyi girin",
+    "enterNewPassword": "Yeni şifreyi girin",
+    "reenterNewPassword": "Yeni şifreyi tekrar girin",
+    "passwordCannotBeSame": "Yeni şifre mevcut şifre ile aynı olamaz"
 }

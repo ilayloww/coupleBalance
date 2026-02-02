@@ -597,4 +597,50 @@ class AppLocalizationsTr extends AppLocalizations {
   String settleSingleTransactionContent(String note) {
     return '\'$note\' işlemi için hesaplaşmayı onaylıyor musun?';
   }
+
+  @override
+  String get goodMorning => 'Günaydın';
+
+  @override
+  String get goodAfternoon => 'Tünaydın';
+
+  @override
+  String get goodEvening => 'İyi Akşamlar';
+
+  @override
+  String get goodNight => 'İyi Geceler';
+
+  @override
+  String get settings => 'Ayarlar';
+
+  @override
+  String get notifications => 'Bildirimler';
+
+  @override
+  String get editProfile => 'Düzenle';
+
+  @override
+  String get done => 'Tamam';
+
+  @override
+  String get passwordMinLength8 => 'En az 8 karakter içermeli';
+
+  @override
+  String get updatePassword => 'Şifreyi Güncelle';
+
+  @override
+  String get passwordDifferentNote =>
+      'Yeni şifreniz öncekilerden farklı olmalı';
+
+  @override
+  String get enterCurrentPassword => 'Mevcut şifreyi girin';
+
+  @override
+  String get enterNewPassword => 'Yeni şifreyi girin';
+
+  @override
+  String get reenterNewPassword => 'Yeni şifreyi tekrar girin';
+
+  @override
+  String get passwordCannotBeSame => 'Yeni şifre mevcut şifre ile aynı olamaz';
 }

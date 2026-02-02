@@ -1189,6 +1189,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Do you want to accept the settlement for \'{note}\'?'**
   String settleSingleTransactionContent(String note);
+
+  /// No description provided for @goodMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Good Morning'**
+  String get goodMorning;
+
+  /// No description provided for @goodAfternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Good Afternoon'**
+  String get goodAfternoon;
+
+  /// No description provided for @goodEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good Evening'**
+  String get goodEvening;
+
+  /// No description provided for @goodNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Good Night'**
+  String get goodNight;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @editProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get editProfile;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @passwordMinLength8.
+  ///
+  /// In en, this message translates to:
+  /// **'Must contain at least 8 characters'**
+  String get passwordMinLength8;
+
+  /// No description provided for @updatePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Password'**
+  String get updatePassword;
+
+  /// No description provided for @passwordDifferentNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Your new password must be different from previous used passwords'**
+  String get passwordDifferentNote;
+
+  /// No description provided for @enterCurrentPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter current password'**
+  String get enterCurrentPassword;
+
+  /// No description provided for @enterNewPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter new password'**
+  String get enterNewPassword;
+
+  /// No description provided for @reenterNewPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-enter new password'**
+  String get reenterNewPassword;
+
+  /// No description provided for @passwordCannotBeSame.
+  ///
+  /// In en, this message translates to:
+  /// **'New password cannot be the same as current password'**
+  String get passwordCannotBeSame;
 }
 
 class _AppLocalizationsDelegate

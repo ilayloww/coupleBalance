@@ -304,5 +304,20 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "goodMorning": "Good Morning",
+    "goodAfternoon": "Good Afternoon",
+    "goodEvening": "Good Evening",
+    "goodNight": "Good Night",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "editProfile": "Edit",
+    "done": "Done",
+    "passwordMinLength8": "Must contain at least 8 characters",
+    "updatePassword": "Update Password",
+    "passwordDifferentNote": "Your new password must be different from previous used passwords",
+    "enterCurrentPassword": "Enter current password",
+    "enterNewPassword": "Enter new password",
+    "reenterNewPassword": "Re-enter new password",
+    "passwordCannotBeSame": "New password cannot be the same as current password"
 }

@@ -596,4 +596,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String settleSingleTransactionContent(String note) {
     return 'Do you want to accept the settlement for \'$note\'?';
   }
+
+  @override
+  String get goodMorning => 'Good Morning';
+
+  @override
+  String get goodAfternoon => 'Good Afternoon';
+
+  @override
+  String get goodEvening => 'Good Evening';
+
+  @override
+  String get goodNight => 'Good Night';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get editProfile => 'Edit';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get passwordMinLength8 => 'Must contain at least 8 characters';
+
+  @override
+  String get updatePassword => 'Update Password';
+
+  @override
+  String get passwordDifferentNote =>
+      'Your new password must be different from previous used passwords';
+
+  @override
+  String get enterCurrentPassword => 'Enter current password';
+
+  @override
+  String get enterNewPassword => 'Enter new password';
+
+  @override
+  String get reenterNewPassword => 'Re-enter new password';
+
+  @override
+  String get passwordCannotBeSame =>
+      'New password cannot be the same as current password';
 }

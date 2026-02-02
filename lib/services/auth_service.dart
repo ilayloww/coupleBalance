@@ -241,6 +241,13 @@ class AuthService extends ChangeNotifier {
       );
       await user.reauthenticateWithCredential(credential);
 
+      if (currentPassword == newPassword) {
+        throw FirebaseAuthException(
+          code: 'same-password',
+          message: 'New password cannot be the same as current password',
+        );
+      }
+
       // Update password
       await user.updatePassword(newPassword);
     } on FirebaseAuthException catch (e) {

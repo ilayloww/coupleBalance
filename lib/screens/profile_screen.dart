@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/auth_service.dart';
 import '../services/theme_service.dart';
+import '../config/theme.dart';
 import '../screens/partner_list_screen.dart';
 import '../screens/change_password_screen.dart';
 import '../screens/delete_account_screen.dart';
@@ -23,17 +24,16 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _nameController = TextEditingController();
   bool _isLoading = false;
+  bool _isEditing = false;
   String? _photoUrl;
   File? _imageFile;
   ThemeMode? _selectedThemeMode;
-  int? _selectedColorIndex;
   Locale? _selectedLocale;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
-    // Initialize local state from services
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final themeService = Provider.of<ThemeService>(context, listen: false);
       final localizationService = Provider.of<LocalizationService>(
@@ -42,7 +42,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
       setState(() {
         _selectedThemeMode = themeService.themeMode;
-        _selectedColorIndex = themeService.themeColorIndex;
         _selectedLocale = localizationService.locale;
       });
     });
@@ -65,6 +64,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _pickImage() async {
+    if (!_isEditing) return; // Only pick image in edit mode
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(
       source: ImageSource.gallery,
@@ -84,7 +84,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isLoading = true);
     final user = Provider.of<AuthService>(context, listen: false).currentUser;
 
-    // Apply Settings Changes Immediately for UI responsiveness
     if (mounted) {
       if (_selectedThemeMode != null) {
         Provider.of<ThemeService>(
@@ -92,14 +91,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           listen: false,
         ).setThemeMode(_selectedThemeMode!);
       }
-
-      if (_selectedColorIndex != null) {
-        Provider.of<ThemeService>(
-          context,
-          listen: false,
-        ).setThemeColor(_selectedColorIndex!);
-      }
-
       if (_selectedLocale != null) {
         Provider.of<LocalizationService>(
           context,
@@ -112,7 +103,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (user != null) {
         String? newPhotoUrl = _photoUrl;
 
-        // Upload new image if selected
         if (_imageFile != null) {
           final storageRef = FirebaseStorage.instance
               .ref()
@@ -123,14 +113,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           newPhotoUrl = await storageRef.getDownloadURL();
         }
 
-        // Update Firestore
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
           'displayName': _nameController.text.trim(),
           if (newPhotoUrl != null) 'photoUrl': newPhotoUrl,
           'photoBase64': FieldValue.delete(),
         }, SetOptions(merge: true));
 
-        // Update local state helpers
         if (newPhotoUrl != null) {
           setState(() => _photoUrl = newPhotoUrl);
         }
@@ -145,512 +133,423 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving profile: $e'),
-          ), // Fallback string as we might not have 'errorSaving' key
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error saving profile: $e')));
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isEditing = false; // Exit edit mode
+        });
+      }
     }
+  }
+
+  void _showLanguageSelector() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF05100A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                AppLocalizations.of(context)!.language,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                title: Text(
+                  AppLocalizations.of(context)!.english,
+                  style: const TextStyle(color: Colors.white),
+                ),
+                leading: const Text('🇺🇸', style: TextStyle(fontSize: 24)),
+                trailing: _selectedLocale?.languageCode == 'en'
+                    ? const Icon(Icons.check, color: AppTheme.emeraldPrimary)
+                    : null,
+                onTap: () {
+                  setState(() => _selectedLocale = const Locale('en'));
+                  Provider.of<LocalizationService>(
+                    context,
+                    listen: false,
+                  ).setLocale(const Locale('en'));
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: Text(
+                  AppLocalizations.of(context)!.turkish,
+                  style: const TextStyle(color: Colors.white),
+                ),
+                leading: const Text('🇹🇷', style: TextStyle(fontSize: 24)),
+                trailing: _selectedLocale?.languageCode == 'tr'
+                    ? const Icon(Icons.check, color: AppTheme.emeraldPrimary)
+                    : null,
+                onTap: () {
+                  setState(() => _selectedLocale = const Locale('tr'));
+                  Provider.of<LocalizationService>(
+                    context,
+                    listen: false,
+                  ).setLocale(const Locale('tr'));
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthService>(context).currentUser;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
+      backgroundColor: const Color(0xFF05100A), // Deep dark green/black
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.myProfile),
-        // Remove hardcoded colors, let Theme handle it
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          l10n.myProfile, // "Profile"
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        leading: const BackButton(color: Colors.white),
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (_isEditing) {
+                _saveProfile();
+              } else {
+                setState(() => _isEditing = true);
+              }
+            },
+            child: Text(
+              _isEditing ? l10n.done : l10n.editProfile,
+              style: const TextStyle(
+                color: AppTheme.emeraldPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
-            GestureDetector(
-              onTap: _isLoading ? null : _pickImage,
-              child: Stack(
-                alignment: Alignment.bottomRight,
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: AppTheme.emeraldPrimary),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.primaryContainer,
-                    backgroundImage: _imageFile != null
-                        ? FileImage(_imageFile!)
-                        : (_photoUrl != null
-                              ? CachedNetworkImageProvider(_photoUrl!)
-                              : null as ImageProvider?),
-                    child: _photoUrl == null
-                        ? Icon(
-                            Icons.person,
-                            size: 70,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onPrimaryContainer,
-                          )
-                        : null,
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(color: Colors.black26, blurRadius: 4),
+                  const SizedBox(height: 24),
+                  // Avatar Section
+                  GestureDetector(
+                    onTap: () {
+                      if (_isEditing) _pickImage();
+                    },
+                    child: Stack(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppTheme.emeraldPrimary.withValues(
+                                alpha: 0.5,
+                              ),
+                              width: 3,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.emeraldPrimary.withValues(
+                                  alpha: 0.2,
+                                ),
+                                blurRadius: 20,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: CircleAvatar(
+                            radius: 60,
+                            backgroundColor: Colors.grey[800],
+                            backgroundImage: _imageFile != null
+                                ? FileImage(_imageFile!)
+                                : (_photoUrl != null
+                                      ? CachedNetworkImageProvider(_photoUrl!)
+                                      : null as ImageProvider?),
+                            child: _photoUrl == null && _imageFile == null
+                                ? const Icon(
+                                    Icons.person,
+                                    size: 60,
+                                    color: Colors.white54,
+                                  )
+                                : null,
+                          ),
+                        ),
+                        if (_isEditing)
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(
+                                color: AppTheme.emeraldPrimary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.camera_alt,
+                                color: Colors.black,
+                                size: 20,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.camera_alt,
-                      color: Colors.pinkAccent,
-                      size: 20,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Name
+                  if (_isEditing)
+                    TextField(
+                      controller: _nameController,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: l10n.displayName,
+                        hintStyle: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
+                        border: InputBorder.none,
+                      ),
+                    )
+                  else
+                    Text(
+                      _nameController.text.isNotEmpty
+                          ? _nameController.text
+                          : 'User',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                  const SizedBox(height: 4),
+                  Text(
+                    user?.email ?? l10n.noEmail,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 14,
                     ),
                   ),
+
+                  const SizedBox(height: 32),
+
+                  // Settings Header
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      l10n.settings, // "Settings"
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Settings List
+                  _SettingsTile(
+                    icon: Icons.favorite,
+                    title: l10n.partnersTitle, // "Partners"
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PartnerListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _SettingsTile(
+                    icon: Icons.lock,
+                    title: l10n.changePassword,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ChangePasswordScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _SettingsTile(
+                    icon: Icons.language,
+                    title: l10n.language,
+                    trailingText: _selectedLocale?.languageCode == 'tr'
+                        ? 'Türkçe'
+                        : 'English',
+                    onTap: _showLanguageSelector,
+                  ),
+                  const SizedBox(height: 12),
+                  _SettingsTile(
+                    // Placeholder for Notifications
+                    icon: Icons.notifications,
+                    title: l10n.notifications,
+                    onTap: () {
+                      // Implement notification settings or toggle
+                    },
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Logout & Delete
+                  _SettingsTile(
+                    icon: Icons.logout,
+                    iconColor: Colors.redAccent,
+                    title: l10n.logout,
+                    textColor: Colors.redAccent,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Provider.of<AuthService>(
+                        context,
+                        listen: false,
+                      ).signOut();
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _SettingsTile(
+                    icon: Icons.delete_forever,
+                    iconColor: Colors.redAccent,
+                    title: l10n.deleteAccountTitle,
+                    textColor: Colors.redAccent,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const DeleteAccountScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 24),
+                  Center(
+                    child: Text(
+                      "Version 2.4.0 (Build 152)",
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
-            const SizedBox(height: 32),
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)!.displayName,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.person),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              initialValue: user?.email,
-              readOnly: true,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)!.email,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.email),
-              ),
-            ),
-            const SizedBox(height: 32),
+    );
+  }
+}
 
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PartnerListScreen(),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.group, color: Colors.pinkAccent),
-                label: Text(
-                  AppLocalizations.of(context)!.partnersTitle,
-                  style: const TextStyle(color: Colors.pinkAccent),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.pinkAccent),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+class _SettingsTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final Color? iconColor;
+  final Color? textColor;
+  final String? trailingText;
+
+  const _SettingsTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.iconColor,
+    this.textColor,
+    this.trailingText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.05), // Glassy background
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: (iconColor ?? AppTheme.emeraldPrimary).withValues(
+                    alpha: 0.1,
                   ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: iconColor ?? AppTheme.emeraldPrimary,
+                  size: 24,
                 ),
               ),
-            ),
-            const SizedBox(height: 32),
-
-            _ThemeSelector(
-              currentMode: _selectedThemeMode ?? ThemeMode.system,
-              onChanged: (mode) => setState(() => _selectedThemeMode = mode),
-            ),
-            const SizedBox(height: 16),
-            _ColorSelector(
-              selectedColorIndex:
-                  _selectedColorIndex ??
-                  Provider.of<ThemeService>(
-                    context,
-                    listen: false,
-                  ).themeColorIndex,
-              onChanged: (index) => setState(() => _selectedColorIndex = index),
-            ),
-            const SizedBox(height: 16),
-            _LanguageSelector(
-              currentLocale: _selectedLocale ?? const Locale('en'),
-              onChanged: (locale) => setState(() => _selectedLocale = locale),
-            ),
-            const SizedBox(height: 32),
-
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _saveProfile,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.pinkAccent,
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        AppLocalizations.of(context)!.saveProfile,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ChangePasswordScreen(),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : Colors.grey.shade300, // Darker grey for better contrast
-                  foregroundColor: Theme.of(context).colorScheme.onSurface,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(
-                      color: Theme.of(context).dividerColor.withValues(
-                        alpha: Theme.of(context).brightness == Brightness.dark
-                            ? 0.3
-                            : 0.2, // Subtle border re-added for definition
-                      ),
-                    ),
-                  ),
-                ),
+              const SizedBox(width: 16),
+              Expanded(
                 child: Text(
-                  AppLocalizations.of(context)!.changePassword,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context); // Close profile screen first
-                  Provider.of<AuthService>(context, listen: false).signOut();
-                },
-                icon: const Icon(Icons.logout, color: Colors.red),
-                label: Text(
-                  AppLocalizations.of(context)!.logout,
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.red),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: TextButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const DeleteAccountScreen(),
-                    ),
-                  );
-                },
-                icon: Icon(
-                  Icons.delete_forever,
-                  size: 20,
-                  color: Colors.red.shade700.withValues(alpha: 0.8),
-                ),
-                label: Text(
-                  AppLocalizations.of(context)!.removeAccount,
+                  title,
                   style: TextStyle(
-                    color: Colors.red.shade700.withValues(alpha: 0.8),
-                    fontSize: 14,
+                    color: textColor ?? Colors.white,
+                    fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                style: TextButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+              ),
+              if (trailingText != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Text(
+                    trailingText!,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 14,
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ThemeSelector extends StatelessWidget {
-  final ThemeMode currentMode;
-  final Function(ThemeMode) onChanged;
-
-  const _ThemeSelector({required this.currentMode, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          AppLocalizations.of(context)!.appearance,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: Theme.of(
-              context,
-            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            children: [
-              _ThemeOption(
-                label: AppLocalizations.of(context)!.system,
-                icon: Icons.brightness_auto,
-                isSelected: currentMode == ThemeMode.system,
-                onTap: () => onChanged(ThemeMode.system),
-              ),
-              _ThemeOption(
-                label: AppLocalizations.of(context)!.light,
-                icon: Icons.light_mode,
-                isSelected: currentMode == ThemeMode.light,
-                onTap: () => onChanged(ThemeMode.light),
-              ),
-              _ThemeOption(
-                label: AppLocalizations.of(context)!.dark,
-                icon: Icons.dark_mode,
-                isSelected: currentMode == ThemeMode.dark,
-                onTap: () => onChanged(ThemeMode.dark),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ThemeOption extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _ThemeOption({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? Theme.of(context).colorScheme.surface
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : [],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
               Icon(
-                icon,
-                color: isSelected
-                    ? Colors.pinkAccent
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
-                size: 20,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected
-                      ? Colors.pinkAccent
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+                Icons.arrow_forward_ios,
+                color: Colors.white.withValues(alpha: 0.3),
+                size: 16,
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-}
-
-class _LanguageSelector extends StatelessWidget {
-  final Locale currentLocale;
-  final ValueChanged<Locale> onChanged;
-
-  const _LanguageSelector({
-    required this.currentLocale,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          AppLocalizations.of(context)!.language,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<Locale>(
-              value: currentLocale,
-              isExpanded: true,
-              items: [
-                DropdownMenuItem(
-                  value: const Locale('en'),
-                  child: Row(
-                    children: [
-                      const Text('🇺🇸 '),
-                      Text(AppLocalizations.of(context)!.english),
-                    ],
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: const Locale('tr'),
-                  child: Row(
-                    children: [
-                      const Text('🇹🇷 '),
-                      Text(AppLocalizations.of(context)!.turkish),
-                    ],
-                  ),
-                ),
-              ],
-              onChanged: (locale) {
-                if (locale != null) {
-                  onChanged(locale);
-                }
-              },
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ColorSelector extends StatelessWidget {
-  final int selectedColorIndex;
-  final ValueChanged<int> onChanged;
-
-  const _ColorSelector({
-    required this.selectedColorIndex,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          AppLocalizations.of(context)!.themeColor,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: List.generate(ThemeService.availableColors.length, (index) {
-            final color = ThemeService.availableColors[index];
-            final isSelected = selectedColorIndex == index;
-            return GestureDetector(
-              onTap: () => onChanged(index),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  border: isSelected
-                      ? Border.all(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black,
-                          width: 3,
-                        )
-                      : null,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: isSelected
-                    ? const Icon(Icons.check, color: Colors.white, size: 24)
-                    : null,
-              ),
-            );
-          }),
-        ),
-      ],
     );
   }
 }

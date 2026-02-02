@@ -58,6 +58,8 @@ dependencies:
   rive: ^0.13.0
   table_calendar: ^3.2.0
   cloud_functions: ^6.0.5
+  url_launcher: ^6.3.2
+  android_intent_plus: ^6.0.0
 
 dev_dependencies:
   flutter_test:
