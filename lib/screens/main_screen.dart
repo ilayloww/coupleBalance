@@ -106,6 +106,7 @@ class _MainScreenState extends State<MainScreen> {
                       ? Colors
                             .white // White bar with shadow for floating look
                       : Theme.of(context).colorScheme.surfaceContainerHighest,
+                  surfaceTintColor: Colors.transparent,
                   shape: const CenteredCircularNotchedRectangle(),
                   notchMargin: 8.0,
                   height: 50,

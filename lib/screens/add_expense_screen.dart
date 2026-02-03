@@ -286,14 +286,8 @@ class _AddExpenseContent extends StatelessWidget {
                             viewModel.selectedCategory,
                           );
 
-                          // If Custom is selected, we assume the entered "Amount" is effectively
-                          // what the partner owes (since there's no secondary input).
-                          // This simplifies "Custom" to "Indirect Settle / Owe Request".
-                          if (viewModel.selectedOption == SplitOption.custom) {
-                            viewModel.setCustomOwedAmount(amount);
-                            // Ensure we default to "I Paid" so the logic treats 'amount' as what partner owes me.
-                            viewModel.setCustomPayer(null);
-                          }
+                          // If Custom is selected, the slider has already set
+                          // _customOwedAmount, so we don't need to override it here.
 
                           final success = await viewModel.saveExpense(
                             amount: amount,
@@ -609,6 +603,9 @@ class _NumberPad extends StatelessWidget {
   }
 }
 
+/// Enum to track which input is currently active for custom numpad
+enum _ActiveInput { myPercent, myAmount, partnerPercent, partnerAmount }
+
 class _CustomSplitSheetContent extends StatefulWidget {
   const _CustomSplitSheetContent();
 
@@ -632,6 +629,12 @@ class _CustomSplitSheetContentState extends State<_CustomSplitSheetContent> {
   double? _localSliderValue;
   bool _isDragging = false;
 
+  // Active input tracking for custom numpad
+  _ActiveInput? _activeInput;
+
+  // Scroll controller for auto-scrolling to numpad
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -651,6 +654,7 @@ class _CustomSplitSheetContentState extends State<_CustomSplitSheetContent> {
     _myAmountFocus.dispose();
     _partnerPercentFocus.dispose();
     _partnerAmountFocus.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -681,6 +685,81 @@ class _CustomSplitSheetContentState extends State<_CustomSplitSheetContent> {
     sync(_partnerAmountCtrl, _partnerAmountFocus, partnerAmt, 2);
   }
 
+  TextEditingController? get _activeController {
+    switch (_activeInput) {
+      case _ActiveInput.myPercent:
+        return _myPercentCtrl;
+      case _ActiveInput.myAmount:
+        return _myAmountCtrl;
+      case _ActiveInput.partnerPercent:
+        return _partnerPercentCtrl;
+      case _ActiveInput.partnerAmount:
+        return _partnerAmountCtrl;
+      case null:
+        return null;
+    }
+  }
+
+  void _onNumpadDigit(int digit) {
+    final ctrl = _activeController;
+    if (ctrl == null) return;
+
+    String current = ctrl.text;
+    if (current == '0' && digit != 0) {
+      current = digit.toString();
+    } else if (current == '0' && digit == 0) {
+      return; // Don't add leading zeros
+    } else {
+      // Prevent too many decimal places
+      if (current.contains('.')) {
+        final parts = current.split('.');
+        if (parts.length > 1 && parts[1].length >= 2) return;
+      }
+      if (current.length >= 7) return; // Max length
+      current += digit.toString();
+    }
+    ctrl.text = current;
+    ctrl.selection = TextSelection.fromPosition(
+      TextPosition(offset: ctrl.text.length),
+    );
+    _triggerOnChanged(ctrl.text);
+  }
+
+  void _onNumpadDecimal() {
+    final ctrl = _activeController;
+    if (ctrl == null) return;
+
+    if (!ctrl.text.contains('.')) {
+      ctrl.text = '${ctrl.text}.';
+      ctrl.selection = TextSelection.fromPosition(
+        TextPosition(offset: ctrl.text.length),
+      );
+    }
+  }
+
+  void _onNumpadBackspace() {
+    final ctrl = _activeController;
+    if (ctrl == null) return;
+
+    String current = ctrl.text;
+    if (current.length > 1) {
+      current = current.substring(0, current.length - 1);
+    } else {
+      current = '0';
+    }
+    ctrl.text = current;
+    ctrl.selection = TextSelection.fromPosition(
+      TextPosition(offset: ctrl.text.length),
+    );
+    _triggerOnChanged(ctrl.text);
+  }
+
+  void _triggerOnChanged(String value) {
+    // This will be called when numpad changes a value
+    // The actual update to model happens through the build method's onChanged callbacks
+    setState(() {}); // Trigger rebuild to sync values
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AddExpenseViewModel>(
@@ -690,187 +769,215 @@ class _CustomSplitSheetContentState extends State<_CustomSplitSheetContent> {
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          child: Column(
-            children: [
-              // Header
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    Expanded(
+                      child: Text(
+                        "Custom Split",
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 48),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Total Amount
+                Text(
+                  "Total Amount",
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 14,
                   ),
-                  Expanded(
-                    child: Text(
-                      "Custom Split",
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "\u20BA${totalAmount.toStringAsFixed(2)}",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 48,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 48),
+
+                // Rows
+                _buildEditableRow(
+                  context,
+                  "You",
+                  "Payer",
+                  Provider.of<AuthService>(
+                        context,
+                      ).currentUserModel?.photoUrl ??
+                      model.userPhotoUrl,
+                  Icons.person,
+                  _myPercentCtrl,
+                  _myPercentFocus,
+                  _myAmountCtrl,
+                  _myAmountFocus,
+                  (val) => model.setCustomPercentage(
+                    double.tryParse(val) ?? 0,
+                    totalAmount,
+                  ),
+                  (val) => model.setCustomAmount(
+                    double.tryParse(val) ?? 0,
+                    totalAmount,
+                  ),
+                  _ActiveInput.myPercent,
+                  _ActiveInput.myAmount,
+                ),
+                const SizedBox(height: 16),
+                _buildEditableRow(
+                  context,
+                  model.partnerName,
+                  "",
+                  model.partnerPhotoUrl,
+                  Icons.people,
+                  _partnerPercentCtrl,
+                  _partnerPercentFocus,
+                  _partnerAmountCtrl,
+                  _partnerAmountFocus,
+                  (val) {
+                    double pPct = double.tryParse(val) ?? 0;
+                    model.setCustomPercentage(100 - pPct, totalAmount);
+                  },
+                  (val) {
+                    double pAmt = double.tryParse(val) ?? 0;
+                    model.setCustomAmount(totalAmount - pAmt, totalAmount);
+                  },
+                  _ActiveInput.partnerPercent,
+                  _ActiveInput.partnerAmount,
+                ),
+
+                const SizedBox(height: 32),
+
+                // Slider
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "YOUR SHARE",
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      "PARTNER'S SHARE",
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: AppTheme.emeraldPrimary,
+                    inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
+                    thumbColor: AppTheme.emeraldPrimary,
+                    overlayColor: AppTheme.emeraldPrimary.withValues(
+                      alpha: 0.2,
+                    ),
+                    trackHeight: 6,
+                    thumbShape: const _DottedSliderThumbShape(thumbRadius: 14),
+                  ),
+                  child: Slider(
+                    value:
+                        (_isDragging
+                                ? _localSliderValue
+                                : model.customPercentage)
+                            ?.clamp(0.0, 100.0) ??
+                        50.0,
+                    min: 0,
+                    max: 100,
+                    allowedInteraction: SliderInteraction.tapAndSlide,
+                    onChangeStart: (val) {
+                      setState(() {
+                        _isDragging = true;
+                        _localSliderValue = val;
+                      });
+                    },
+                    onChanged: (val) {
+                      setState(() {
+                        _localSliderValue = val;
+                      });
+                      // Update model for live text field updates
+                      model.setCustomPercentage(val, totalAmount);
+                    },
+                    onChangeEnd: (val) {
+                      setState(() {
+                        _isDragging = false;
+                        _localSliderValue = null;
+                      });
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+                Text(
+                  "Adjusting one value automatically updates the others.",
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.3),
+                    fontSize: 12,
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Custom Numpad (only show when an input is active)
+                if (_activeInput != null) ...[
+                  _buildMiniNumpad(model, totalAmount),
+                  const SizedBox(height: 16),
+                ] else
+                  const SizedBox(height: 24),
+
+                // Confirm Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Set the split option to custom before closing
+                      model.setSplitOption(SplitOption.custom);
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.emeraldPrimary,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      "Confirm Split",
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 48),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Total Amount
-              Text(
-                "Total Amount",
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
-                  fontSize: 14,
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "\u20BA${totalAmount.toStringAsFixed(2)}",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 48),
-
-              // Rows
-              _buildEditableRow(
-                context,
-                "You",
-                "Payer",
-                Provider.of<AuthService>(context).currentUserModel?.photoUrl ??
-                    model.userPhotoUrl,
-                Icons.person,
-                _myPercentCtrl,
-                _myPercentFocus,
-                _myAmountCtrl,
-                _myAmountFocus,
-                (val) => model.setCustomPercentage(
-                  double.tryParse(val) ?? 0,
-                  totalAmount,
-                ),
-                (val) => model.setCustomAmount(
-                  double.tryParse(val) ?? 0,
-                  totalAmount,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildEditableRow(
-                context,
-                model.partnerName,
-                "",
-                model.partnerPhotoUrl,
-                Icons.people,
-                _partnerPercentCtrl,
-                _partnerPercentFocus,
-                _partnerAmountCtrl,
-                _partnerAmountFocus,
-                (val) {
-                  double pPct = double.tryParse(val) ?? 0;
-                  model.setCustomPercentage(100 - pPct, totalAmount);
-                },
-                (val) {
-                  double pAmt = double.tryParse(val) ?? 0;
-                  model.setCustomAmount(totalAmount - pAmt, totalAmount);
-                },
-              ),
-
-              const SizedBox(height: 32),
-
-              // Slider
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "YOUR SHARE",
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    "PARTNER'S SHARE",
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  activeTrackColor: AppTheme.emeraldPrimary,
-                  inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
-                  thumbColor: AppTheme.emeraldPrimary,
-                  overlayColor: AppTheme.emeraldPrimary.withValues(alpha: 0.2),
-                  trackHeight: 6,
-                  thumbShape: const _DottedSliderThumbShape(thumbRadius: 14),
-                ),
-                child: Slider(
-                  value:
-                      (_isDragging ? _localSliderValue : model.customPercentage)
-                          ?.clamp(0.0, 100.0) ??
-                      50.0,
-                  min: 0,
-                  max: 100,
-                  allowedInteraction: SliderInteraction.tapAndSlide,
-                  onChangeStart: (val) {
-                    setState(() {
-                      _isDragging = true;
-                      _localSliderValue = val;
-                    });
-                  },
-                  onChanged: (val) {
-                    setState(() {
-                      _localSliderValue = val;
-                    });
-                    // Update model for live text field updates
-                    model.setCustomPercentage(val, totalAmount);
-                  },
-                  onChangeEnd: (val) {
-                    setState(() {
-                      _isDragging = false;
-                      _localSliderValue = null;
-                    });
-                  },
-                ),
-              ),
-
-              const SizedBox(height: 8),
-              Text(
-                "Adjusting one value automatically updates the others.",
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.3),
-                  fontSize: 12,
-                ),
-              ),
-
-              const Spacer(),
-
-              // Confirm Button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.emeraldPrimary,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text(
-                    "Confirm Split",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -889,6 +996,8 @@ class _CustomSplitSheetContentState extends State<_CustomSplitSheetContent> {
     FocusNode amtFocus,
     ValueChanged<String> onPctChanged,
     ValueChanged<String> onAmtChanged,
+    _ActiveInput pctInputType,
+    _ActiveInput amtInputType,
   ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -978,9 +1087,23 @@ class _CustomSplitSheetContentState extends State<_CustomSplitSheetContent> {
           // Inputs Side-by-Side
           Row(
             children: [
-              _buildBoxedInput(pctCtrl, pctFocus, onPctChanged, "%", 80),
+              _buildBoxedInput(
+                pctCtrl,
+                pctFocus,
+                onPctChanged,
+                "%",
+                80,
+                pctInputType,
+              ),
               const SizedBox(width: 12),
-              _buildBoxedInput(amtCtrl, amtFocus, onAmtChanged, "\u20BA", 100),
+              _buildBoxedInput(
+                amtCtrl,
+                amtFocus,
+                onAmtChanged,
+                "\u20BA",
+                100,
+                amtInputType,
+              ),
             ],
           ),
         ],
@@ -994,67 +1117,232 @@ class _CustomSplitSheetContentState extends State<_CustomSplitSheetContent> {
     ValueChanged<String> onChanged,
     String suffix,
     double width,
+    _ActiveInput inputType,
   ) {
-    return Container(
-      width: width,
-      height: 44,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: const Color(0xFF0B1E14), // Darker green/black
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: focus.hasFocus
-              ? AppTheme.emeraldPrimary
-              : Colors.white.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Stack(
+    final isActive = _activeInput == inputType;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _activeInput = inputType;
+        });
+        focus.requestFocus();
+        // Auto-scroll to show the numpad
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        });
+      },
+      child: Container(
+        width: width,
+        height: 44,
         alignment: Alignment.center,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(
-              right: 14,
-            ), // Shift text left from symbol
-            child: TextField(
-              controller: ctrl,
-              focusNode: focus,
-              onChanged: onChanged,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              textAlign: TextAlign.center,
-              cursorColor: AppTheme.emeraldPrimary,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-              decoration: const InputDecoration(
-                isDense: true,
-                filled: false,
-                contentPadding: EdgeInsets.zero,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-              ),
-            ),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0B1E14), // Darker green/black
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isActive
+                ? AppTheme.emeraldPrimary
+                : Colors.white.withValues(alpha: 0.1),
           ),
-          Positioned(
-            right: 12,
-            child: IgnorePointer(
-              child: Text(
-                suffix,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
-                  fontSize: 14,
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(
+                right: 14,
+              ), // Shift text left from symbol
+              child: TextField(
+                controller: ctrl,
+                focusNode: focus,
+                readOnly: true, // Prevent system keyboard
+                showCursor: true,
+                onTap: () {
+                  setState(() {
+                    _activeInput = inputType;
+                  });
+                  // Auto-scroll to show the numpad
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _scrollController.animateTo(
+                      _scrollController.position.maxScrollExtent,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                    );
+                  });
+                },
+                onChanged: onChanged,
+                textAlign: TextAlign.center,
+                cursorColor: AppTheme.emeraldPrimary,
+                style: const TextStyle(
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  filled: false,
+                  contentPadding: EdgeInsets.zero,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
                 ),
               ),
             ),
-          ),
-        ],
+            Positioned(
+              right: 12,
+              child: IgnorePointer(
+                child: Text(
+                  suffix,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Widget _buildMiniNumpad(AddExpenseViewModel model, double totalAmount) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildNumpadRow(['1', '2', '3'], model, totalAmount),
+        const SizedBox(height: 12),
+        _buildNumpadRow(['4', '5', '6'], model, totalAmount),
+        const SizedBox(height: 12),
+        _buildNumpadRow(['7', '8', '9'], model, totalAmount),
+        const SizedBox(height: 12),
+        _buildNumpadRow(['.', '0', 'BACK'], model, totalAmount),
+        const SizedBox(height: 16),
+        // Done button to dismiss numpad
+        SizedBox(
+          width: double.infinity,
+          height: 44,
+          child: TextButton(
+            onPressed: () {
+              setState(() {
+                _activeInput = null;
+              });
+              // Unfocus all inputs
+              FocusScope.of(context).unfocus();
+            },
+            style: TextButton.styleFrom(
+              backgroundColor: AppTheme.emeraldPrimary.withValues(alpha: 0.15),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              "Done",
+              style: TextStyle(
+                color: AppTheme.emeraldPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNumpadRow(
+    List<String> keys,
+    AddExpenseViewModel model,
+    double totalAmount,
+  ) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: keys.map((key) {
+        if (key == 'BACK') {
+          return _buildNumpadKey(
+            child: Icon(
+              Icons.backspace_outlined,
+              color: Colors.white.withValues(alpha: 0.7),
+              size: 20,
+            ),
+            onTap: () {
+              _onNumpadBackspace();
+              _commitValueToModel(model, totalAmount);
+            },
+          );
+        } else if (key == '.') {
+          return _buildNumpadKey(
+            child: Text(
+              '.',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onTap: () => _onNumpadDecimal(),
+          );
+        } else {
+          return _buildNumpadKey(
+            child: Text(
+              key,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.9),
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onTap: () {
+              _onNumpadDigit(int.parse(key));
+              _commitValueToModel(model, totalAmount);
+            },
+          );
+        }
+      }).toList(),
+    );
+  }
+
+  Widget _buildNumpadKey({required Widget child, required VoidCallback onTap}) {
+    return SizedBox(
+      width: 56,
+      height: 48,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Center(child: child),
+        ),
+      ),
+    );
+  }
+
+  void _commitValueToModel(AddExpenseViewModel model, double totalAmount) {
+    final ctrl = _activeController;
+    if (ctrl == null) return;
+
+    final value = double.tryParse(ctrl.text) ?? 0;
+
+    switch (_activeInput) {
+      case _ActiveInput.myPercent:
+        model.setCustomPercentage(value, totalAmount);
+        break;
+      case _ActiveInput.myAmount:
+        model.setCustomAmount(value, totalAmount);
+        break;
+      case _ActiveInput.partnerPercent:
+        model.setCustomPercentage(100 - value, totalAmount);
+        break;
+      case _ActiveInput.partnerAmount:
+        model.setCustomAmount(totalAmount - value, totalAmount);
+        break;
+      case null:
+        break;
+    }
   }
 }
 

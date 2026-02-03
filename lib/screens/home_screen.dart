@@ -61,10 +61,13 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         return Scaffold(
+          extendBody: true, // Allow content to extend behind bottom nav
           // Background color usually handled by theme, but for this specific dashboard look
           // we might want to ensure it's compatible with the dark theme.
           // The screenshot implies a dark background. Our theme is already dark emerald.
           body: SafeArea(
+            bottom:
+                false, // Don't add bottom safe area padding - let content extend
             child: Column(
               children: [
                 // 1. Header
