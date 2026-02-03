@@ -1,13 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:couple_balance/l10n/app_localizations.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:couple_balance/l10n/app_localizations.dart';
+import 'package:couple_balance/config/theme.dart';
 import 'package:image_picker/image_picker.dart';
-
 import '../services/auth_service.dart';
 import '../viewmodels/add_expense_viewmodel.dart';
 
 class AddExpenseScreen extends StatelessWidget {
-  final String partnerUid; // Passed from parent or context
+  final String partnerUid;
 
   const AddExpenseScreen({super.key, required this.partnerUid});
 
@@ -15,327 +16,355 @@ class AddExpenseScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => AddExpenseViewModel()..init(partnerUid),
-      child: _AddExpenseContent(partnerUid: partnerUid),
+      child: const _AddExpenseContent(),
     );
   }
 }
 
-class _AddExpenseContent extends StatefulWidget {
-  final String partnerUid;
-  const _AddExpenseContent({required this.partnerUid});
-
-  @override
-  State<_AddExpenseContent> createState() => _AddExpenseContentState();
-}
-
-class _AddExpenseContentState extends State<_AddExpenseContent> {
-  final _amountController = TextEditingController();
-  final _noteController = TextEditingController();
+class _AddExpenseContent extends StatelessWidget {
+  const _AddExpenseContent();
 
   @override
   Widget build(BuildContext context) {
     final viewModel = Provider.of<AddExpenseViewModel>(context);
-    final state = viewModel.state;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.addExpense)),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+      backgroundColor: const Color(0xFF05100A),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Amount Input
-                  TextField(
-                    controller: _amountController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    onChanged: (val) {
-                      setState(() {});
-                      viewModel.recalculateCustomSplit(
-                        double.tryParse(val) ?? 0,
-                      );
-                    },
-                    decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context)!.amount('₺'),
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 20,
-                        horizontal: 16,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      // fillColor handled by Theme
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  Text(
+                    l10n.addExpense,
                     style: const TextStyle(
-                      fontSize: 24,
+                      color: Colors.white,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  // Split Options
-                  Column(
-                    children: [
-                      _SplitOptionCard(
-                        title: AppLocalizations.of(context)!.youPaidSplit,
-                        isSelected:
-                            viewModel.selectedOption ==
-                            SplitOption.youPaidSplit,
-                        onTap: () =>
-                            viewModel.setSplitOption(SplitOption.youPaidSplit),
-                        icon: Icons.call_split,
+                  TextButton(
+                    onPressed: viewModel.clearAmount,
+                    child: const Text(
+                      "Reset",
+                      style: TextStyle(
+                        color: AppTheme.emeraldPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 8),
-                      _SplitOptionCard(
-                        title: AppLocalizations.of(context)!.youPaidFull,
-                        isSelected:
-                            viewModel.selectedOption == SplitOption.youPaidFull,
-                        onTap: () =>
-                            viewModel.setSplitOption(SplitOption.youPaidFull),
-                        icon: Icons.arrow_downward,
-                      ),
-                      const SizedBox(height: 8),
-                      _SplitOptionCard(
-                        title: AppLocalizations.of(
-                          context,
-                        )!.partnerPaidSplit(viewModel.partnerName),
-                        isSelected:
-                            viewModel.selectedOption ==
-                            SplitOption.partnerPaidSplit,
-                        onTap: () => viewModel.setSplitOption(
-                          SplitOption.partnerPaidSplit,
-                        ),
-                        icon: Icons.call_split,
-                        isPartner: true,
-                      ),
-                      const SizedBox(height: 8),
-                      _SplitOptionCard(
-                        title: AppLocalizations.of(
-                          context,
-                        )!.partnerPaidFull(viewModel.partnerName),
-                        isSelected:
-                            viewModel.selectedOption ==
-                            SplitOption.partnerPaidFull,
-                        onTap: () => viewModel.setSplitOption(
-                          SplitOption.partnerPaidFull,
-                        ),
-                        icon: Icons.arrow_upward,
-                        isPartner: true,
-                      ),
-                      const SizedBox(height: 8),
-                      // More Options / Custom Split
-                      _SplitOptionCard(
-                        title: AppLocalizations.of(context)!.moreOptions,
-                        isSelected:
-                            viewModel.selectedOption == SplitOption.custom,
-                        onTap: () => _showCustomSplitSheet(
-                          context,
-                          viewModel,
-                          double.tryParse(_amountController.text) ?? 0,
-                        ),
-                        icon: Icons.tune,
-                      ),
-                    ],
-                  ),
-
-                  // Dynamic Explanation
-                  if (_amountController.text.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0, left: 4),
-                      child: Text(
-                        viewModel.getDescriptionText(
-                          double.tryParse(_amountController.text) ?? 0,
-                        ),
-                        style: TextStyle(
-                          color: Colors.pinkAccent[700],
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-
-                  const SizedBox(height: 16),
-
-                  // Note Input
-                  TextField(
-                    controller: _noteController,
-                    decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context)!.whatIsItFor,
-                      hintText: AppLocalizations.of(context)!.expenseHint,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  // Quick Options
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children:
-                          [
-                                AppLocalizations.of(context)!.tagFood,
-                                AppLocalizations.of(context)!.tagCoffee,
-                                AppLocalizations.of(context)!.tagGroceries,
-                                AppLocalizations.of(context)!.tagRent,
-                                AppLocalizations.of(context)!.tagTransport,
-                                AppLocalizations.of(context)!.tagDate,
-                                AppLocalizations.of(context)!.tagBills,
-                                AppLocalizations.of(context)!.tagShopping,
-                              ]
-                              .map(
-                                (option) => Padding(
-                                  padding: const EdgeInsets.only(right: 8.0),
-                                  child: ActionChip(
-                                    label: Text(option),
-                                    backgroundColor: Theme.of(
-                                      context,
-                                    ).cardColor,
-                                    side: BorderSide(
-                                      color: Theme.of(context).dividerColor,
-                                    ),
-                                    onPressed: () {
-                                      _noteController.text = option;
-                                    },
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Image Action
-                  ListTile(
-                    leading: Icon(
-                      Icons.camera_alt,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    title: Text(AppLocalizations.of(context)!.addReceiptPhoto),
-                    subtitle: state.selectedImage != null
-                        ? Text(AppLocalizations.of(context)!.imageSelected)
-                        : null,
-                    tileColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    onTap: () => _showImagePickerModal(context, viewModel),
-                  ),
-                  if (state.selectedImage != null) ...[
-                    const SizedBox(height: 10),
-                    Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            state.selectedImage!,
-                            height: 150,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: GestureDetector(
-                            onTap: () => viewModel.removeImage(),
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).cardColor,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black26,
-                                    blurRadius: 4,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.close,
-                                size: 20,
-                                color: Colors.red,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  const SizedBox(height: 20),
                 ],
               ),
             ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
+
+            const SizedBox(height: 10),
+
+            // Amount Display
+            Text(
+              "AMOUNT",
+              style: TextStyle(
+                color: AppTheme.emeraldPrimary.withValues(alpha: 0.7),
+                fontSize: 12,
+                letterSpacing: 1.5,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  "\u20BA${viewModel.amountStr}",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 56,
+                    fontWeight: FontWeight.bold,
+                    height: 1,
+                  ),
+                ),
+                Container(
+                  width: 2,
+                  height: 48,
+                  margin: const EdgeInsets.only(bottom: 8, left: 2),
+                  color: AppTheme.emeraldPrimary,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            // Split Toggle
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.all(4),
+                child: Row(
+                  children: [
+                    _SplitToggleItem(
+                      label: "50/50",
+                      isSelected:
+                          viewModel.selectedOption ==
+                              SplitOption.youPaidSplit ||
+                          viewModel.selectedOption ==
+                              SplitOption.partnerPaidSplit,
+                      onTap: () =>
+                          viewModel.setSplitOption(SplitOption.youPaidSplit),
+                    ),
+                    _SplitToggleItem(
+                      label: "Full",
+                      isSelected:
+                          viewModel.selectedOption == SplitOption.youPaidFull ||
+                          viewModel.selectedOption ==
+                              SplitOption.partnerPaidFull,
+                      onTap: () =>
+                          viewModel.setSplitOption(SplitOption.youPaidFull),
+                    ),
+                    _SplitToggleItem(
+                      label: "Custom",
+                      isSelected:
+                          viewModel.selectedOption == SplitOption.custom,
+                      onTap: () {
+                        viewModel.setSplitOption(SplitOption.custom);
+                        _showCustomSplitSheet(context, viewModel);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Category Label
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "CATEGORY",
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 12,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Category List
+            SizedBox(
+              height: 44,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                scrollDirection: Axis.horizontal,
+                itemCount: viewModel.categories.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final cat = viewModel.categories[index];
+                  final isSelected = viewModel.selectedCategory == cat['id'];
+                  return _CategoryChip(
+                    label: _getCategoryLabel(context, cat['id']),
+                    icon: cat['icon'],
+                    isSelected: isSelected,
+                    onTap: () => viewModel.setCategory(cat['id']),
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Attach Receipt
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: InkWell(
+                onTap: () => _showImagePickerModal(context, viewModel),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: viewModel.state.selectedImage != null
+                              ? AppTheme.emeraldPrimary
+                              : Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.camera_alt,
+                          color: viewModel.state.selectedImage != null
+                              ? Colors.black
+                              : AppTheme.emeraldPrimary,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            viewModel.state.selectedImage != null
+                                ? l10n.imageSelected
+                                : l10n.addReceiptPhoto,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
+                          if (viewModel.state.selectedImage == null)
+                            Text(
+                              "Optional",
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.4),
+                                fontSize: 12,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const Spacer(),
+                      Icon(
+                        Icons.chevron_right,
+                        color: Colors.white.withValues(alpha: 0.3),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            const Spacer(),
+
+            // Number Pad
+            _NumberPad(viewModel: viewModel),
+
+            const SizedBox(height: 20),
+
+            // Save Button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: SizedBox(
                 width: double.infinity,
+                height: 56,
                 child: ElevatedButton(
                   onPressed: viewModel.isLoading
                       ? null
                       : () async {
-                          final amount = double.tryParse(
-                            _amountController.text,
-                          );
-                          if (amount == null) {
+                          final amount =
+                              double.tryParse(viewModel.amountStr) ?? 0;
+                          if (amount <= 0) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  AppLocalizations.of(
-                                    context,
-                                  )!.validAmountError,
-                                ),
-                              ),
+                              SnackBar(content: Text(l10n.validAmountError)),
                             );
                             return;
+                          }
+                          // Pass the localized category name as the note
+                          final note = _getCategoryLabel(
+                            context,
+                            viewModel.selectedCategory,
+                          );
+
+                          // If Custom is selected, we assume the entered "Amount" is effectively
+                          // what the partner owes (since there's no secondary input).
+                          // This simplifies "Custom" to "Indirect Settle / Owe Request".
+                          if (viewModel.selectedOption == SplitOption.custom) {
+                            viewModel.setCustomOwedAmount(amount);
+                            // Ensure we default to "I Paid" so the logic treats 'amount' as what partner owes me.
+                            viewModel.setCustomPayer(null);
                           }
 
                           final success = await viewModel.saveExpense(
                             amount: amount,
-                            note: _noteController.text,
-                            receiverUid: widget.partnerUid,
+                            note: note,
+                            receiverUid:
+                                Provider.of<AuthService>(
+                                  context,
+                                  listen: false,
+                                ).selectedPartnerId ??
+                                '',
                           );
-
-                          if (!context.mounted) return;
-                          if (success) {
+                          if (success && context.mounted) {
                             Navigator.pop(context);
                           }
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.pinkAccent,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: AppTheme.emeraldPrimary,
+                    foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
+                    elevation: 0,
                   ),
                   child: viewModel.isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : Text(
-                          AppLocalizations.of(context)!.addExpense,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                      ? const CircularProgressIndicator(color: Colors.black)
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.check, size: 24),
+                            const SizedBox(width: 8),
+                            Text(
+                              l10n.saveExpense,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  String _getCategoryLabel(BuildContext context, String id) {
+    // Map ids to l10n
+    final l10n = AppLocalizations.of(context)!;
+    switch (id) {
+      case 'food':
+        return l10n.tagFood;
+      case 'coffee':
+        return l10n.tagCoffee;
+      case 'rent':
+        return l10n.tagRent;
+      case 'groceries':
+        return l10n.tagGroceries;
+      case 'transport':
+        return l10n.tagTransport;
+      case 'date':
+        return l10n.tagDate;
+      case 'bills':
+        return l10n.tagBills;
+      case 'shopping':
+        return l10n.tagShopping;
+      default:
+        return id;
+    }
   }
 
   void _showImagePickerModal(
@@ -344,20 +373,27 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
   ) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: const Color(0xFF0B1E14),
       builder: (ctx) => SafeArea(
         child: Wrap(
           children: [
             ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: Text(AppLocalizations.of(context)!.gallery),
+              leading: const Icon(Icons.photo_library, color: Colors.white),
+              title: Text(
+                AppLocalizations.of(context)!.gallery,
+                style: const TextStyle(color: Colors.white),
+              ),
               onTap: () {
                 viewModel.pickImage(ImageSource.gallery);
                 Navigator.pop(ctx);
               },
             ),
             ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: Text(AppLocalizations.of(context)!.camera),
+              leading: const Icon(Icons.camera_alt, color: Colors.white),
+              title: Text(
+                AppLocalizations.of(context)!.camera,
+                style: const TextStyle(color: Colors.white),
+              ),
               onTap: () {
                 viewModel.pickImage(ImageSource.camera);
                 Navigator.pop(ctx);
@@ -372,220 +408,24 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
   void _showCustomSplitSheet(
     BuildContext context,
     AddExpenseViewModel viewModel,
-    double totalAmount,
   ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: const Color(0xFF05100A), // Dark background
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            final isMePayer =
-                viewModel.customPayerUid == null ||
-                viewModel.customPayerUid ==
-                    Provider.of<AuthService>(
-                      context,
-                      listen: false,
-                    ).currentUser?.uid;
-
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-                top: 20,
-                left: 20,
-                right: 20,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    AppLocalizations.of(context)!.custom,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Section 1: Who Paid?
-                  Text(
-                    AppLocalizations.of(context)!.whoPaid,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ChoiceChip(
-                          label: Text(AppLocalizations.of(context)!.me),
-                          selected: isMePayer,
-                          onSelected: (selected) {
-                            if (selected) {
-                              setSheetState(() {
-                                viewModel.setCustomPayer(null); // Me
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ChoiceChip(
-                          label: Text(viewModel.partnerName),
-                          selected: !isMePayer,
-                          onSelected: (selected) {
-                            if (selected) {
-                              setSheetState(() {
-                                viewModel.setCustomPayer(widget.partnerUid);
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Section 2: Split Type (Percentage vs Amount)
-                  Text(
-                    AppLocalizations.of(context)!.splitBy,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ChoiceChip(
-                          label: Text(
-                            AppLocalizations.of(context)!.byPercentage,
-                          ),
-                          selected:
-                              viewModel.customSplitType ==
-                              CustomSplitType.percentage,
-                          onSelected: (selected) {
-                            if (selected) {
-                              setSheetState(() {
-                                viewModel.setCustomSplitType(
-                                  CustomSplitType.percentage,
-                                );
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ChoiceChip(
-                          label: Text(AppLocalizations.of(context)!.byAmount),
-                          selected:
-                              viewModel.customSplitType ==
-                              CustomSplitType.amount,
-                          onSelected: (selected) {
-                            if (selected) {
-                              setSheetState(() {
-                                viewModel.setCustomSplitType(
-                                  CustomSplitType.amount,
-                                );
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Section 3: Input (Slider or TextField)
-                  if (viewModel.customSplitType ==
-                      CustomSplitType.percentage) ...[
-                    Text(
-                      '${AppLocalizations.of(context)!.percentage}: ${viewModel.customPercentage.toStringAsFixed(0)}%',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Slider(
-                      value: viewModel.customPercentage,
-                      min: 0,
-                      max: 100,
-                      divisions: 100,
-                      label: '${viewModel.customPercentage.round()}%',
-                      onChanged: (val) {
-                        setSheetState(() {
-                          viewModel.setCustomPercentage(val, totalAmount);
-                        });
-                      },
-                    ),
-                    Text(
-                      '${AppLocalizations.of(context)!.enterAmountOwed}: ${viewModel.customOwedAmount.toStringAsFixed(2)} ₺',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ] else ...[
-                    Text(
-                      AppLocalizations.of(context)!.enterAmountOwed,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: InputDecoration(
-                        labelText: AppLocalizations.of(context)!.customAmount,
-                        suffixText: '₺',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onChanged: (val) {
-                        // Recalculate percentage if amount changes
-                        viewModel.setCustomOwedAmount(
-                          double.tryParse(val) ?? 0,
-                          totalAmount: totalAmount,
-                        );
-                      },
-                      controller: TextEditingController.fromValue(
-                        TextEditingValue(
-                          text: viewModel.customOwedAmount == 0
-                              ? ''
-                              : viewModel.customOwedAmount.toString(),
-                          selection: TextSelection.collapsed(
-                            offset: viewModel.customOwedAmount == 0
-                                ? 0
-                                : viewModel.customOwedAmount.toString().length,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      viewModel.setSplitOption(SplitOption.custom);
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.pinkAccent,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      AppLocalizations.of(context)!.confirm,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+        return DraggableScrollableSheet(
+          initialChildSize: 0.85,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) {
+            return ChangeNotifierProvider.value(
+              value: viewModel,
+              child: const _CustomSplitSheetContent(),
             );
           },
         );
@@ -594,91 +434,688 @@ class _AddExpenseContentState extends State<_AddExpenseContent> {
   }
 }
 
-class _SplitOptionCard extends StatelessWidget {
-  final String title;
+class _SplitToggleItem extends StatelessWidget {
+  final String label;
   final bool isSelected;
   final VoidCallback onTap;
-  final IconData icon;
-  final bool isPartner;
 
-  const _SplitOptionCard({
-    required this.title,
+  const _SplitToggleItem({
+    required this.label,
     required this.isSelected,
     required this.onTap,
-    required this.icon,
-    this.isPartner = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: isSelected ? AppTheme.emeraldPrimary : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected
+                  ? Colors.black
+                  : Colors.white.withValues(alpha: 0.6),
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _CategoryChip({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
-              : Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(12),
+              ? const Color(0xFF0B3B24)
+              : Colors.transparent, // Darker Green BG for selected
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isSelected
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).dividerColor,
-            width: isSelected ? 2 : 1,
+                ? AppTheme.emeraldPrimary
+                : Colors.white.withValues(alpha: 0.2),
+            width: 1,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.pinkAccent.withValues(alpha: 0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [],
         ),
         child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected
+                  ? AppTheme.emeraldPrimary
+                  : Colors.white.withValues(alpha: 0.7),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
                 color: isSelected
-                    ? Theme.of(
-                        context,
-                      ).colorScheme.primary.withValues(alpha: 0.2)
-                    : Theme.of(context).colorScheme.surfaceContainerHighest,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                color: isSelected
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).hintColor,
-                size: 20,
+                    ? AppTheme.emeraldPrimary
+                    : Colors.white.withValues(alpha: 0.7),
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ),
-            if (isSelected)
-              const Icon(
-                Icons.check_circle,
-                color: Colors.pinkAccent,
-                size: 24,
-              ),
           ],
         ),
       ),
     );
+  }
+}
+
+class _NumberPad extends StatelessWidget {
+  final AddExpenseViewModel viewModel;
+
+  const _NumberPad({required this.viewModel});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: Column(
+        children: [
+          _buildRow(['1', '2', '3']),
+          const SizedBox(height: 24),
+          _buildRow(['4', '5', '6']),
+          const SizedBox(height: 24),
+          _buildRow(['7', '8', '9']),
+          const SizedBox(height: 24),
+          _buildRow(['.', '0', 'BACK']),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRow(List<String> keys) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: keys.map((key) {
+        if (key == 'BACK') {
+          return _buildKey(
+            child: const Icon(
+              Icons.backspace_outlined,
+              color: Colors.white,
+              size: 24,
+            ),
+            onTap: viewModel.backspace,
+          );
+        } else if (key == '.') {
+          return _buildKey(
+            child: const Text(
+              '.',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onTap: viewModel.addDecimal,
+          );
+        } else {
+          return _buildKey(
+            child: Text(
+              key,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onTap: () => viewModel.addDigit(int.parse(key)),
+          );
+        }
+      }).toList(),
+    );
+  }
+
+  Widget _buildKey({required Widget child, required VoidCallback onTap}) {
+    return SizedBox(
+      width: 60,
+      height: 60,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(30),
+        child: Center(child: child),
+      ),
+    );
+  }
+}
+
+class _CustomSplitSheetContent extends StatefulWidget {
+  const _CustomSplitSheetContent();
+
+  @override
+  State<_CustomSplitSheetContent> createState() =>
+      _CustomSplitSheetContentState();
+}
+
+class _CustomSplitSheetContentState extends State<_CustomSplitSheetContent> {
+  late TextEditingController _myPercentCtrl;
+  late TextEditingController _myAmountCtrl;
+  late TextEditingController _partnerPercentCtrl;
+  late TextEditingController _partnerAmountCtrl;
+
+  final FocusNode _myPercentFocus = FocusNode();
+  final FocusNode _myAmountFocus = FocusNode();
+  final FocusNode _partnerPercentFocus = FocusNode();
+  final FocusNode _partnerAmountFocus = FocusNode();
+
+  // Local slider value for smooth dragging
+  double? _localSliderValue;
+  bool _isDragging = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _myPercentCtrl = TextEditingController();
+    _myAmountCtrl = TextEditingController();
+    _partnerPercentCtrl = TextEditingController();
+    _partnerAmountCtrl = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _myPercentCtrl.dispose();
+    _myAmountCtrl.dispose();
+    _partnerPercentCtrl.dispose();
+    _partnerAmountCtrl.dispose();
+    _myPercentFocus.dispose();
+    _myAmountFocus.dispose();
+    _partnerPercentFocus.dispose();
+    _partnerAmountFocus.dispose();
+    super.dispose();
+  }
+
+  void _syncControllers(AddExpenseViewModel model) {
+    double total = double.tryParse(model.amountStr) ?? 0;
+    double myPct = model.customPercentage;
+    double myAmt = (total * myPct) / 100;
+    double partnerPct = 100 - myPct;
+    double partnerAmt = total - myAmt;
+
+    void sync(
+      TextEditingController ctrl,
+      FocusNode focus,
+      double val,
+      int decimals,
+    ) {
+      if (!focus.hasFocus) {
+        String newVal = val.toStringAsFixed(decimals);
+        if (ctrl.text != newVal) {
+          ctrl.text = newVal;
+        }
+      }
+    }
+
+    sync(_myPercentCtrl, _myPercentFocus, myPct, 1);
+    sync(_myAmountCtrl, _myAmountFocus, myAmt, 2);
+    sync(_partnerPercentCtrl, _partnerPercentFocus, partnerPct, 1);
+    sync(_partnerAmountCtrl, _partnerAmountFocus, partnerAmt, 2);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AddExpenseViewModel>(
+      builder: (context, model, child) {
+        _syncControllers(model);
+        final double totalAmount = double.tryParse(model.amountStr) ?? 0;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: Column(
+            children: [
+              // Header
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  Expanded(
+                    child: Text(
+                      "Custom Split",
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 48),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Total Amount
+              Text(
+                "Total Amount",
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "\u20BA${totalAmount.toStringAsFixed(2)}",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 48,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 48),
+
+              // Rows
+              _buildEditableRow(
+                context,
+                "You",
+                "Payer",
+                Provider.of<AuthService>(context).currentUserModel?.photoUrl ??
+                    model.userPhotoUrl,
+                Icons.person,
+                _myPercentCtrl,
+                _myPercentFocus,
+                _myAmountCtrl,
+                _myAmountFocus,
+                (val) => model.setCustomPercentage(
+                  double.tryParse(val) ?? 0,
+                  totalAmount,
+                ),
+                (val) => model.setCustomAmount(
+                  double.tryParse(val) ?? 0,
+                  totalAmount,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildEditableRow(
+                context,
+                model.partnerName,
+                "",
+                model.partnerPhotoUrl,
+                Icons.people,
+                _partnerPercentCtrl,
+                _partnerPercentFocus,
+                _partnerAmountCtrl,
+                _partnerAmountFocus,
+                (val) {
+                  double pPct = double.tryParse(val) ?? 0;
+                  model.setCustomPercentage(100 - pPct, totalAmount);
+                },
+                (val) {
+                  double pAmt = double.tryParse(val) ?? 0;
+                  model.setCustomAmount(totalAmount - pAmt, totalAmount);
+                },
+              ),
+
+              const SizedBox(height: 32),
+
+              // Slider
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "YOUR SHARE",
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    "PARTNER'S SHARE",
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  activeTrackColor: AppTheme.emeraldPrimary,
+                  inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
+                  thumbColor: AppTheme.emeraldPrimary,
+                  overlayColor: AppTheme.emeraldPrimary.withValues(alpha: 0.2),
+                  trackHeight: 6,
+                  thumbShape: const _DottedSliderThumbShape(thumbRadius: 14),
+                ),
+                child: Slider(
+                  value:
+                      (_isDragging ? _localSliderValue : model.customPercentage)
+                          ?.clamp(0.0, 100.0) ??
+                      50.0,
+                  min: 0,
+                  max: 100,
+                  allowedInteraction: SliderInteraction.tapAndSlide,
+                  onChangeStart: (val) {
+                    setState(() {
+                      _isDragging = true;
+                      _localSliderValue = val;
+                    });
+                  },
+                  onChanged: (val) {
+                    setState(() {
+                      _localSliderValue = val;
+                    });
+                    // Update model for live text field updates
+                    model.setCustomPercentage(val, totalAmount);
+                  },
+                  onChangeEnd: (val) {
+                    setState(() {
+                      _isDragging = false;
+                      _localSliderValue = null;
+                    });
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 8),
+              Text(
+                "Adjusting one value automatically updates the others.",
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  fontSize: 12,
+                ),
+              ),
+
+              const Spacer(),
+
+              // Confirm Button
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.emeraldPrimary,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text(
+                    "Confirm Split",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEditableRow(
+    BuildContext context,
+    String name,
+    String role,
+    String? photoUrl,
+    IconData fallbackIcon,
+    TextEditingController pctCtrl,
+    FocusNode pctFocus,
+    TextEditingController amtCtrl,
+    FocusNode amtFocus,
+    ValueChanged<String> onPctChanged,
+    ValueChanged<String> onAmtChanged,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: const BoxDecoration(shape: BoxShape.circle),
+            alignment: Alignment.center,
+            child: ClipOval(
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: (photoUrl != null && photoUrl.isNotEmpty)
+                    ? CachedNetworkImage(
+                        imageUrl: photoUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          child: const Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppTheme.emeraldPrimary,
+                              ),
+                            ),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.white,
+                          alignment: Alignment.center,
+                          child: Icon(
+                            fallbackIcon,
+                            color: AppTheme.emeraldPrimary,
+                            size: 24,
+                          ),
+                        ),
+                      )
+                    : Container(
+                        color: Colors.white,
+                        alignment: Alignment.center,
+                        child: Icon(
+                          fallbackIcon,
+                          color: AppTheme.emeraldPrimary,
+                          size: 24,
+                        ),
+                      ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                if (role.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      role,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Inputs Side-by-Side
+          Row(
+            children: [
+              _buildBoxedInput(pctCtrl, pctFocus, onPctChanged, "%", 80),
+              const SizedBox(width: 12),
+              _buildBoxedInput(amtCtrl, amtFocus, onAmtChanged, "\u20BA", 100),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBoxedInput(
+    TextEditingController ctrl,
+    FocusNode focus,
+    ValueChanged<String> onChanged,
+    String suffix,
+    double width,
+  ) {
+    return Container(
+      width: width,
+      height: 44,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: const Color(0xFF0B1E14), // Darker green/black
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: focus.hasFocus
+              ? AppTheme.emeraldPrimary
+              : Colors.white.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(
+              right: 14,
+            ), // Shift text left from symbol
+            child: TextField(
+              controller: ctrl,
+              focusNode: focus,
+              onChanged: onChanged,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              textAlign: TextAlign.center,
+              cursorColor: AppTheme.emeraldPrimary,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+              decoration: const InputDecoration(
+                isDense: true,
+                filled: false,
+                contentPadding: EdgeInsets.zero,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+              ),
+            ),
+          ),
+          Positioned(
+            right: 12,
+            child: IgnorePointer(
+              child: Text(
+                suffix,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Custom slider thumb with 6 dots inside a green circle
+class _DottedSliderThumbShape extends SliderComponentShape {
+  final double thumbRadius;
+
+  const _DottedSliderThumbShape({this.thumbRadius = 14});
+
+  @override
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) {
+    return Size.fromRadius(thumbRadius);
+  }
+
+  @override
+  void paint(
+    PaintingContext context,
+    Offset center, {
+    required Animation<double> activationAnimation,
+    required Animation<double> enableAnimation,
+    required bool isDiscrete,
+    required TextPainter labelPainter,
+    required RenderBox parentBox,
+    required SliderThemeData sliderTheme,
+    required TextDirection textDirection,
+    required double value,
+    required double textScaleFactor,
+    required Size sizeWithOverflow,
+  }) {
+    final Canvas canvas = context.canvas;
+
+    // Draw the green circle
+    final circlePaint = Paint()
+      ..color = AppTheme.emeraldPrimary
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, thumbRadius, circlePaint);
+
+    // Draw 6 dark dots (2 columns x 3 rows)
+    final dotPaint = Paint()
+      ..color = const Color(0xFF05100A)
+      ..style = PaintingStyle.fill;
+
+    const double dotRadius = 2.5;
+    const double horizontalSpacing = 6.0;
+    const double verticalSpacing = 5.0;
+
+    // Column positions (centered around the thumb center)
+    final double col1 = center.dx - horizontalSpacing / 2;
+    final double col2 = center.dx + horizontalSpacing / 2;
+
+    // Row positions (centered around the thumb center)
+    final double row1 = center.dy - verticalSpacing;
+    final double row2 = center.dy;
+    final double row3 = center.dy + verticalSpacing;
+
+    // Draw dots
+    canvas.drawCircle(Offset(col1, row1), dotRadius, dotPaint);
+    canvas.drawCircle(Offset(col2, row1), dotRadius, dotPaint);
+    canvas.drawCircle(Offset(col1, row2), dotRadius, dotPaint);
+    canvas.drawCircle(Offset(col2, row2), dotRadius, dotPaint);
+    canvas.drawCircle(Offset(col1, row3), dotRadius, dotPaint);
+    canvas.drawCircle(Offset(col2, row3), dotRadius, dotPaint);
   }
 }

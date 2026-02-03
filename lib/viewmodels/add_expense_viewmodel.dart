@@ -42,6 +42,74 @@ class AddExpenseViewModel extends ChangeNotifier {
   String _partnerName = 'Partner';
   String get partnerName => _partnerName;
 
+  String? _partnerUid;
+  String? get partnerUid => _partnerUid;
+
+  String? _partnerPhotoUrl;
+  String? get partnerPhotoUrl => _partnerPhotoUrl;
+
+  String? get userPhotoUrl => _auth.currentUser?.photoURL;
+
+  // Keypad State
+  String _amountStr = '0';
+  String get amountStr => _amountStr;
+
+  void addDigit(int digit) {
+    if (_amountStr == '0') {
+      _amountStr = digit.toString();
+    } else {
+      // Prevent too many decimal places if needed, or max length
+      if (_amountStr.contains('.')) {
+        final parts = _amountStr.split('.');
+        if (parts.length > 1 && parts[1].length >= 2) return; // Max 2 decimals
+      }
+      if (_amountStr.length >= 9) return; // Max length
+      _amountStr += digit.toString();
+    }
+    notifyListeners();
+  }
+
+  void addDecimal() {
+    if (!_amountStr.contains('.')) {
+      _amountStr += '.';
+      notifyListeners();
+    }
+  }
+
+  void backspace() {
+    if (_amountStr.length > 1) {
+      _amountStr = _amountStr.substring(0, _amountStr.length - 1);
+    } else {
+      _amountStr = '0';
+    }
+    notifyListeners();
+  }
+
+  void clearAmount() {
+    _amountStr = '0';
+    notifyListeners();
+  }
+
+  // Categories
+  final List<Map<String, dynamic>> categories = [
+    {'id': 'food', 'icon': Icons.restaurant},
+    {'id': 'coffee', 'icon': Icons.coffee},
+    {'id': 'rent', 'icon': Icons.home},
+    {'id': 'groceries', 'icon': Icons.shopping_cart},
+    {'id': 'transport', 'icon': Icons.directions_car},
+    {'id': 'date', 'icon': Icons.favorite},
+    {'id': 'bills', 'icon': Icons.receipt_long},
+    {'id': 'shopping', 'icon': Icons.shopping_bag},
+  ];
+
+  String _selectedCategory = 'food';
+  String get selectedCategory => _selectedCategory;
+
+  void setCategory(String category) {
+    _selectedCategory = category;
+    notifyListeners();
+  }
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final ImagePicker _picker = ImagePicker();
@@ -55,11 +123,13 @@ class AddExpenseViewModel extends ChangeNotifier {
   }
 
   Future<void> init(String partnerUid) async {
+    _partnerUid = partnerUid;
     try {
       final doc = await _firestore.collection('users').doc(partnerUid).get();
       if (doc.exists) {
         final data = doc.data();
         _partnerName = data?['displayName'] ?? 'Partner';
+        _partnerPhotoUrl = data?['photoUrl'];
         notifyListeners();
       }
     } catch (e) {
@@ -92,10 +162,29 @@ class AddExpenseViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setCustomPercentage(double rank, double totalAmount) {
-    _customPercentage = rank; // 0 to 100
-    // Recalculate amount
-    _customOwedAmount = (totalAmount * _customPercentage) / 100;
+  void setCustomAmount(double myAmount, double totalAmount) {
+    if (totalAmount <= 0) return;
+    double percentage = (myAmount / totalAmount) * 100;
+    // Clamp to 0-100
+    if (percentage < 0) percentage = 0;
+    if (percentage > 100) percentage = 100;
+
+    _customPercentage = percentage;
+    // Update owed amount (Partner's share)
+    double partnerSharePercent = 100 - _customPercentage;
+    _customOwedAmount = (totalAmount * partnerSharePercent) / 100;
+
+    notifyListeners();
+  }
+
+  void setCustomPercentage(double myPercentage, double totalAmount) {
+    _customPercentage = myPercentage; // 0 to 100 representing MY share
+
+    // We update _customOwedAmount (what partner owes if I paid).
+    // If I am the payer:
+    double partnerSharePercent = 100 - _customPercentage;
+    _customOwedAmount = (totalAmount * partnerSharePercent) / 100;
+
     notifyListeners();
   }
 

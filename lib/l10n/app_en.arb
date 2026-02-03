@@ -319,5 +319,6 @@
     "enterCurrentPassword": "Enter current password",
     "enterNewPassword": "Enter new password",
     "reenterNewPassword": "Re-enter new password",
-    "passwordCannotBeSame": "New password cannot be the same as current password"
+    "passwordCannotBeSame": "New password cannot be the same as current password",
+    "saveExpense": "Save Expense"
 }

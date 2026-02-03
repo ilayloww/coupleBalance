@@ -643,4 +643,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get passwordCannotBeSame => 'Yeni şifre mevcut şifre ile aynı olamaz';
+
+  @override
+  String get saveExpense => 'Harcamayı Kaydet';
 }

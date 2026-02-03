@@ -643,4 +643,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get passwordCannotBeSame =>
       'New password cannot be the same as current password';
+
+  @override
+  String get saveExpense => 'Save Expense';
 }

@@ -1279,6 +1279,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New password cannot be the same as current password'**
   String get passwordCannotBeSame;
+
+  /// No description provided for @saveExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Expense'**
+  String get saveExpense;
 }
 
 class _AppLocalizationsDelegate

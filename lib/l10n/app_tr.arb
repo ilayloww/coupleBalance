@@ -202,5 +202,6 @@
     "enterCurrentPassword": "Mevcut şifreyi girin",
     "enterNewPassword": "Yeni şifreyi girin",
     "reenterNewPassword": "Yeni şifreyi tekrar girin",
-    "passwordCannotBeSame": "Yeni şifre mevcut şifre ile aynı olamaz"
+    "passwordCannotBeSame": "Yeni şifre mevcut şifre ile aynı olamaz",
+    "saveExpense": "Harcamayı Kaydet"
 }
