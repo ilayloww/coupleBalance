@@ -320,5 +320,18 @@
     "enterNewPassword": "Enter new password",
     "reenterNewPassword": "Re-enter new password",
     "passwordCannotBeSame": "New password cannot be the same as current password",
-    "saveExpense": "Save Expense"
+    "saveExpense": "Save Expense",
+    "tagCustom": "Custom",
+    "customCategoryHint": "Enter category name",
+    "enterCategoryError": "Please enter a category name",
+    "expensesSummary": "Expenses Summary",
+    "items": "items",
+    "pending": "Pending",
+    "dueToday": "Due today",
+    "paysYou": "pays You",
+    "youPay": "You pay",
+    "confirmSettlement": "Confirm Settlement",
+    "filterAllTime": "All Time",
+    "filterThisYear": "This Year",
+    "filterLastYear": "Last Year"
 }

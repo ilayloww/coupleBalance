@@ -100,14 +100,26 @@ class AddExpenseViewModel extends ChangeNotifier {
     {'id': 'date', 'icon': Icons.favorite},
     {'id': 'bills', 'icon': Icons.receipt_long},
     {'id': 'shopping', 'icon': Icons.shopping_bag},
+    {'id': 'custom', 'icon': Icons.edit},
   ];
 
   String _selectedCategory = 'food';
   String get selectedCategory => _selectedCategory;
 
+  String _customCategoryText = '';
+  String get customCategoryText => _customCategoryText;
+
   void setCategory(String category) {
     _selectedCategory = category;
     notifyListeners();
+  }
+
+  void setCustomCategoryText(String text) {
+    _customCategoryText = text;
+    // Don't notify listeners here to avoid rebuilding on every keystroke if not needed,
+    // or notify if validation state depends on it. Ideally use a Controller in UI,
+    // but if we want to validate in VM:
+    // notifyListeners();
   }
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -164,7 +176,7 @@ class AddExpenseViewModel extends ChangeNotifier {
 
   void setCustomAmount(double myAmount, double totalAmount) {
     if (totalAmount <= 0) return;
-    double percentage = (myAmount / totalAmount) * 100;
+    double percentage = ((myAmount / totalAmount) * 100).roundToDouble();
     // Clamp to 0-100
     if (percentage < 0) percentage = 0;
     if (percentage > 100) percentage = 100;
@@ -178,7 +190,8 @@ class AddExpenseViewModel extends ChangeNotifier {
   }
 
   void setCustomPercentage(double myPercentage, double totalAmount) {
-    _customPercentage = myPercentage; // 0 to 100 representing MY share
+    _customPercentage = myPercentage
+        .roundToDouble(); // 0 to 100 representing MY share
 
     // We update _customOwedAmount (what partner owes if I paid).
     // If I am the payer:
@@ -247,6 +260,12 @@ class AddExpenseViewModel extends ChangeNotifier {
     required String receiverUid, // Partner's UID
   }) async {
     if (_auth.currentUser == null) return false;
+
+    // Validate Custom Category
+    if (_selectedCategory == 'custom' && _customCategoryText.trim().isEmpty) {
+      // Validation failed - we'll handle UI feedback in the screen
+      return false;
+    }
 
     setLoading(true);
     try {
@@ -318,10 +337,11 @@ class AddExpenseViewModel extends ChangeNotifier {
         senderUid: finalSender,
         receiverUid: finalReceiver,
         amount: finalAmount,
-        note: note,
+        note: _selectedCategory == 'custom' ? _customCategoryText.trim() : note,
         photoUrl: photoUrl,
         timestamp: DateTime.now(),
         addedByUid: _auth.currentUser!.uid,
+        category: _selectedCategory,
       );
 
       // 3. Save to Firestore

@@ -32,302 +32,372 @@ class _AddExpenseContent extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF05100A),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: CustomScrollView(
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Column(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  Text(
-                    l10n.addExpense,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        Text(
+                          l10n.addExpense,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: viewModel.clearAmount,
+                          child: const Text(
+                            "Reset",
+                            style: TextStyle(
+                              color: AppTheme.emeraldPrimary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  TextButton(
-                    onPressed: viewModel.clearAmount,
-                    child: const Text(
-                      "Reset",
-                      style: TextStyle(
+
+                  const SizedBox(height: 10),
+
+                  // Amount Display
+                  Text(
+                    "AMOUNT",
+                    style: TextStyle(
+                      color: AppTheme.emeraldPrimary.withValues(alpha: 0.7),
+                      fontSize: 12,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        "\u20BA${viewModel.amountStr}",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 56,
+                          fontWeight: FontWeight.bold,
+                          height: 1,
+                        ),
+                      ),
+                      Container(
+                        width: 2,
+                        height: 48,
+                        margin: const EdgeInsets.only(bottom: 8, left: 2),
                         color: AppTheme.emeraldPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Split Toggle
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.all(4),
+                      child: Row(
+                        children: [
+                          _SplitToggleItem(
+                            label: "50/50",
+                            isSelected:
+                                viewModel.selectedOption ==
+                                    SplitOption.youPaidSplit ||
+                                viewModel.selectedOption ==
+                                    SplitOption.partnerPaidSplit,
+                            onTap: () => viewModel.setSplitOption(
+                              SplitOption.youPaidSplit,
+                            ),
+                          ),
+                          _SplitToggleItem(
+                            label: "Full",
+                            isSelected:
+                                viewModel.selectedOption ==
+                                    SplitOption.youPaidFull ||
+                                viewModel.selectedOption ==
+                                    SplitOption.partnerPaidFull,
+                            onTap: () => viewModel.setSplitOption(
+                              SplitOption.youPaidFull,
+                            ),
+                          ),
+                          _SplitToggleItem(
+                            label: "Custom",
+                            isSelected:
+                                viewModel.selectedOption == SplitOption.custom,
+                            onTap: () {
+                              viewModel.setSplitOption(SplitOption.custom);
+                              _showCustomSplitSheet(context, viewModel);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Category Label
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "CATEGORY",
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontSize: 12,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Category List
+                  SizedBox(
+                    height: 44,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: viewModel.categories.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(width: 12),
+                      itemBuilder: (context, index) {
+                        final cat = viewModel.categories[index];
+                        final isSelected =
+                            viewModel.selectedCategory == cat['id'];
+                        return _CategoryChip(
+                          label: _getCategoryLabel(context, cat['id']),
+                          icon: cat['icon'],
+                          isSelected: isSelected,
+                          onTap: () => viewModel.setCategory(cat['id']),
+                        );
+                      },
+                    ),
+                  ),
+
+                  // Custom Category Input
+                  if (viewModel.selectedCategory == 'custom')
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        left: 24,
+                        right: 24,
+                        top: 16,
+                      ),
+                      child: TextField(
+                        onChanged: viewModel.setCustomCategoryText,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: l10n.customCategoryHint,
+                          hintStyle: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.05),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  const SizedBox(height: 24),
+
+                  // Attach Receipt
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: InkWell(
+                      onTap: () => _showImagePickerModal(context, viewModel),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: viewModel.state.selectedImage != null
+                                    ? AppTheme.emeraldPrimary
+                                    : Colors.white.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.camera_alt,
+                                color: viewModel.state.selectedImage != null
+                                    ? Colors.black
+                                    : AppTheme.emeraldPrimary,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  viewModel.state.selectedImage != null
+                                      ? l10n.imageSelected
+                                      : l10n.addReceiptPhoto,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                if (viewModel.state.selectedImage == null)
+                                  Text(
+                                    "Optional",
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.4,
+                                      ),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const Spacer(),
+                            Icon(
+                              Icons.chevron_right,
+                              color: Colors.white.withValues(alpha: 0.3),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // Number Pad
+                  _NumberPad(viewModel: viewModel),
+
+                  const SizedBox(height: 20),
+
+                  // Save Button
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 20,
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: viewModel.isLoading
+                            ? null
+                            : () async {
+                                final amount =
+                                    double.tryParse(viewModel.amountStr) ?? 0;
+                                if (amount <= 0) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(l10n.validAmountError),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                if (viewModel.selectedCategory == 'custom' &&
+                                    viewModel.customCategoryText
+                                        .trim()
+                                        .isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(l10n.enterCategoryError),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                // Pass the localized category name as the note
+                                final note = _getCategoryLabel(
+                                  context,
+                                  viewModel.selectedCategory,
+                                );
+
+                                // If Custom is selected, the slider has already set
+                                // _customOwedAmount, so we don't need to override it here.
+
+                                final success = await viewModel.saveExpense(
+                                  amount: amount,
+                                  note: note,
+                                  receiverUid:
+                                      Provider.of<AuthService>(
+                                        context,
+                                        listen: false,
+                                      ).selectedPartnerId ??
+                                      '',
+                                );
+                                if (success && context.mounted) {
+                                  Navigator.pop(context);
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.emeraldPrimary,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: viewModel.isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.black,
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.check, size: 24),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    l10n.saveExpense,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
                       ),
                     ),
                   ),
                 ],
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            // Amount Display
-            Text(
-              "AMOUNT",
-              style: TextStyle(
-                color: AppTheme.emeraldPrimary.withValues(alpha: 0.7),
-                fontSize: 12,
-                letterSpacing: 1.5,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  "\u20BA${viewModel.amountStr}",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 56,
-                    fontWeight: FontWeight.bold,
-                    height: 1,
-                  ),
-                ),
-                Container(
-                  width: 2,
-                  height: 48,
-                  margin: const EdgeInsets.only(bottom: 8, left: 2),
-                  color: AppTheme.emeraldPrimary,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Split Toggle
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Container(
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.all(4),
-                child: Row(
-                  children: [
-                    _SplitToggleItem(
-                      label: "50/50",
-                      isSelected:
-                          viewModel.selectedOption ==
-                              SplitOption.youPaidSplit ||
-                          viewModel.selectedOption ==
-                              SplitOption.partnerPaidSplit,
-                      onTap: () =>
-                          viewModel.setSplitOption(SplitOption.youPaidSplit),
-                    ),
-                    _SplitToggleItem(
-                      label: "Full",
-                      isSelected:
-                          viewModel.selectedOption == SplitOption.youPaidFull ||
-                          viewModel.selectedOption ==
-                              SplitOption.partnerPaidFull,
-                      onTap: () =>
-                          viewModel.setSplitOption(SplitOption.youPaidFull),
-                    ),
-                    _SplitToggleItem(
-                      label: "Custom",
-                      isSelected:
-                          viewModel.selectedOption == SplitOption.custom,
-                      onTap: () {
-                        viewModel.setSplitOption(SplitOption.custom);
-                        _showCustomSplitSheet(context, viewModel);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Category Label
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "CATEGORY",
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    fontSize: 12,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Category List
-            SizedBox(
-              height: 44,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                scrollDirection: Axis.horizontal,
-                itemCount: viewModel.categories.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 12),
-                itemBuilder: (context, index) {
-                  final cat = viewModel.categories[index];
-                  final isSelected = viewModel.selectedCategory == cat['id'];
-                  return _CategoryChip(
-                    label: _getCategoryLabel(context, cat['id']),
-                    icon: cat['icon'],
-                    isSelected: isSelected,
-                    onTap: () => viewModel.setCategory(cat['id']),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Attach Receipt
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: InkWell(
-                onTap: () => _showImagePickerModal(context, viewModel),
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: viewModel.state.selectedImage != null
-                              ? AppTheme.emeraldPrimary
-                              : Colors.white.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          Icons.camera_alt,
-                          color: viewModel.state.selectedImage != null
-                              ? Colors.black
-                              : AppTheme.emeraldPrimary,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            viewModel.state.selectedImage != null
-                                ? l10n.imageSelected
-                                : l10n.addReceiptPhoto,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
-                          ),
-                          if (viewModel.state.selectedImage == null)
-                            Text(
-                              "Optional",
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.4),
-                                fontSize: 12,
-                              ),
-                            ),
-                        ],
-                      ),
-                      const Spacer(),
-                      Icon(
-                        Icons.chevron_right,
-                        color: Colors.white.withValues(alpha: 0.3),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            const Spacer(),
-
-            // Number Pad
-            _NumberPad(viewModel: viewModel),
-
-            const SizedBox(height: 20),
-
-            // Save Button
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: viewModel.isLoading
-                      ? null
-                      : () async {
-                          final amount =
-                              double.tryParse(viewModel.amountStr) ?? 0;
-                          if (amount <= 0) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(l10n.validAmountError)),
-                            );
-                            return;
-                          }
-                          // Pass the localized category name as the note
-                          final note = _getCategoryLabel(
-                            context,
-                            viewModel.selectedCategory,
-                          );
-
-                          // If Custom is selected, the slider has already set
-                          // _customOwedAmount, so we don't need to override it here.
-
-                          final success = await viewModel.saveExpense(
-                            amount: amount,
-                            note: note,
-                            receiverUid:
-                                Provider.of<AuthService>(
-                                  context,
-                                  listen: false,
-                                ).selectedPartnerId ??
-                                '',
-                          );
-                          if (success && context.mounted) {
-                            Navigator.pop(context);
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.emeraldPrimary,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: viewModel.isLoading
-                      ? const CircularProgressIndicator(color: Colors.black)
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.check, size: 24),
-                            const SizedBox(width: 8),
-                            Text(
-                              l10n.saveExpense,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                ),
               ),
             ),
           ],
@@ -356,6 +426,8 @@ class _AddExpenseContent extends StatelessWidget {
         return l10n.tagBills;
       case 'shopping':
         return l10n.tagShopping;
+      case 'custom':
+        return l10n.tagCustom;
       default:
         return id;
     }
@@ -679,9 +751,9 @@ class _CustomSplitSheetContentState extends State<_CustomSplitSheetContent> {
       }
     }
 
-    sync(_myPercentCtrl, _myPercentFocus, myPct, 1);
+    sync(_myPercentCtrl, _myPercentFocus, myPct, 0);
     sync(_myAmountCtrl, _myAmountFocus, myAmt, 2);
-    sync(_partnerPercentCtrl, _partnerPercentFocus, partnerPct, 1);
+    sync(_partnerPercentCtrl, _partnerPercentFocus, partnerPct, 0);
     sync(_partnerAmountCtrl, _partnerAmountFocus, partnerAmt, 2);
   }
 
@@ -728,6 +800,12 @@ class _CustomSplitSheetContentState extends State<_CustomSplitSheetContent> {
   void _onNumpadDecimal() {
     final ctrl = _activeController;
     if (ctrl == null) return;
+
+    // Block decimals for percentage inputs
+    if (_activeInput == _ActiveInput.myPercent ||
+        _activeInput == _ActiveInput.partnerPercent) {
+      return;
+    }
 
     if (!ctrl.text.contains('.')) {
       ctrl.text = '${ctrl.text}.';

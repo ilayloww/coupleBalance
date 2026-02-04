@@ -646,4 +646,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saveExpense => 'Save Expense';
+
+  @override
+  String get tagCustom => 'Custom';
+
+  @override
+  String get customCategoryHint => 'Enter category name';
+
+  @override
+  String get enterCategoryError => 'Please enter a category name';
+
+  @override
+  String get expensesSummary => 'Expenses Summary';
+
+  @override
+  String get items => 'items';
+
+  @override
+  String get pending => 'Pending';
+
+  @override
+  String get dueToday => 'Due today';
+
+  @override
+  String get paysYou => 'pays You';
+
+  @override
+  String get youPay => 'You pay';
+
+  @override
+  String get confirmSettlement => 'Confirm Settlement';
+
+  @override
+  String get filterAllTime => 'All Time';
+
+  @override
+  String get filterThisYear => 'This Year';
+
+  @override
+  String get filterLastYear => 'Last Year';
 }

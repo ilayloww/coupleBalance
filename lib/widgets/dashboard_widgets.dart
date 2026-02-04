@@ -211,7 +211,7 @@ class DashboardBalanceCard extends StatelessWidget {
           Row(
             children: [
               Icon(
-                isPositive ? Icons.arrow_outward : Icons.call_received,
+                isPositive ? Icons.call_received : Icons.arrow_outward,
                 color: AppTheme.emeraldPrimary,
                 size: 16,
               ),
@@ -303,7 +303,35 @@ class DashboardTransactionTile extends StatelessWidget {
     this.partnerName = "Partner",
   });
 
-  IconData _getIconForNote(String note) {
+  IconData _getIconForNote(String note, String? category) {
+    // 1. Try Category First
+    if (category != null && category.isNotEmpty) {
+      switch (category) {
+        case 'food':
+          return Icons.restaurant;
+        case 'coffee':
+          return Icons.coffee;
+        case 'rent':
+          return Icons.home;
+        case 'groceries':
+          return Icons.shopping_cart;
+        case 'transport':
+          return Icons.directions_car;
+        case 'date':
+          return Icons.favorite;
+        case 'bills':
+          return Icons.receipt_long;
+        case 'shopping':
+          return Icons.shopping_bag;
+        case 'custom':
+          return Icons.edit;
+        default:
+          // Fallback to text matching if unknown category ID
+          break;
+      }
+    }
+
+    // 2. Fallback to Note Matching (Old Logic)
     final lowerNote = note.toLowerCase();
     if (lowerNote.contains("grocery") ||
         lowerNote.contains("market") ||
@@ -365,7 +393,7 @@ class DashboardTransactionTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              _getIconForNote(transaction.note),
+              _getIconForNote(transaction.note, transaction.category),
               color: _getIconColor(transaction.note),
               size: 24,
             ),

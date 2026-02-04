@@ -98,6 +98,38 @@ class SettlementViewModel extends ChangeNotifier {
     }
   }
 
+  // Helper to fetch unsettled transactions for UI display
+  Future<List<QueryDocumentSnapshot>> getUnsettledTransactions(
+    String myUid,
+    String partnerUid,
+  ) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final snapshot = await firestore
+          .collection('transactions')
+          .where(
+            Filter.or(
+              Filter('senderUid', isEqualTo: myUid),
+              Filter('receiverUid', isEqualTo: myUid),
+            ),
+          )
+          .orderBy('timestamp', descending: true)
+          .get();
+
+      return snapshot.docs.where((doc) {
+        final data = doc.data();
+        if (data['isSettled'] == true) return false;
+        final sender = data['senderUid'];
+        final receiver = data['receiverUid'];
+        return (sender == myUid && receiver == partnerUid) ||
+            (sender == partnerUid && receiver == myUid);
+      }).toList();
+    } catch (e) {
+      debugPrint("Error fetching unsettled transactions: $e");
+      return [];
+    }
+  }
+
   // Renamed to clarify it now REQUESTS settlement instead of doing it immediately
   Future<int> requestSingleTransactionSettlement({
     required String myUid,
@@ -351,6 +383,29 @@ class SettlementViewModel extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return null;
+    }
+  }
+
+  Future<List<TransactionModel>> fetchTransactions(List<String> ids) async {
+    if (ids.isEmpty) return [];
+    try {
+      // Create a list of Futures to fetch all documents
+      final futures = ids.map(
+        (id) =>
+            FirebaseFirestore.instance.collection('transactions').doc(id).get(),
+      );
+
+      // Wait for all to complete
+      final snapshots = await Future.wait(futures);
+
+      // Process results
+      return snapshots
+          .where((doc) => doc.exists && doc.data() != null)
+          .map((doc) => TransactionModel.fromMap(doc.data()!, doc.id))
+          .toList();
+    } catch (e) {
+      debugPrint('Error fetching transactions list: $e');
+      return [];
     }
   }
 

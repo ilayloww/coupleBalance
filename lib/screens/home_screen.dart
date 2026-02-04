@@ -506,7 +506,7 @@ class _DashboardTransactionListState extends State<_DashboardTransactionList> {
 
               return ListView.builder(
                 padding: const EdgeInsets.only(
-                  bottom: 80,
+                  bottom: 100,
                 ), // Space for FAB/BottomBar
                 itemCount: docs.length,
                 itemBuilder: (context, index) {

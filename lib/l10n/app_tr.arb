@@ -203,5 +203,18 @@
     "enterNewPassword": "Yeni şifreyi girin",
     "reenterNewPassword": "Yeni şifreyi tekrar girin",
     "passwordCannotBeSame": "Yeni şifre mevcut şifre ile aynı olamaz",
-    "saveExpense": "Harcamayı Kaydet"
+    "saveExpense": "Harcamayı Kaydet",
+    "tagCustom": "Özel",
+    "customCategoryHint": "Kategori adı girin",
+    "enterCategoryError": "Lütfen kategori adı girin",
+    "expensesSummary": "Harcama Özeti",
+    "items": "öğe",
+    "pending": "Bekliyor",
+    "dueToday": "Son gün bugün",
+    "paysYou": "sana ödüyor",
+    "youPay": "Sen ödüyorsun",
+    "confirmSettlement": "Hesaplaşmayı Onayla",
+    "filterAllTime": "Tüm Zamanlar",
+    "filterThisYear": "Bu Yıl",
+    "filterLastYear": "Geçen Yıl"
 }

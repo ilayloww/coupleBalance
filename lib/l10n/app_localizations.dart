@@ -1285,6 +1285,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save Expense'**
   String get saveExpense;
+
+  /// No description provided for @tagCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get tagCustom;
+
+  /// No description provided for @customCategoryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter category name'**
+  String get customCategoryHint;
+
+  /// No description provided for @enterCategoryError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a category name'**
+  String get enterCategoryError;
+
+  /// No description provided for @expensesSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses Summary'**
+  String get expensesSummary;
+
+  /// No description provided for @items.
+  ///
+  /// In en, this message translates to:
+  /// **'items'**
+  String get items;
+
+  /// No description provided for @pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pending;
+
+  /// No description provided for @dueToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Due today'**
+  String get dueToday;
+
+  /// No description provided for @paysYou.
+  ///
+  /// In en, this message translates to:
+  /// **'pays You'**
+  String get paysYou;
+
+  /// No description provided for @youPay.
+  ///
+  /// In en, this message translates to:
+  /// **'You pay'**
+  String get youPay;
+
+  /// No description provided for @confirmSettlement.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Settlement'**
+  String get confirmSettlement;
+
+  /// No description provided for @filterAllTime.
+  ///
+  /// In en, this message translates to:
+  /// **'All Time'**
+  String get filterAllTime;
+
+  /// No description provided for @filterThisYear.
+  ///
+  /// In en, this message translates to:
+  /// **'This Year'**
+  String get filterThisYear;
+
+  /// No description provided for @filterLastYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Year'**
+  String get filterLastYear;
 }
 
 class _AppLocalizationsDelegate

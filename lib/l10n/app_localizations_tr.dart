@@ -646,4 +646,43 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get saveExpense => 'Harcamayı Kaydet';
+
+  @override
+  String get tagCustom => 'Özel';
+
+  @override
+  String get customCategoryHint => 'Kategori adı girin';
+
+  @override
+  String get enterCategoryError => 'Lütfen kategori adı girin';
+
+  @override
+  String get expensesSummary => 'Harcama Özeti';
+
+  @override
+  String get items => 'öğe';
+
+  @override
+  String get pending => 'Bekliyor';
+
+  @override
+  String get dueToday => 'Son gün bugün';
+
+  @override
+  String get paysYou => 'sana ödüyor';
+
+  @override
+  String get youPay => 'Sen ödüyorsun';
+
+  @override
+  String get confirmSettlement => 'Hesaplaşmayı Onayla';
+
+  @override
+  String get filterAllTime => 'Tüm Zamanlar';
+
+  @override
+  String get filterThisYear => 'Bu Yıl';
+
+  @override
+  String get filterLastYear => 'Geçen Yıl';
 }

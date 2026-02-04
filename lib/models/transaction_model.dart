@@ -12,6 +12,7 @@ class TransactionModel {
   final bool isSettled;
   final String? settlementId;
   final String? addedByUid;
+  final String? category;
 
   TransactionModel({
     required this.id,
@@ -25,6 +26,7 @@ class TransactionModel {
     this.isSettled = false,
     this.settlementId,
     this.addedByUid,
+    this.category,
   });
 
   factory TransactionModel.fromMap(
@@ -43,6 +45,7 @@ class TransactionModel {
       isSettled: data['isSettled'] ?? false,
       settlementId: data['settlementId'],
       addedByUid: data['addedByUid'],
+      category: data['category'],
     );
   }
 
@@ -58,6 +61,7 @@ class TransactionModel {
       'isSettled': isSettled,
       'settlementId': settlementId,
       'addedByUid': addedByUid,
+      'category': category,
     };
   }
 }
