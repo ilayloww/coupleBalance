@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:couple_balance/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../config/theme.dart';
 import '../models/transaction_model.dart';
 import '../services/auth_service.dart';
@@ -13,6 +14,7 @@ import 'settlement_history_screen.dart';
 import '../viewmodels/settlement_viewmodel.dart';
 import 'partner_list_screen.dart';
 import 'transaction_detail_screen.dart';
+import 'all_transactions_screen.dart'; // Added
 import '../models/user_model.dart';
 import '../services/theme_service.dart';
 import '../services/update_service.dart';
@@ -426,6 +428,9 @@ class _DashboardTransactionListState extends State<_DashboardTransactionList> {
   }
 
   void _createStream() {
+    // Limit to let's say 30 first to minimize data if only showing 20,
+    // but user wanted 'recent transactions limit to 20'.
+    // Firestore limit would be better efficiently.
     _transactionStream = FirebaseFirestore.instance
         .collection('transactions')
         .where(
@@ -435,6 +440,8 @@ class _DashboardTransactionListState extends State<_DashboardTransactionList> {
           ),
         )
         .orderBy('timestamp', descending: true)
+        // .limit(20) // REMOVED: limit(20) here causes issues if the top 20 are settled/deleted.
+        // We will limit the display count instead.
         .snapshots();
   }
 
@@ -460,12 +467,26 @@ class _DashboardTransactionListState extends State<_DashboardTransactionList> {
                   color: Colors.white,
                 ),
               ),
-              Text(
-                "See All", // Could move to localizations
-                style: TextStyle(
-                  color: AppTheme.emeraldPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AllTransactionsScreen(
+                        userUid: widget.userUid,
+                        partnerUid: widget.partnerUid!,
+                        partnerName: widget.partnerName,
+                      ),
+                    ),
+                  );
+                },
+                child: Text(
+                  "See All", // Could move to localizations
+                  style: TextStyle(
+                    color: AppTheme.emeraldPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ],
@@ -482,7 +503,7 @@ class _DashboardTransactionListState extends State<_DashboardTransactionList> {
               }
               final allDocs = snapshot.data?.docs ?? [];
 
-              // Filter logic (same as before)
+              // Filter logic
               final docs = allDocs.where((d) {
                 final data = d.data() as Map<String, dynamic>;
                 if (data['isDeleted'] == true || data['isSettled'] == true) {
@@ -504,11 +525,14 @@ class _DashboardTransactionListState extends State<_DashboardTransactionList> {
                 );
               }
 
+              // Apply limit here
+              final displayCount = docs.length > 20 ? 20 : docs.length;
+
               return ListView.builder(
                 padding: const EdgeInsets.only(
                   bottom: 100,
                 ), // Space for FAB/BottomBar
-                itemCount: docs.length,
+                itemCount: displayCount,
                 itemBuilder: (context, index) {
                   final data = docs[index].data() as Map<String, dynamic>;
                   final tx = TransactionModel.fromMap(data, docs[index].id);
@@ -525,7 +549,7 @@ class _DashboardTransactionListState extends State<_DashboardTransactionList> {
                         ),
                       );
                     },
-                    child: DashboardTransactionTile(
+                    child: SwipeableTransactionTile(
                       transaction: tx,
                       currentUserId: widget.userUid,
                       partnerName: widget.partnerName,

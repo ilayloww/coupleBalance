@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:couple_balance/config/theme.dart';
 import 'package:couple_balance/models/transaction_model.dart';
 import 'package:couple_balance/l10n/app_localizations.dart';
+import 'package:couple_balance/services/settlement_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // --- Dashboard Header ---
 class DashboardHeader extends StatelessWidget {
@@ -295,12 +298,14 @@ class DashboardTransactionTile extends StatelessWidget {
   final TransactionModel transaction;
   final String currentUserId;
   final String partnerName;
+  final EdgeInsetsGeometry? margin;
 
   const DashboardTransactionTile({
     super.key,
     required this.transaction,
     required this.currentUserId,
     this.partnerName = "Partner",
+    this.margin,
   });
 
   IconData _getIconForNote(String note, String? category) {
@@ -377,7 +382,7 @@ class DashboardTransactionTile extends StatelessWidget {
         : "$partnerName paid ${amount.toStringAsFixed(2)} $currency";
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
+      margin: margin ?? const EdgeInsets.only(bottom: 12, left: 16, right: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF1A2621), // Dark Green/Grey card bg
@@ -446,6 +451,233 @@ class DashboardTransactionTile extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+// --- Swipeable Transaction Tile ---
+class SwipeableTransactionTile extends StatelessWidget {
+  final TransactionModel transaction;
+  final String currentUserId;
+  final String partnerName;
+
+  const SwipeableTransactionTile({
+    super.key,
+    required this.transaction,
+    required this.currentUserId,
+    this.partnerName = "Partner",
+  });
+
+  Future<void> _handleDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A2621),
+        title: Text(
+          AppLocalizations.of(context)!.deleteTransactionTitle,
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          AppLocalizations.of(context)!.deleteTransactionContent,
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              "Delete",
+              style: TextStyle(
+                color: Colors.redAccent,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('transactions')
+            .doc(transaction.id)
+            .delete();
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("Transaction deleted")));
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("Delete Error: $e")));
+        }
+      }
+    }
+  }
+
+  Future<void> _handleSettleUp(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final amount = transaction.amount;
+    final currency = transaction.currency;
+
+    final shouldSettle = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A2621),
+        title: Text(l10n.settleUp, style: const TextStyle(color: Colors.white)),
+        content: Text(
+          "Do you want to settle this transaction of ${amount.toStringAsFixed(2)} $currency?",
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppTheme.emeraldPrimary,
+            ),
+            child: Text(l10n.sendRequest),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldSettle == true) {
+      try {
+        final settlementService = SettlementService();
+        String partnerUid = "";
+        if (transaction.senderUid == currentUserId) {
+          partnerUid = transaction.receiverUid;
+        } else {
+          partnerUid = transaction.senderUid;
+        }
+
+        if (partnerUid.isEmpty || partnerUid == currentUserId) {
+          partnerUid = transaction.senderUid == currentUserId
+              ? transaction.receiverUid
+              : transaction.senderUid;
+        }
+
+        await settlementService.requestSettlement(
+          senderUid: currentUserId,
+          receiverUid: partnerUid,
+          amount: amount,
+          currency: currency,
+          transactionId: transaction.id,
+        );
+
+        if (context.mounted) {
+          scaffoldMessenger.showSnackBar(
+            SnackBar(
+              content: Text(l10n.requestSentSuccess),
+              backgroundColor: AppTheme.emeraldPrimary,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          scaffoldMessenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                "Error: ${e.toString().replaceAll('Exception:', '')}",
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
+      child: Slidable(
+        key: Key(transaction.id),
+        // Left swipe reveals Settle Up button
+        startActionPane: ActionPane(
+          motion: const BehindMotion(),
+          extentRatio: 0.28,
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: CustomSlidableAction(
+                  onPressed: (ctx) => _handleSettleUp(context),
+                  backgroundColor: AppTheme.emeraldPrimary,
+                  foregroundColor: Colors.black,
+                  borderRadius: BorderRadius.circular(16),
+                  padding: EdgeInsets.zero,
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.check, size: 24),
+                      SizedBox(height: 4),
+                      Text(
+                        "Settle",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        // Right swipe reveals Delete button
+        endActionPane: ActionPane(
+          motion: const BehindMotion(),
+          extentRatio: 0.28,
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: CustomSlidableAction(
+                  onPressed: (ctx) => _handleDelete(context),
+                  backgroundColor: const Color(0xFFEF4444),
+                  foregroundColor: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  padding: EdgeInsets.zero,
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.delete, size: 24),
+                      SizedBox(height: 4),
+                      Text(
+                        "Delete",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        child: DashboardTransactionTile(
+          transaction: transaction,
+          currentUserId: currentUserId,
+          partnerName: partnerName,
+          margin: EdgeInsets.zero,
+        ),
       ),
     );
   }

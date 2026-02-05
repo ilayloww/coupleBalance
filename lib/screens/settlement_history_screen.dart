@@ -206,6 +206,55 @@ class _ExpandableSettlementCardState extends State<ExpandableSettlementCard> {
   bool _isLoading = false;
   List<TransactionModel> _transactions = [];
 
+  IconData _getIcon(TransactionModel tx) {
+    if (tx.category != null && tx.category!.isNotEmpty) {
+      switch (tx.category!.toLowerCase()) {
+        case 'food':
+          return Icons.restaurant;
+        case 'coffee':
+          return Icons.coffee;
+        case 'rent':
+          return Icons.home;
+        case 'groceries':
+          return Icons.shopping_cart;
+        case 'transport':
+          return Icons.directions_car;
+        case 'date':
+          return Icons.favorite;
+        case 'bills':
+          return Icons.receipt_long;
+        case 'shopping':
+          return Icons.shopping_bag;
+        case 'custom':
+          return Icons.edit;
+        default:
+          break;
+      }
+    }
+
+    final lowerNote = tx.note.toLowerCase();
+    if (lowerNote.contains("grocery") ||
+        lowerNote.contains("market") ||
+        lowerNote.contains("food")) {
+      return Icons.shopping_cart;
+    } else if (lowerNote.contains("gas") || lowerNote.contains("fuel")) {
+      return Icons.local_gas_station;
+    } else if (lowerNote.contains("dinner") ||
+        lowerNote.contains("lunch") ||
+        lowerNote.contains("restaurant")) {
+      return Icons.restaurant;
+    } else if (lowerNote.contains("movie") || lowerNote.contains("cinema")) {
+      return Icons.movie;
+    } else if (lowerNote.contains("rent") || lowerNote.contains("home")) {
+      return Icons.home;
+    } else if (lowerNote.contains("bill") ||
+        lowerNote.contains("wifi") ||
+        lowerNote.contains("electric")) {
+      return Icons.receipt_long;
+    }
+    return Icons.receipt;
+  }
+
   Future<void> _toggleExpand() async {
     if (_isExpanded) {
       setState(() {
@@ -379,7 +428,7 @@ class _ExpandableSettlementCardState extends State<ExpandableSettlementCard> {
                       child: Row(
                         children: [
                           Icon(
-                            Icons.receipt_long, // Or use category icon logic
+                            _getIcon(tx),
                             color: Colors.white.withValues(alpha: 0.6),
                             size: 20,
                           ),
