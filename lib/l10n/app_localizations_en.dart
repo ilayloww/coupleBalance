@@ -748,4 +748,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get you => 'You';
+
+  @override
+  String owePartner(String name) {
+    return 'You owe $name';
+  }
 }

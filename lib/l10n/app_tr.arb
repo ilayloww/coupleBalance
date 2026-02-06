@@ -244,5 +244,13 @@
     "owesYou": "Sana borçlu",
     "youOwe": "Sen borçlusun",
     "you": "Sen",
-    "partner": "Partner"
+    "partner": "Partner",
+    "owePartner": "{name} alacaklı",
+    "@owePartner": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    }
 }

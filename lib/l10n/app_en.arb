@@ -361,5 +361,13 @@
     "owesYou": "Owes you",
     "youOwe": "You owe",
     "you": "You",
-    "partner": "Partner"
+    "partner": "Partner",
+    "owePartner": "You owe {name}",
+    "@owePartner": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    }
 }

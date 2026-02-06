@@ -473,7 +473,11 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             _buildSplitCard(
               context,
               user: isMe ? currentUser : partnerUser,
-              description: l10n.paidByYou,
+              description: isMe
+                  ? l10n.paidByYou
+                  : l10n.paidByPartner(
+                      partnerUser.displayName,
+                    ), // Corrected description logic
               amount: widget.transaction.totalAmount != null
                   ? (widget.transaction.totalAmount! - // Show 'My Share' (Cost)
                         widget.transaction.amount) // Debt
@@ -485,7 +489,11 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             _buildSplitCard(
               context,
               user: isMe ? partnerUser : currentUser!,
-              description: l10n.owesYou,
+              description: isMe
+                  ? l10n.owesYou
+                  : l10n.owePartner(
+                      partnerUser.displayName,
+                    ), // Corrected description logic
               amount: widget.transaction.amount, // Debt is always Debt
               currency: widget.transaction.currency,
               isPayer: false,
@@ -697,6 +705,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   }) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+    final isCurrentUser = user?.uid == widget.currentUserId;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -723,7 +732,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                isPayer ? l10n.you : (user?.displayName ?? l10n.partner),
+                isCurrentUser ? l10n.you : (user?.displayName ?? l10n.partner),
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,

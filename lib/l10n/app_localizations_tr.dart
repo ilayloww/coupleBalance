@@ -748,4 +748,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get you => 'Sen';
+
+  @override
+  String owePartner(String name) {
+    return '$name alacaklı';
+  }
 }

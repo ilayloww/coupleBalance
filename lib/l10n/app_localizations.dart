@@ -1477,6 +1477,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You'**
   String get you;
+
+  /// No description provided for @owePartner.
+  ///
+  /// In en, this message translates to:
+  /// **'You owe {name}'**
+  String owePartner(String name);
 }
 
 class _AppLocalizationsDelegate
