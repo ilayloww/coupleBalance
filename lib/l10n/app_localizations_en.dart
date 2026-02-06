@@ -48,6 +48,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enterEmail => 'Please enter your email';
 
   @override
+  String get enterDisplayName => 'Please enter your display name';
+
+  @override
+  String get tooManyRequests => 'Too many attempts. Please try again later.';
+
+  @override
+  String waitToResend(Object seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
   String get validEmail => 'Please enter a valid email';
 
   @override
@@ -500,9 +511,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invalidCredential => 'Incorrect email or password';
 
   @override
-  String get tooManyRequests => 'Too many attempts. Please try again later.';
-
-  @override
   String get networkRequestFailed =>
       'Network error. Please check your connection.';
 
@@ -524,6 +532,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountDeleted => 'Account deleted successfully.';
+
+  @override
+  String get areYouSure => 'Are you sure?';
+
+  @override
+  String get deleteAccountDescription =>
+      'This action cannot be undone. All your shared expenses, history, and linked accounts will be permanently deleted from our servers.';
+
+  @override
+  String get typeDeleteToConfirm => 'To confirm, type DELETE below';
+
+  @override
+  String get deleteConfirmationKeyword => 'DELETE';
+
+  @override
+  String get partnerNotifiedInfo =>
+      'Your partner will be notified that the shared ledger has been closed.';
+
+  @override
+  String get deleteMyAccount => 'Delete My Account';
+
+  @override
+  String get goBack => 'Go Back';
 
   @override
   String get requestNotFound => 'Request not found or timed out.';
@@ -685,4 +716,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get filterLastYear => 'Last Year';
+
+  @override
+  String get splitDetails => 'Split Details';
+
+  @override
+  String get receipt => 'Receipt';
+
+  @override
+  String get time => 'Time';
+
+  @override
+  String get category => 'Category';
+
+  @override
+  String get paidByYou => 'Paid by You';
+
+  @override
+  String paidByPartner(String name) {
+    return 'Paid by $name';
+  }
+
+  @override
+  String get paidFullAmount => 'Paid full amount';
+
+  @override
+  String get owesYou => 'Owes you';
+
+  @override
+  String get youOwe => 'You owe';
+
+  @override
+  String get you => 'You';
 }

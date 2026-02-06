@@ -12,6 +12,9 @@
     "authFailed": "Kimlik doğrulama başarısız",
     "unexpectedError": "Beklenmeyen bir hata oluştu",
     "enterEmail": "Lütfen e-posta adresinizi girin",
+    "enterDisplayName": "Lütfen isminizi girin",
+    "tooManyRequests": "Çok fazla istek gönderildi. Lütfen daha sonra tekrar deneyin.",
+    "waitToResend": "{seconds}sn sonra tekrar deneyin",
     "validEmail": "Lütfen geçerli bir e-posta girin",
     "enterPassword": "Lütfen şifrenizi girin",
     "passwordMinLength": "Şifre en az 6 karakter olmalıdır",
@@ -160,6 +163,13 @@
     "enterEmailToConfirm": "Onaylamak için e-postanızı girin",
     "deleteForever": "Kalıcı Olarak Sil",
     "accountDeleted": "Hesap başarıyla silindi.",
+    "areYouSure": "Emin misiniz?",
+    "deleteAccountDescription": "Bu işlem geri alınamaz. Tüm paylaşılan harcamalarınız, geçmişiniz ve bağlı hesaplarınız sunucularımızdan kalıcı olarak silinecektir.",
+    "typeDeleteToConfirm": "Onaylamak için aşağıya DELETE yazın",
+    "deleteConfirmationKeyword": "DELETE",
+    "partnerNotifiedInfo": "Partneriniz, ortak defterin kapatıldığına dair bilgilendirilecektir.",
+    "deleteMyAccount": "Hesabımı Sil",
+    "goBack": "Geri Dön",
     "requestNotFound": "İstek bulunamadı veya zaman aşımına uğradı.",
     "partnerWantsToSettleUp": "Partnerin hesaplaşmak istiyor",
     "settlementConfirmationDescription": "Onayladığında seçilen işlemler temizlenecek ve bakiyen güncellenecektir.",
@@ -216,5 +226,23 @@
     "confirmSettlement": "Hesaplaşmayı Onayla",
     "filterAllTime": "Tüm Zamanlar",
     "filterThisYear": "Bu Yıl",
-    "filterLastYear": "Geçen Yıl"
+    "filterLastYear": "Geçen Yıl",
+    "splitDetails": "Bölüşüm Detayları",
+    "receipt": "Fiş",
+    "time": "Saat",
+    "category": "Kategori",
+    "paidByYou": "Sen ödedin",
+    "paidByPartner": "{name} ödedi",
+    "@paidByPartner": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "paidFullAmount": "Tamamını ödedi (borç yok)",
+    "owesYou": "Sana borçlu",
+    "youOwe": "Sen borçlusun",
+    "you": "Sen",
+    "partner": "Partner"
 }

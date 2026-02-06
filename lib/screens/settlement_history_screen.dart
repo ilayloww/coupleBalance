@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:couple_balance/l10n/app_localizations.dart';
+import 'package:couple_balance/utils/date_time_utils.dart';
 import '../viewmodels/settlement_viewmodel.dart';
 import '../models/settlement_model.dart';
 import '../models/transaction_model.dart';
@@ -445,9 +446,7 @@ class _ExpandableSettlementCardState extends State<ExpandableSettlementCard> {
                                   ),
                                 ),
                                 Text(
-                                  DateFormat(
-                                    'MMM d, h:mm a',
-                                  ).format(tx.timestamp),
+                                  "${DateFormat('MMM d').format(tx.timestamp)}, ${DateTimeUtils.formatTime(context, tx.timestamp)}",
                                   style: TextStyle(
                                     color: Colors.white.withValues(alpha: 0.4),
                                     fontSize: 10,

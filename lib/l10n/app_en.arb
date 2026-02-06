@@ -12,6 +12,9 @@
     "authFailed": "Authentication failed",
     "unexpectedError": "An unexpected error occurred",
     "enterEmail": "Please enter your email",
+    "enterDisplayName": "Please enter your display name",
+    "tooManyRequests": "Too many requests. Please try again later.",
+    "waitToResend": "Resend in {seconds}s",
     "validEmail": "Please enter a valid email",
     "enterPassword": "Please enter your password",
     "passwordMinLength": "Password must be at least 6 characters",
@@ -267,6 +270,13 @@
     "enterEmailToConfirm": "Enter your email to confirm",
     "deleteForever": "Delete Forever",
     "accountDeleted": "Account deleted successfully.",
+    "areYouSure": "Are you sure?",
+    "deleteAccountDescription": "This action cannot be undone. All your shared expenses, history, and linked accounts will be permanently deleted from our servers.",
+    "typeDeleteToConfirm": "To confirm, type DELETE below",
+    "deleteConfirmationKeyword": "DELETE",
+    "partnerNotifiedInfo": "Your partner will be notified that the shared ledger has been closed.",
+    "deleteMyAccount": "Delete My Account",
+    "goBack": "Go Back",
     "requestNotFound": "Request not found or timed out.",
     "partnerWantsToSettleUp": "Partner wants to settle up",
     "settlementConfirmationDescription": "Confirming this will clear selected transactions and update your balance.",
@@ -333,5 +343,23 @@
     "confirmSettlement": "Confirm Settlement",
     "filterAllTime": "All Time",
     "filterThisYear": "This Year",
-    "filterLastYear": "Last Year"
+    "filterLastYear": "Last Year",
+    "splitDetails": "Split Details",
+    "receipt": "Receipt",
+    "time": "Time",
+    "category": "Category",
+    "paidByYou": "Paid by You",
+    "paidByPartner": "Paid by {name}",
+    "@paidByPartner": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "paidFullAmount": "Paid full amount",
+    "owesYou": "Owes you",
+    "youOwe": "You owe",
+    "you": "You",
+    "partner": "Partner"
 }

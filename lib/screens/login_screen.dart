@@ -18,6 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _displayNameController = TextEditingController();
   bool _isLogin = true;
   bool _isLoading = false;
   bool _isPasswordVisible = false;
@@ -27,6 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _displayNameController.dispose();
     super.dispose();
   }
 
@@ -47,7 +49,26 @@ class _LoginScreenState extends State<LoginScreen> {
       if (_isLogin) {
         await authService.signInWithEmailAndPassword(email, password);
       } else {
-        await authService.registerWithEmailAndPassword(email, password);
+        try {
+          await authService.registerWithEmailAndPassword(
+            email,
+            password,
+            _displayNameController.text.trim(),
+          );
+        } on FirebaseAuthException catch (e) {
+          if (e.code == 'email-already-in-use') {
+            // Try to log in with these credentials transparency
+            try {
+              await authService.signInWithEmailAndPassword(email, password);
+              // If successful, the auth state stream will update and redirect
+              return;
+            } catch (_) {
+              // If login fails (wrong password), throw original error
+              rethrow;
+            }
+          }
+          rethrow;
+        }
       }
     } on FirebaseAuthException catch (e) {
       setState(() {
@@ -206,6 +227,27 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
 
+                      // Display Name Field (Sign Up Only)
+                      if (!_isLogin) ...[
+                        CustomTextField(
+                          label: AppLocalizations.of(context)!.displayName,
+                          controller: _displayNameController,
+                          prefixIcon: const Icon(
+                            Icons.person_outline,
+                            color: Colors.white54,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return AppLocalizations.of(
+                                context,
+                              )!.enterDisplayName;
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
                       // Email Field
                       CustomTextField(
                         label: AppLocalizations.of(context)!.email,
@@ -217,10 +259,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your email';
+                            return AppLocalizations.of(context)!.enterEmail;
                           }
                           if (!value.contains('@')) {
-                            return 'Please enter a valid email';
+                            return AppLocalizations.of(context)!.validEmail;
                           }
                           return null;
                         },
@@ -251,10 +293,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your password';
+                            return AppLocalizations.of(context)!.enterPassword;
                           }
                           if (!_isLogin && value.length < 6) {
-                            return 'Password must be at least 6 characters';
+                            return AppLocalizations.of(
+                              context,
+                            )!.passwordMinLength;
                           }
                           return null;
                         },

@@ -48,6 +48,18 @@ class AppLocalizationsTr extends AppLocalizations {
   String get enterEmail => 'Lütfen e-posta adresinizi girin';
 
   @override
+  String get enterDisplayName => 'Lütfen isminizi girin';
+
+  @override
+  String get tooManyRequests =>
+      'Çok fazla deneme yaptınız. Lütfen daha sonra tekrar deneyin.';
+
+  @override
+  String waitToResend(Object seconds) {
+    return '${seconds}sn sonra tekrar deneyin';
+  }
+
+  @override
   String get validEmail => 'Lütfen geçerli bir e-posta girin';
 
   @override
@@ -368,7 +380,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get me => 'Ben';
 
   @override
-  String get partner => 'Partnerim';
+  String get partner => 'Partner';
 
   @override
   String get splitEqually => 'Eşit';
@@ -501,10 +513,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get invalidCredential => 'E-posta veya şifre hatalı';
 
   @override
-  String get tooManyRequests =>
-      'Çok fazla deneme yaptınız. Lütfen daha sonra tekrar deneyin.';
-
-  @override
   String get networkRequestFailed =>
       'Ağ hatası. Lütfen bağlantınızı kontrol edin.';
 
@@ -526,6 +534,29 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get accountDeleted => 'Hesap başarıyla silindi.';
+
+  @override
+  String get areYouSure => 'Emin misiniz?';
+
+  @override
+  String get deleteAccountDescription =>
+      'Bu işlem geri alınamaz. Tüm paylaşılan harcamalarınız, geçmişiniz ve bağlı hesaplarınız sunucularımızdan kalıcı olarak silinecektir.';
+
+  @override
+  String get typeDeleteToConfirm => 'Onaylamak için aşağıya DELETE yazın';
+
+  @override
+  String get deleteConfirmationKeyword => 'DELETE';
+
+  @override
+  String get partnerNotifiedInfo =>
+      'Partneriniz, ortak defterin kapatıldığına dair bilgilendirilecektir.';
+
+  @override
+  String get deleteMyAccount => 'Hesabımı Sil';
+
+  @override
+  String get goBack => 'Geri Dön';
 
   @override
   String get requestNotFound => 'İstek bulunamadı veya zaman aşımına uğradı.';
@@ -685,4 +716,36 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get filterLastYear => 'Geçen Yıl';
+
+  @override
+  String get splitDetails => 'Bölüşüm Detayları';
+
+  @override
+  String get receipt => 'Fiş';
+
+  @override
+  String get time => 'Saat';
+
+  @override
+  String get category => 'Kategori';
+
+  @override
+  String get paidByYou => 'Sen ödedin';
+
+  @override
+  String paidByPartner(String name) {
+    return '$name ödedi';
+  }
+
+  @override
+  String get paidFullAmount => 'Tamamını ödedi (borç yok)';
+
+  @override
+  String get owesYou => 'Sana borçlu';
+
+  @override
+  String get youOwe => 'Sen borçlusun';
+
+  @override
+  String get you => 'Sen';
 }

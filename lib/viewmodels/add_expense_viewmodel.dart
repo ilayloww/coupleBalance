@@ -342,6 +342,7 @@ class AddExpenseViewModel extends ChangeNotifier {
         timestamp: DateTime.now(),
         addedByUid: _auth.currentUser!.uid,
         category: _selectedCategory,
+        totalAmount: amount,
       );
 
       // 3. Save to Firestore

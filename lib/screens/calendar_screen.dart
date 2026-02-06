@@ -4,6 +4,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:couple_balance/l10n/app_localizations.dart';
+import 'package:couple_balance/utils/date_time_utils.dart';
 import '../models/transaction_model.dart';
 import 'transaction_detail_screen.dart';
 
@@ -507,7 +508,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            DateFormat.jm().format(tx.timestamp),
+                            DateTimeUtils.formatTime(context, tx.timestamp),
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.5),
                               fontSize: 12,

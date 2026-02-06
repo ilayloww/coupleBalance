@@ -176,6 +176,24 @@ abstract class AppLocalizations {
   /// **'Please enter your email'**
   String get enterEmail;
 
+  /// No description provided for @enterDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your display name'**
+  String get enterDisplayName;
+
+  /// No description provided for @tooManyRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Please try again later.'**
+  String get tooManyRequests;
+
+  /// No description provided for @waitToResend.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {seconds}s'**
+  String waitToResend(Object seconds);
+
   /// No description provided for @validEmail.
   ///
   /// In en, this message translates to:
@@ -1016,12 +1034,6 @@ abstract class AppLocalizations {
   /// **'Incorrect email or password'**
   String get invalidCredential;
 
-  /// No description provided for @tooManyRequests.
-  ///
-  /// In en, this message translates to:
-  /// **'Too many attempts. Please try again later.'**
-  String get tooManyRequests;
-
   /// No description provided for @networkRequestFailed.
   ///
   /// In en, this message translates to:
@@ -1063,6 +1075,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Account deleted successfully.'**
   String get accountDeleted;
+
+  /// No description provided for @areYouSure.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure?'**
+  String get areYouSure;
+
+  /// No description provided for @deleteAccountDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be undone. All your shared expenses, history, and linked accounts will be permanently deleted from our servers.'**
+  String get deleteAccountDescription;
+
+  /// No description provided for @typeDeleteToConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'To confirm, type DELETE below'**
+  String get typeDeleteToConfirm;
+
+  /// No description provided for @deleteConfirmationKeyword.
+  ///
+  /// In en, this message translates to:
+  /// **'DELETE'**
+  String get deleteConfirmationKeyword;
+
+  /// No description provided for @partnerNotifiedInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Your partner will be notified that the shared ledger has been closed.'**
+  String get partnerNotifiedInfo;
+
+  /// No description provided for @deleteMyAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete My Account'**
+  String get deleteMyAccount;
+
+  /// No description provided for @goBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Go Back'**
+  String get goBack;
 
   /// No description provided for @requestNotFound.
   ///
@@ -1363,6 +1417,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Last Year'**
   String get filterLastYear;
+
+  /// No description provided for @splitDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Split Details'**
+  String get splitDetails;
+
+  /// No description provided for @receipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt'**
+  String get receipt;
+
+  /// No description provided for @time.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get time;
+
+  /// No description provided for @category.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get category;
+
+  /// No description provided for @paidByYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid by You'**
+  String get paidByYou;
+
+  /// No description provided for @paidByPartner.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid by {name}'**
+  String paidByPartner(String name);
+
+  /// No description provided for @paidFullAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid full amount'**
+  String get paidFullAmount;
+
+  /// No description provided for @owesYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Owes you'**
+  String get owesYou;
+
+  /// No description provided for @youOwe.
+  ///
+  /// In en, this message translates to:
+  /// **'You owe'**
+  String get youOwe;
+
+  /// No description provided for @you.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get you;
 }
 
 class _AppLocalizationsDelegate

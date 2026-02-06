@@ -154,6 +154,7 @@ class AuthService extends ChangeNotifier {
   Future<User?> registerWithEmailAndPassword(
     String email,
     String password,
+    String displayName,
   ) async {
     try {
       final credential = await _auth.createUserWithEmailAndPassword(
@@ -163,13 +164,14 @@ class AuthService extends ChangeNotifier {
 
       if (credential.user != null) {
         debugPrint(
-          "AuthService: Registering user doc for ${credential.user!.uid} with email: $email",
+          "AuthService: Registering user doc for ${credential.user!.uid} with email: $email, name: $displayName",
         );
         await FirebaseFirestore.instance
             .collection('users')
             .doc(credential.user!.uid)
             .set({
               'email': email.toLowerCase(),
+              'displayName': displayName,
               'createdAt': FieldValue.serverTimestamp(),
               'partnerUids': [],
             });

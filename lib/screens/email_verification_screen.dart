@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:couple_balance/l10n/app_localizations.dart';
 import '../services/auth_service.dart';
+import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/custom_button.dart';
 import '../config/theme.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -57,6 +59,31 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     }
   }
 
+  Timer? _resendTimer;
+  int _resendCountdown = 0;
+
+  @override
+  void dispose() {
+    _resendTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startResendTimer() {
+    setState(() {
+      _resendCountdown = 60;
+    });
+    _resendTimer?.cancel();
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_resendCountdown > 0) {
+        setState(() {
+          _resendCountdown--;
+        });
+      } else {
+        _resendTimer?.cancel();
+      }
+    });
+  }
+
   Future<void> _resendVerificationEmail() async {
     setState(() {
       _isLoading = true;
@@ -70,6 +97,20 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
         setState(() {
           _message = AppLocalizations.of(context)!.verificationEmailSent;
         });
+        _startResendTimer();
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        if (e.code == 'too-many-requests') {
+          setState(() {
+            _message = AppLocalizations.of(context)!.tooManyRequests;
+          });
+          _startResendTimer(); // Start timer anyway to prevent spamming
+        } else {
+          setState(() {
+            _message = e.message;
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -270,11 +311,21 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                     ),
                   ),
                   TextButton(
-                    onPressed: _isLoading ? null : _resendVerificationEmail,
+                    onPressed: (_isLoading || _resendCountdown > 0)
+                        ? null
+                        : _resendVerificationEmail,
                     child: Text(
-                      AppLocalizations.of(context)!.resendVerificationEmail,
-                      style: const TextStyle(
-                        color: AppTheme.emeraldPrimary, // Green text
+                      _resendCountdown > 0
+                          ? AppLocalizations.of(
+                              context,
+                            )!.waitToResend(_resendCountdown)
+                          : AppLocalizations.of(
+                              context,
+                            )!.resendVerificationEmail,
+                      style: TextStyle(
+                        color: (_isLoading || _resendCountdown > 0)
+                            ? Colors.white38
+                            : AppTheme.emeraldPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
