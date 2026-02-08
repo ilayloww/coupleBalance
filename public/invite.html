@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Couple Balance Invite</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f4f4f4;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            font-size: 18px;
+            color: white;
+            background-color: #00E676;
+            text-decoration: none;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Couple Balance Invite</h1>
+    <p>Click the button below to join:</p>
+    <a id="deepLinkBtn" class="button" href="#">Open App</a>
+
+    <script>
+        // Get query parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const partnerId = urlParams.get('partnerId');
+
+        if (partnerId) {
+            // Construct Deep Link
+            const deepLink = `couplebalance://invite?partnerId=${partnerId}`;
+            document.getElementById('deepLinkBtn').href = deepLink;
+
+            // Auto Redirect
+            setTimeout(() => {
+                window.location.href = deepLink;
+            }, 500); // Small delay to let page load
+        } else {
+            document.body.innerHTML = '<h1>Invalid Link</h1><p>No Partner ID found.</p>';
+        }
+    </script>
+</body>
+
+</html>

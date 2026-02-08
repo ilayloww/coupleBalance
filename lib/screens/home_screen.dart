@@ -18,6 +18,7 @@ import 'all_transactions_screen.dart'; // Added
 import '../models/user_model.dart';
 import '../services/theme_service.dart';
 import '../services/update_service.dart';
+import '../services/deep_link_service.dart'; // Add this
 import '../widgets/pending_settlements_widget.dart';
 import '../widgets/dashboard_widgets.dart'; // New Dashboard Widgets
 
@@ -34,7 +35,23 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      UpdateService().checkForUpdate(context);
+      // Small delay to allow DeepLinkService to process any initial link
+      // and set 'isHandlingLink' flag before showing update dialog.
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (!mounted) return;
+        final deepLinkService = Provider.of<DeepLinkService>(
+          context,
+          listen: false,
+        );
+        debugPrint(
+          'HomeScreen: isHandlingLink: ${deepLinkService.isHandlingLink}',
+        );
+        if (!deepLinkService.isHandlingLink) {
+          UpdateService().checkForUpdate(context);
+        } else {
+          debugPrint('HomeScreen: Skipping update check due to deep link.');
+        }
+      });
     });
   }
 

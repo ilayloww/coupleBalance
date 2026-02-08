@@ -9,7 +9,9 @@ import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
 
 class PartnerLinkScreen extends StatefulWidget {
-  const PartnerLinkScreen({super.key});
+  final String? initialPartnerId;
+
+  const PartnerLinkScreen({super.key, this.initialPartnerId});
 
   @override
   State<PartnerLinkScreen> createState() => _PartnerLinkScreenState();
@@ -20,6 +22,8 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
   bool _isLoading = false;
   String? _myPartnerId;
   final _focusNode = FocusNode();
+  bool _hasAttemptedAutoLink = false;
+  bool _hasAttemptedIdGeneration = false;
 
   @override
   void initState() {
@@ -27,31 +31,67 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
     _focusNode.addListener(() {
       if (mounted) setState(() {});
     });
-    _initPartnerId();
+
+    if (widget.initialPartnerId != null) {
+      _partnerIdController.text = widget.initialPartnerId!.replaceAll('-', '');
+    }
   }
 
-  Future<void> _initPartnerId() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    // If ID exists, use it. If not, generate it.
-    String? id = authService.currentUserModel?.partnerId;
-    if (id == null) {
-      setState(() => _isLoading = true);
-      id = await authService.generatePartnerId();
-      setState(() => _isLoading = false);
+  Future<void> _checkAutoActions(AuthService authService) async {
+    // 1. Generate/Get Partner ID if missing
+    if (authService.currentUserModel != null &&
+        authService.currentUserModel!.partnerId == null &&
+        !_hasAttemptedIdGeneration) {
+      _hasAttemptedIdGeneration = true;
+      // Use a microtask/postFrame to avoid build-time setState
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        setState(() => _isLoading = true);
+        final id = await authService.generatePartnerId();
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _myPartnerId = id;
+          });
+        }
+      });
+    } else if (authService.currentUserModel?.partnerId != null) {
+      // If we have it, ensure local state matches
+      if (_myPartnerId != authService.currentUserModel!.partnerId) {
+        // Update local state without rebuilding everything?
+        // It's safe to set this here if we are careful, but better in postFrame
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted &&
+              _myPartnerId != authService.currentUserModel!.partnerId) {
+            setState(() {
+              _myPartnerId = authService.currentUserModel!.partnerId;
+            });
+          }
+        });
+      }
     }
-    if (mounted) {
-      setState(() {
-        _myPartnerId = id;
+
+    // 2. Auto-Link if initialPartnerId provided
+    if (widget.initialPartnerId != null &&
+        !_hasAttemptedAutoLink &&
+        authService.currentUserModel != null) {
+      _hasAttemptedAutoLink = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _linkPartner();
       });
     }
   }
 
   Future<void> _linkPartner() async {
+    // Original _linkPartner logic...
+    // But we need to make sure we use the passed context or provider correctly.
+    // Since we are taking this method from the existing code, I'll assume I'm keeping the body mostly same
+    // but I need to make sure I don't paste the WHOLE file here.
+    // I will call the ORIGINAL _linkPartner logic via the tool, but I am replacing lines 20-200.
+    // So I need to provide the implementation of _linkPartner inside this replacement chunk.
+
     final partnerIdInput = _partnerIdController.text.trim().toUpperCase();
     if (partnerIdInput.isEmpty) return;
-
-    // Basic format validation (XXXX-XXXX)
-    // Optional: Add strict regex check if needed
 
     setState(() => _isLoading = true);
     try {
@@ -59,9 +99,18 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
       final currentUser = authService.currentUser;
       final currentUserModel = authService.currentUserModel;
 
-      if (currentUser == null || currentUserModel == null) return;
+      if (currentUser == null || currentUserModel == null) {
+        // Should not happen if we waited for loading, but safety first
+        return;
+      }
 
-      if (partnerIdInput == _myPartnerId) {
+      String formattedPartnerId = partnerIdInput;
+      if (partnerIdInput.length == 8) {
+        formattedPartnerId =
+            '${partnerIdInput.substring(0, 4)}-${partnerIdInput.substring(4)}';
+      }
+
+      if (formattedPartnerId == _myPartnerId) {
         if (!mounted) return;
         ScaffoldMessenger.of(
           context,
@@ -72,7 +121,7 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
       // 1. Find partner by ID
       final querySnapshot = await FirebaseFirestore.instance
           .collection('users')
-          .where('partnerId', isEqualTo: partnerIdInput)
+          .where('partnerId', isEqualTo: formattedPartnerId)
           .limit(1)
           .get();
 
@@ -121,10 +170,14 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
       }
 
       // 4. Create Friend Request
+      final String fromName = currentUserModel.displayName.isNotEmpty
+          ? currentUserModel.displayName
+          : (currentUser.displayName ?? currentUser.email ?? 'Unknown');
+
       await FirebaseFirestore.instance.collection('friend_requests').add({
         'fromUid': currentUser.uid,
-        'fromEmail': currentUser.email,
-        'fromName': currentUser.displayName ?? currentUser.email,
+        'fromEmail': currentUserModel.email ?? currentUser.email,
+        'fromName': fromName,
         'toUid': partnerUid,
         'toEmail': partnerDoc['email'],
         'toName': partnerDoc['displayName'] ?? '',
@@ -165,7 +218,7 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
     if (_myPartnerId != null) {
       // ignore: deprecated_member_use
       await Share.share(
-        'Let\'s track expenses together on Couple Balance! My Partner ID is: $_myPartnerId',
+        'Let\'s track expenses together on Couple Balance! Tap here to connect: https://couple-balance-app.web.app/invite.html?partnerId=$_myPartnerId',
       );
     }
   }
@@ -184,328 +237,356 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
     // Assuming dark theme based on requirements description
     // final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Custom colors to match the "green" aesthetic from description functionality-wise,
-    // but sticking to app theme if possible.
-    // Description says: "The design will be as n screenshot" (missing screenshot but implied dark/green).
-    // I will try to use the current theme's primary color, but use dark background.
+    return Consumer<AuthService>(
+      builder: (context, authService, child) {
+        // If loading or no user model yet, show loading
+        if (authService.isLoading || authService.currentUserModel == null) {
+          return const Scaffold(
+            backgroundColor: Color(0xFF121212),
+            body: Center(
+              child: CircularProgressIndicator(color: Color(0xFF00E676)),
+            ),
+          );
+        }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF121212), // Dark background
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          AppLocalizations.of(context)!.linkPartnerTitle,
-          style: const TextStyle(color: Colors.white),
-        ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 20),
-              const Text(
-                'Connect with\nyour partner',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Enter your partner\'s unique ID or scan their\nQR code to start tracking expenses\ntogether.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white.withValues(alpha: 0.6),
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 40),
+        // Run checks (non-blocking)
+        _checkAutoActions(authService);
 
-              // Partner ID Input
-              // Partner ID Header & Scan Button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return Scaffold(
+          backgroundColor: const Color(0xFF121212), // Dark background
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: Text(
+              AppLocalizations.of(context)!.linkPartnerTitle,
+              style: const TextStyle(color: Colors.white),
+            ),
+            centerTitle: true,
+          ),
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    'Partner ID',
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Connect with\nyour partner',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      height: 1.2,
                     ),
                   ),
-                  GestureDetector(
-                    onTap: _onScanQr,
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.qr_code_scanner,
-                          color: Color(0xFF00E676),
-                          size: 18,
+                  const SizedBox(height: 16),
+                  Text(
+                    'Enter your partner\'s unique ID or scan their\nQR code to start tracking expenses\ntogether.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.6),
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+
+                  // Partner ID Input
+                  // Partner ID Header & Scan Button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Partner ID',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'SCAN',
-                          style: const TextStyle(
-                            color: Color(0xFF00E676),
-                            fontWeight: FontWeight.bold,
+                      ),
+                      GestureDetector(
+                        onTap: _onScanQr,
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.qr_code_scanner,
+                              color: Color(0xFF00E676),
+                              size: 18,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'SCAN',
+                              style: const TextStyle(
+                                color: Color(0xFF00E676),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Segmented Input Boxes
+                  GestureDetector(
+                    onTap: () {
+                      // Ensure keyboard opens and cursor is at end
+                      FocusScope.of(context).requestFocus(_focusNode);
+                      final textLength = _partnerIdController.text.length;
+                      _partnerIdController.selection =
+                          TextSelection.fromPosition(
+                            TextPosition(offset: textLength),
+                          );
+                    },
+                    child: Container(
+                      color: Colors.transparent, // Hit test target
+                      child: Stack(
+                        children: [
+                          // Visual Layer
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              ...List.generate(
+                                4,
+                                (index) => _buildInputBox(index),
+                              ),
+                              const Text(
+                                "-",
+                                style: TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              ...List.generate(
+                                4,
+                                (index) => _buildInputBox(index + 4),
+                              ),
+                            ],
+                          ),
+                          // Input Layer (Hidden but active for keyboard)
+                          Positioned.fill(
+                            child: IgnorePointer(
+                              child: TextField(
+                                focusNode: _focusNode,
+                                controller: _partnerIdController,
+                                maxLength: 8,
+                                keyboardType: TextInputType.visiblePassword,
+                                textCapitalization:
+                                    TextCapitalization.characters,
+                                style: const TextStyle(
+                                  color: Colors.transparent,
+                                ),
+                                cursorColor: Colors.transparent,
+                                cursorWidth: 0,
+                                showCursor: false,
+                                enableInteractiveSelection: false,
+                                decoration: const InputDecoration(
+                                  border: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  errorBorder: InputBorder.none,
+                                  disabledBorder: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                  counterText: '',
+                                  fillColor: Colors.transparent,
+                                  filled: true,
+                                ),
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r'[a-zA-Z0-9]'),
+                                  ),
+                                  UpperCaseTextFormatter(),
+                                ],
+                                onChanged: (val) {
+                                  setState(() {});
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Link Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed:
+                          (_isLoading || _partnerIdController.text.isEmpty)
+                          ? null
+                          : _linkPartner,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(
+                          0xFF00E676,
+                        ), // Bright Green
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: _isLoading
+                          ? const CircularProgressIndicator(color: Colors.black)
+                          : Text(
+                              'Link Accounts',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+
+                  // Divider
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Divider(
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'Or share your ID',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.5),
                             fontSize: 14,
-                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Divider(
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 40),
+
+                  // My ID Card
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'MY UNIQUE ID',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 12,
+                            letterSpacing: 1.2,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        // QR Code
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: _myPartnerId != null
+                              ? QrImageView(
+                                  data: _myPartnerId!,
+                                  version: QrVersions.auto,
+                                  size: 160.0,
+                                  backgroundColor: Colors.white,
+                                )
+                              : const SizedBox(
+                                  height: 160,
+                                  width: 160,
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                ),
+                        ),
+                        const SizedBox(height: 24),
+                        // ID Display
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _myPartnerId ?? 'Generating...',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              GestureDetector(
+                                onTap: _copyMyId,
+                                child: Icon(
+                                  Icons.copy,
+                                  color: Colors.white.withValues(alpha: 0.6),
+                                  size: 20,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        // Send Invite Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: OutlinedButton.icon(
+                            onPressed: _shareMyId,
+                            icon: const Icon(Icons.ios_share, size: 20),
+                            label: const Text('Send Invite'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              side: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.3),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(height: 40),
                 ],
               ),
-              const SizedBox(height: 16),
-
-              // Segmented Input Boxes
-              GestureDetector(
-                onTap: () {
-                  // Ensure keyboard opens and cursor is at end
-                  FocusScope.of(context).requestFocus(_focusNode);
-                  final textLength = _partnerIdController.text.length;
-                  _partnerIdController.selection = TextSelection.fromPosition(
-                    TextPosition(offset: textLength),
-                  );
-                },
-                child: Container(
-                  color: Colors.transparent, // Hit test target
-                  child: Stack(
-                    children: [
-                      // Visual Layer
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          ...List.generate(4, (index) => _buildInputBox(index)),
-                          const Text(
-                            "-",
-                            style: TextStyle(
-                              color: Colors.white54,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          ...List.generate(
-                            4,
-                            (index) => _buildInputBox(index + 4),
-                          ),
-                        ],
-                      ),
-                      // Input Layer (Hidden but active for keyboard)
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          child: TextField(
-                            focusNode: _focusNode,
-                            controller: _partnerIdController,
-                            maxLength: 8,
-                            keyboardType: TextInputType.visiblePassword,
-                            textCapitalization: TextCapitalization.characters,
-                            style: const TextStyle(color: Colors.transparent),
-                            cursorColor: Colors.transparent,
-                            cursorWidth: 0,
-                            showCursor: false,
-                            enableInteractiveSelection: false,
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              errorBorder: InputBorder.none,
-                              disabledBorder: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
-                              counterText: '',
-                              fillColor: Colors.transparent,
-                              filled: true,
-                            ),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                RegExp(r'[a-zA-Z0-9]'),
-                              ),
-                              UpperCaseTextFormatter(),
-                            ],
-                            onChanged: (val) {
-                              setState(() {});
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Link Button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: (_isLoading || _partnerIdController.text.isEmpty)
-                      ? null
-                      : _linkPartner,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00E676), // Bright Green
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.black)
-                      : Text(
-                          'Link Accounts',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                ),
-              ),
-              const SizedBox(height: 40),
-
-              // Divider
-              Row(
-                children: [
-                  Expanded(
-                    child: Divider(color: Colors.white.withValues(alpha: 0.2)),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'Or share your ID',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Divider(color: Colors.white.withValues(alpha: 0.2)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 40),
-
-              // My ID Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.1),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      'MY UNIQUE ID',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 12,
-                        letterSpacing: 1.2,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // QR Code
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: _myPartnerId != null
-                          ? QrImageView(
-                              data: _myPartnerId!,
-                              version: QrVersions.auto,
-                              size: 160.0,
-                              backgroundColor: Colors.white,
-                            )
-                          : const SizedBox(
-                              height: 160,
-                              width: 160,
-                              child: Center(child: CircularProgressIndicator()),
-                            ),
-                    ),
-                    const SizedBox(height: 24),
-                    // ID Display
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _myPartnerId ?? 'Generating...',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          GestureDetector(
-                            onTap: _copyMyId,
-                            child: Icon(
-                              Icons.copy,
-                              color: Colors.white.withValues(alpha: 0.6),
-                              size: 20,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // Send Invite Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: OutlinedButton.icon(
-                        onPressed: _shareMyId,
-                        icon: const Icon(Icons.ios_share, size: 20),
-                        label: const Text('Send Invite'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.3),
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
