@@ -329,7 +329,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteTransactionTitle.
   ///
   /// In en, this message translates to:
-  /// **'Delete Transaction?'**
+  /// **'Delete Transaction'**
   String get deleteTransactionTitle;
 
   /// No description provided for @deleteTransactionContent.

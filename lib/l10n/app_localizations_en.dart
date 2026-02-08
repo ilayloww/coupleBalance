@@ -131,7 +131,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noTransactionsYet => 'No transactions yet.';
 
   @override
-  String get deleteTransactionTitle => 'Delete Transaction?';
+  String get deleteTransactionTitle => 'Delete Transaction';
 
   @override
   String get deleteTransactionContent =>

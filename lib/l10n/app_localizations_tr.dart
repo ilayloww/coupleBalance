@@ -132,7 +132,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get noTransactionsYet => 'Henüz işlem yok.';
 
   @override
-  String get deleteTransactionTitle => 'İşlemi Sil?';
+  String get deleteTransactionTitle => 'İşlemi Sil';
 
   @override
   String get deleteTransactionContent =>

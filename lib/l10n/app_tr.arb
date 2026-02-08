@@ -37,7 +37,7 @@
     "selectSettlementDay": "Hesap Kesim Gününü Seç",
     "day": "{day}. Gün",
     "noTransactionsYet": "Henüz işlem yok.",
-    "deleteTransactionTitle": "İşlemi Sil?",
+    "deleteTransactionTitle": "İşlemi Sil",
     "deleteTransactionContent": "Bu öğeyi silmek istediğinizden emin misiniz?",
     "delete": "Sil",
     "addExpense": "Harcama Ekle",

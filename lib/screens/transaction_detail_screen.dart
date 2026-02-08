@@ -441,6 +441,20 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       widget.transaction.category ?? 'others',
                     ),
                   ),
+                  const SizedBox(height: 20),
+                  _buildDetailRow(
+                    context,
+                    widget.transaction.isSettled
+                        ? Icons.check_circle_outline
+                        : Icons.pending_outlined,
+                    l10n.status,
+                    widget.transaction.isSettled
+                        ? l10n.settled
+                        : l10n.unsettled,
+                    valueColor: widget.transaction.isSettled
+                        ? Colors.greenAccent
+                        : Colors.orangeAccent,
+                  ),
                 ],
               ),
             ),
@@ -658,8 +672,9 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     BuildContext context,
     IconData icon,
     String title,
-    String value,
-  ) {
+    String value, {
+    Color? valueColor,
+  }) {
     return Row(
       children: [
         Container(
@@ -685,8 +700,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         const Spacer(),
         Text(
           value,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: valueColor ?? Colors.white,
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),

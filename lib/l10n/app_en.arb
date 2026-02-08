@@ -64,7 +64,7 @@
         }
     },
     "noTransactionsYet": "No transactions yet.",
-    "deleteTransactionTitle": "Delete Transaction?",
+    "deleteTransactionTitle": "Delete Transaction",
     "deleteTransactionContent": "Are you sure you want to delete this item?",
     "delete": "Delete",
     "addExpense": "Add Expense",

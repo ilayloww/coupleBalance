@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'dart:async';
+import 'dart:math';
 import '../models/user_model.dart';
 
 class AuthService extends ChangeNotifier {
@@ -83,6 +84,7 @@ class AuthService extends ChangeNotifier {
   Future<void> _fetchPartnersDetails() async {
     if (_currentUserModel == null || _currentUserModel!.partnerUids.isEmpty) {
       _partners = [];
+      _selectedPartnerId = null; // Clear selection if no partners
       _isLoading = false; // Done loading (no partners found)
       notifyListeners();
       return;
@@ -102,7 +104,21 @@ class AuthService extends ChangeNotifier {
 
       debugPrint("AuthService: Fetched ${_partners.length} partners.");
 
-      // Check auto-selection again now that we have partners
+      // Check validation of selectedPartnerId
+      if (_selectedPartnerId != null) {
+        // If current selection is not in the new list (unlinked), switch/clear
+        final exists = _partners.any((p) => p.uid == _selectedPartnerId);
+        if (!exists) {
+          if (_partners.isNotEmpty) {
+            _selectedPartnerId =
+                _partners.first.uid; // Switch to next available
+          } else {
+            _selectedPartnerId = null; // No partners left
+          }
+        }
+      }
+
+      // Check auto-selection (initial or after clear)
       if (_selectedPartnerId == null && _partners.isNotEmpty) {
         _selectedPartnerId = _partners.first.uid;
       }
@@ -289,5 +305,51 @@ class AuthService extends ChangeNotifier {
       debugPrint("Error deleting account: $e");
       rethrow;
     }
+  }
+
+  Future<String?> generatePartnerId() async {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+
+    // returning existing if already present
+    if (_currentUserModel?.partnerId != null) {
+      return _currentUserModel!.partnerId;
+    }
+
+    String? generatedId;
+    bool isUnique = false;
+
+    // Retry loop to ensure uniqueness
+    while (!isUnique) {
+      generatedId = _generateRandomId();
+      final query = await FirebaseFirestore.instance
+          .collection('users')
+          .where('partnerId', isEqualTo: generatedId)
+          .limit(1)
+          .get();
+
+      if (query.docs.isEmpty) {
+        isUnique = true;
+      }
+    }
+
+    // Save to user
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      'partnerId': generatedId,
+    });
+
+    // Local update will happen via subscription
+    return generatedId;
+  }
+
+  String _generateRandomId() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final rnd = Random();
+    String result = '';
+    for (var i = 0; i < 8; i++) {
+      if (i == 4) result += '-';
+      result += chars[rnd.nextInt(chars.length)];
+    }
+    return result;
   }
 }
