@@ -1,9 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'dart:async';
-import 'dart:math';
+
 import '../models/user_model.dart';
 
 class AuthService extends ChangeNotifier {
@@ -74,7 +74,7 @@ class AuthService extends ChangeNotifier {
             }
           },
           onError: (e) {
-            debugPrint("Error listening to user details: $e");
+            if (kDebugMode) debugPrint("Error listening to user details: $e");
             _isLoading = false;
             notifyListeners();
           },
@@ -91,18 +91,31 @@ class AuthService extends ChangeNotifier {
     }
 
     try {
-      // Split into chunks of 10 for 'whereIn' query limit if needed,
-      // but for now simple iteration or whereIn is fine for small numbers.
-      final snapshots = await FirebaseFirestore.instance
-          .collection('users')
-          .where(FieldPath.documentId, whereIn: _currentUserModel!.partnerUids)
-          .get(const GetOptions(source: Source.server));
+      // Fetch each partner doc individually (not via whereIn query)
+      // because security rules use resource.data which requires per-doc evaluation.
+      // Each read is wrapped in try-catch so one failure doesn't hide all partners.
+      final List<UserModel> fetchedPartners = [];
+      for (final uid in _currentUserModel!.partnerUids) {
+        try {
+          final doc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .get(const GetOptions(source: Source.server));
+          if (doc.exists) {
+            fetchedPartners.add(UserModel.fromSnapshot(doc));
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint("AuthService: Skipping partner (read failed: $e");
+          }
+        }
+      }
 
-      _partners = snapshots.docs
-          .map((doc) => UserModel.fromSnapshot(doc))
-          .toList();
+      _partners = fetchedPartners;
 
-      debugPrint("AuthService: Fetched ${_partners.length} partners.");
+      if (kDebugMode) {
+        debugPrint("AuthService: Fetched ${_partners.length} partners.");
+      }
 
       // Check validation of selectedPartnerId
       if (_selectedPartnerId != null) {
@@ -126,7 +139,7 @@ class AuthService extends ChangeNotifier {
       _isLoading = false; // Data Loaded
       notifyListeners();
     } catch (e) {
-      debugPrint("Error fetching partners: $e");
+      if (kDebugMode) debugPrint("Error fetching partners: $e");
       _isLoading = false; // Failed but done
       notifyListeners();
     }
@@ -143,9 +156,9 @@ class AuthService extends ChangeNotifier {
       );
       // Sync email to Firestore on login to ensure existing users are discoverable
       if (credential.user != null) {
-        debugPrint(
-          "AuthService: Syncing email for user ${credential.user!.uid}: $email",
-        );
+        if (kDebugMode) {
+          debugPrint("AuthService: Syncing email for user.");
+        }
         await FirebaseFirestore.instance
             .collection('users')
             .doc(credential.user!.uid)
@@ -159,10 +172,10 @@ class AuthService extends ChangeNotifier {
       }
       return credential.user;
     } on FirebaseAuthException catch (e) {
-      debugPrint("Error signing in: ${e.message}");
+      if (kDebugMode) debugPrint("Error signing in: ${e.message}");
       rethrow;
     } catch (e) {
-      debugPrint("Unknown error signing in: $e");
+      if (kDebugMode) debugPrint("Unknown error signing in: $e");
       rethrow;
     }
   }
@@ -179,9 +192,9 @@ class AuthService extends ChangeNotifier {
       );
 
       if (credential.user != null) {
-        debugPrint(
-          "AuthService: Registering user doc for ${credential.user!.uid} with email: $email, name: $displayName",
-        );
+        if (kDebugMode) {
+          debugPrint("AuthService: Registering new user doc.");
+        }
         await FirebaseFirestore.instance
             .collection('users')
             .doc(credential.user!.uid)
@@ -200,10 +213,10 @@ class AuthService extends ChangeNotifier {
       }
       return credential.user;
     } on FirebaseAuthException catch (e) {
-      debugPrint("Error registering: ${e.message}");
+      if (kDebugMode) debugPrint("Error registering: ${e.message}");
       rethrow;
     } catch (e) {
-      debugPrint("Unknown error registering: $e");
+      if (kDebugMode) debugPrint("Unknown error registering: $e");
       rethrow;
     }
   }
@@ -227,7 +240,7 @@ class AuthService extends ChangeNotifier {
     try {
       await _auth.signInAnonymously();
     } catch (e) {
-      debugPrint("Error signing in anonymously: $e");
+      if (kDebugMode) debugPrint("Error signing in anonymously: $e");
       rethrow;
     }
   }
@@ -236,7 +249,9 @@ class AuthService extends ChangeNotifier {
     try {
       await _auth.sendPasswordResetEmail(email: email);
     } on FirebaseAuthException catch (e) {
-      debugPrint("Error sending password reset email: ${e.message}");
+      if (kDebugMode) {
+        debugPrint("Error sending password reset email: ${e.message}");
+      }
       rethrow;
     }
   }
@@ -269,7 +284,7 @@ class AuthService extends ChangeNotifier {
       // Update password
       await user.updatePassword(newPassword);
     } on FirebaseAuthException catch (e) {
-      debugPrint("Error changing password: ${e.message}");
+      if (kDebugMode) debugPrint("Error changing password: ${e.message}");
       rethrow;
     }
   }
@@ -290,9 +305,9 @@ class AuthService extends ChangeNotifier {
       if (user == null) throw Exception('No user');
 
       // Call Cloud Function
-      debugPrint(
-        "AuthService: Calling deleteAccount cloud function for ${user.uid}",
-      );
+      if (kDebugMode) {
+        debugPrint("AuthService: Calling deleteAccount cloud function.");
+      }
       final functions =
           FirebaseFunctions.instance; // Uses default region 'us-central1'
       // functions.useFunctionsEmulator('localhost', 5001); // Uncomment for local testing
@@ -302,7 +317,7 @@ class AuthService extends ChangeNotifier {
 
       await signOut();
     } catch (e) {
-      debugPrint("Error deleting account: $e");
+      if (kDebugMode) debugPrint("Error deleting account: $e");
       rethrow;
     }
   }
@@ -311,45 +326,20 @@ class AuthService extends ChangeNotifier {
     final user = _auth.currentUser;
     if (user == null) return null;
 
-    // returning existing if already present
+    // Return existing if already present
     if (_currentUserModel?.partnerId != null) {
       return _currentUserModel!.partnerId;
     }
 
-    String? generatedId;
-    bool isUnique = false;
-
-    // Retry loop to ensure uniqueness
-    while (!isUnique) {
-      generatedId = _generateRandomId();
-      final query = await FirebaseFirestore.instance
-          .collection('users')
-          .where('partnerId', isEqualTo: generatedId)
-          .limit(1)
-          .get();
-
-      if (query.docs.isEmpty) {
-        isUnique = true;
-      }
+    try {
+      final callable = FirebaseFunctions.instance.httpsCallable(
+        'generateUniquePartnerId',
+      );
+      final result = await callable.call();
+      return result.data['partnerId'] as String?;
+    } catch (e) {
+      if (kDebugMode) debugPrint('Error generating partner ID: $e');
+      rethrow;
     }
-
-    // Save to user
-    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-      'partnerId': generatedId,
-    });
-
-    // Local update will happen via subscription
-    return generatedId;
-  }
-
-  String _generateRandomId() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final rnd = Random();
-    String result = '';
-    for (var i = 0; i < 8; i++) {
-      if (i == 4) result += '-';
-      result += chars[rnd.nextInt(chars.length)];
-    }
-    return result;
   }
 }

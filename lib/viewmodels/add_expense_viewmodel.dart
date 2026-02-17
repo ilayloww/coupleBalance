@@ -1,10 +1,12 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../models/transaction_model.dart';
+import '../utils/input_sanitizer.dart';
 
 enum CustomSplitType { amount, percentage }
 
@@ -145,7 +147,9 @@ class AddExpenseViewModel extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      debugPrint("Error fetching partner name: $e");
+      if (kDebugMode) {
+        debugPrint('Error fetching partner name: $e');
+      }
     }
   }
 
@@ -245,7 +249,9 @@ class AddExpenseViewModel extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      debugPrint("Error picking image: $e");
+      if (kDebugMode) {
+        debugPrint('Error picking image: $e');
+      }
     }
   }
 
@@ -254,18 +260,29 @@ class AddExpenseViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> saveExpense({
+  /// Returns null on success, or an error message string on failure.
+  Future<String?> saveExpense({
     required double amount,
     required String note,
     required String receiverUid, // Partner's UID
   }) async {
-    if (_auth.currentUser == null) return false;
+    if (_auth.currentUser == null) return 'Not authenticated.';
 
     // Validate Custom Category
     if (_selectedCategory == 'custom' && _customCategoryText.trim().isEmpty) {
-      // Validation failed - we'll handle UI feedback in the screen
-      return false;
+      return 'Please enter a custom category name.';
     }
+
+    // Validate amount bounds (must match Firestore rules)
+    final amountError = InputSanitizer.validateAmount(amount);
+    if (amountError != null) return amountError;
+
+    // Validate note length
+    final effectiveNote = InputSanitizer.sanitize(
+      _selectedCategory == 'custom' ? _customCategoryText : note,
+    );
+    final noteError = InputSanitizer.validateNote(effectiveNote);
+    if (noteError != null) return noteError;
 
     setLoading(true);
     try {
@@ -283,7 +300,9 @@ class AddExpenseViewModel extends ChangeNotifier {
           await storageRef.putFile(_state.selectedImage!);
           photoUrl = await storageRef.getDownloadURL();
         } catch (e) {
-          debugPrint("Image upload failed: $e");
+          if (kDebugMode) {
+            debugPrint('Image upload failed: $e');
+          }
           // Fail gracefully for now, but log the specific error
         }
       }
@@ -347,10 +366,12 @@ class AddExpenseViewModel extends ChangeNotifier {
 
       // 3. Save to Firestore
       await _firestore.collection('transactions').add(newTx.toMap());
-      return true;
+      return null; // success
     } catch (e) {
-      debugPrint("Error saving expense: $e");
-      return false;
+      if (kDebugMode) {
+        debugPrint('Error saving expense: $e');
+      }
+      return 'Failed to save expense. Please try again.';
     } finally {
       setLoading(false);
     }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:provider/provider.dart';
 import 'package:couple_balance/l10n/app_localizations.dart';
 import '../services/auth_service.dart';
+import '../utils/input_sanitizer.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:share_plus/share_plus.dart';
@@ -118,34 +120,40 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
         return;
       }
 
-      // 1. Find partner by ID
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('partnerId', isEqualTo: formattedPartnerId)
-          .limit(1)
-          .get();
+      // 1. Find partner by ID via Cloud Function (no direct user doc read)
+      final functions = FirebaseFunctions.instance;
+      final callable = functions.httpsCallable('lookupPartnerByCode');
+      late final Map<String, dynamic> partnerData;
 
-      if (querySnapshot.docs.isEmpty) {
+      try {
+        final result = await callable.call({'partnerId': formattedPartnerId});
+        partnerData = Map<String, dynamic>.from(result.data as Map);
+      } on FirebaseFunctionsException catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.partnerNotFound),
-          ),
-        );
+        if (e.code == 'not-found') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.partnerNotFound),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: ${e.message}')));
+        }
         return;
       }
 
-      final partnerDoc = querySnapshot.docs.first;
-      final partnerUid = partnerDoc.id;
+      final partnerUid = partnerData['uid'] as String;
+      final partnerDisplayName = partnerData['displayName'] as String;
+      final partnerEmail = partnerData['email'] as String;
 
       // 2. Check if already linked
       if (currentUserModel.partnerUids.contains(partnerUid)) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Partner already linked (${partnerDoc['displayName']})',
-            ),
+            content: Text('Partner already linked ($partnerDisplayName)'),
           ),
         );
         return;
@@ -170,17 +178,20 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
       }
 
       // 4. Create Friend Request
-      final String fromName = currentUserModel.displayName.isNotEmpty
+      final String fromName = (currentUserModel.displayName.isNotEmpty
           ? currentUserModel.displayName
-          : (currentUser.displayName ?? currentUser.email ?? 'Unknown');
+          : (currentUser.displayName ?? currentUser.email ?? 'Unknown'));
 
       await FirebaseFirestore.instance.collection('friend_requests').add({
         'fromUid': currentUser.uid,
-        'fromEmail': currentUserModel.email ?? currentUser.email,
-        'fromName': fromName,
+        'fromEmail': InputSanitizer.sanitizeAndTruncate(
+          currentUserModel.email ?? currentUser.email ?? '',
+          320,
+        ),
+        'fromName': InputSanitizer.sanitizeAndTruncate(fromName, 100),
         'toUid': partnerUid,
-        'toEmail': partnerDoc['email'],
-        'toName': partnerDoc['displayName'] ?? '',
+        'toEmail': InputSanitizer.sanitizeAndTruncate(partnerEmail, 320),
+        'toName': InputSanitizer.sanitizeAndTruncate(partnerDisplayName, 100),
         'status': 'pending',
         'createdAt': FieldValue.serverTimestamp(),
       });

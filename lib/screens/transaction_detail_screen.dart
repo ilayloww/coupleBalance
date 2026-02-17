@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:couple_balance/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/input_sanitizer.dart';
 import '../viewmodels/settlement_viewmodel.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/transaction_model.dart';
@@ -47,19 +48,43 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   }
 
   Future<void> _saveChanges() async {
-    if (_noteController.text.trim().isEmpty ||
-        _amountController.text.trim().isEmpty) {
+    final noteText = InputSanitizer.sanitize(_noteController.text);
+    final amountText = _amountController.text.trim();
+
+    if (noteText.isEmpty || amountText.isEmpty) {
       return;
     }
 
-    final newAmount = double.tryParse(_amountController.text.trim());
+    final newAmount = double.tryParse(amountText);
     if (newAmount == null) return;
+
+    // Validate amount bounds
+    final amountError = InputSanitizer.validateAmount(newAmount);
+    if (amountError != null) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(amountError)));
+      }
+      return;
+    }
+
+    // Validate note length
+    final noteError = InputSanitizer.validateNote(noteText);
+    if (noteError != null) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(noteError)));
+      }
+      return;
+    }
 
     try {
       await FirebaseFirestore.instance
           .collection('transactions')
           .doc(widget.transaction.id)
-          .update({'note': _noteController.text.trim(), 'amount': newAmount});
+          .update({'note': noteText, 'amount': newAmount});
 
       if (mounted) {
         setState(() {
@@ -288,6 +313,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                   if (_isEditing)
                     TextFormField(
                       controller: _noteController,
+                      maxLength: 500,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 24,

@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import '../config/theme.dart';
+import '../utils/input_sanitizer.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -53,7 +54,10 @@ class _LoginScreenState extends State<LoginScreen> {
           await authService.registerWithEmailAndPassword(
             email,
             password,
-            _displayNameController.text.trim(),
+            InputSanitizer.sanitizeAndTruncate(
+              _displayNameController.text,
+              100,
+            ),
           );
         } on FirebaseAuthException catch (e) {
           if (e.code == 'email-already-in-use') {
@@ -241,6 +245,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               return AppLocalizations.of(
                                 context,
                               )!.enterDisplayName;
+                            }
+                            if (value.length > 100) {
+                              return 'Display name is too long (max 100 characters).';
                             }
                             return null;
                           },

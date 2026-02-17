@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/auth_service.dart';
 import '../services/theme_service.dart';
+import '../utils/input_sanitizer.dart';
 import '../config/theme.dart';
 import '../screens/partner_list_screen.dart';
 import '../screens/change_password_screen.dart';
@@ -113,8 +114,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
           newPhotoUrl = await storageRef.getDownloadURL();
         }
 
+        final displayName = InputSanitizer.sanitizeAndTruncate(
+          _nameController.text,
+          100,
+        );
+        final nameError = InputSanitizer.validateDisplayName(displayName);
+        if (nameError != null) {
+          if (mounted) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(nameError)));
+          }
+          setState(() => _isLoading = false);
+          return;
+        }
+
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-          'displayName': _nameController.text.trim(),
+          'displayName': displayName,
           if (newPhotoUrl != null) 'photoUrl': newPhotoUrl,
           'photoBase64': FieldValue.delete(),
         }, SetOptions(merge: true));
@@ -330,6 +346,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if (_isEditing)
                     TextField(
                       controller: _nameController,
+                      maxLength: 100,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.white,

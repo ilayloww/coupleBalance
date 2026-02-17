@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -290,7 +291,9 @@ class _ExpandableSettlementCardState extends State<ExpandableSettlementCard> {
         });
       }
     } catch (e) {
-      debugPrint("Error fetching settlement transactions: $e");
+      if (kDebugMode) {
+        debugPrint('Error fetching settlement transactions: $e');
+      }
     } finally {
       if (mounted) {
         setState(() {

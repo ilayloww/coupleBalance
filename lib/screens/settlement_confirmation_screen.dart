@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:couple_balance/l10n/app_localizations.dart';
@@ -69,7 +70,9 @@ class _SettlementConfirmationScreenState
         }
       }
 
-      debugPrint("Fetching request with ID: ${widget.requestId}");
+      if (kDebugMode) {
+        debugPrint('Fetching request with ID: ${widget.requestId}');
+      }
 
       final request = await viewModel
           .fetchSettlementRequest(widget.requestId)
@@ -177,7 +180,9 @@ class _SettlementConfirmationScreenState
         });
       }
     } catch (e) {
-      debugPrint("Error in _fetchRequest: $e");
+      if (kDebugMode) {
+        debugPrint('Error in _fetchRequest: $e');
+      }
       if (mounted) {
         setState(() {
           _isLoading = false;

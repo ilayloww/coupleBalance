@@ -3,8 +3,19 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function isAuthenticated() { return request.auth != null; }
 
+    // ── Validation helpers ──
+    function isValidAmount(val) {
+      return val is number && val > 0 && val < 1000000;
+    }
+    function isShortString(val, maxLen) {
+      return val is string && val.size() <= maxLen;
+    }
+
     match /users/{userId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() && (
+        request.auth.uid == userId ||
+        resource.data.get('partnerUids', []).hasAny([request.auth.uid])
+      );
       allow create: if isAuthenticated() && request.auth.uid == userId;
       allow update: if isAuthenticated() && (
         request.auth.uid == userId || 
@@ -48,58 +59,115 @@ service cloud.firestore {
     }
 
     match /transactions/{transactionId} {
+      function isValidTransaction(data) {
+        return data.keys().hasAll(['senderUid', 'receiverUid', 'amount', 'currency', 'note', 'timestamp']) &&
+          data.senderUid is string &&
+          data.receiverUid is string &&
+          isValidAmount(data.amount) &&
+          isShortString(data.currency, 5) &&
+          isShortString(data.note, 500) &&
+          data.timestamp is timestamp &&
+          (data.senderUid == request.auth.uid || data.receiverUid == request.auth.uid) &&
+          // Optional fields validation
+          (!('category' in data.keys()) || isShortString(data.category, 100)) &&
+          (!('photoUrl' in data.keys()) || (data.photoUrl == null || isShortString(data.photoUrl, 2048))) &&
+          (!('totalAmount' in data.keys()) || (data.totalAmount == null || isValidAmount(data.totalAmount))) &&
+          (!('splitPercentage' in data.keys()) || (data.splitPercentage == null || (data.splitPercentage is number && data.splitPercentage >= 0 && data.splitPercentage <= 100)));
+      }
+
       allow read: if isAuthenticated() && (
         resource.data.senderUid == request.auth.uid || 
         resource.data.receiverUid == request.auth.uid
       );
-      allow create: if isAuthenticated() && (
-        request.resource.data.senderUid == request.auth.uid || 
-        request.resource.data.receiverUid == request.auth.uid
-      );
-      allow update, delete: if isAuthenticated() && (
+      allow create: if isAuthenticated() && isValidTransaction(request.resource.data);
+      allow update: if isAuthenticated() && (
+        resource.data.senderUid == request.auth.uid || 
+        resource.data.receiverUid == request.auth.uid
+      ) && isValidTransaction(request.resource.data);
+      allow delete: if isAuthenticated() && (
         resource.data.senderUid == request.auth.uid || 
         resource.data.receiverUid == request.auth.uid
       );
     }
 
     match /settlements/{settlementId} {
+      function isValidSettlement(data) {
+        return data.keys().hasAll(['payerUid', 'receiverUid', 'totalAmount', 'transactionIds', 'startDate', 'endDate', 'timestamp']) &&
+          data.payerUid is string &&
+          data.receiverUid is string &&
+          isValidAmount(data.totalAmount) &&
+          data.transactionIds is list &&
+          data.startDate is timestamp &&
+          data.endDate is timestamp &&
+          data.timestamp is timestamp &&
+          (data.payerUid == request.auth.uid || data.receiverUid == request.auth.uid);
+      }
+
       allow read: if isAuthenticated() && (
         resource.data.payerUid == request.auth.uid || 
         resource.data.receiverUid == request.auth.uid
       );
-      allow create: if isAuthenticated() && (
-        request.resource.data.payerUid == request.auth.uid || 
-        request.resource.data.receiverUid == request.auth.uid
-      );
-      allow update, delete: if isAuthenticated() && (
+      allow create: if isAuthenticated() && isValidSettlement(request.resource.data);
+      allow update: if isAuthenticated() && (
+        resource.data.payerUid == request.auth.uid || 
+        resource.data.receiverUid == request.auth.uid
+      ) && isValidSettlement(request.resource.data);
+      allow delete: if isAuthenticated() && (
         resource.data.payerUid == request.auth.uid || 
         resource.data.receiverUid == request.auth.uid
       );
     }
 
     match /settlement_requests/{requestId} {
+      function isValidSettlementRequest(data) {
+        return data.keys().hasAll(['senderUid', 'receiverUid', 'amount', 'currency', 'status', 'timestamp']) &&
+          data.senderUid is string &&
+          data.receiverUid is string &&
+          isValidAmount(data.amount) &&
+          isShortString(data.currency, 5) &&
+          data.status is string &&
+          data.status in ['PENDING', 'ACCEPTED', 'REJECTED', 'COMPLETED'] &&
+          data.timestamp is timestamp;
+      }
+
       allow read: if isAuthenticated() && (
         resource.data.senderUid == request.auth.uid || 
         resource.data.receiverUid == request.auth.uid
       );
-      allow create: if isAuthenticated() && request.resource.data.senderUid == request.auth.uid;
+      allow create: if isAuthenticated() &&
+        request.resource.data.senderUid == request.auth.uid &&
+        isValidSettlementRequest(request.resource.data);
       allow update: if isAuthenticated() && (
         resource.data.senderUid == request.auth.uid || 
         resource.data.receiverUid == request.auth.uid
-      );
+      ) && isValidSettlementRequest(request.resource.data);
       allow delete: if isAuthenticated() && resource.data.senderUid == request.auth.uid;
     }
 
     match /friend_requests/{requestId} {
+      function isValidFriendRequest(data) {
+        return data.keys().hasAll(['fromUid', 'toUid', 'status', 'createdAt']) &&
+          data.fromUid is string &&
+          data.toUid is string &&
+          data.status is string &&
+          isShortString(data.status, 20) &&
+          (!('fromName' in data.keys()) || isShortString(data.fromName, 100)) &&
+          (!('toName' in data.keys()) || isShortString(data.toName, 100)) &&
+          (!('fromEmail' in data.keys()) || isShortString(data.fromEmail, 320)) &&
+          (!('toEmail' in data.keys()) || isShortString(data.toEmail, 320));
+      }
+
       allow read: if isAuthenticated() && (
         resource.data.fromUid == request.auth.uid ||
         resource.data.toUid == request.auth.uid
       );
-      allow create: if isAuthenticated() && request.resource.data.fromUid == request.auth.uid;
+      allow create: if isAuthenticated() &&
+        request.resource.data.fromUid == request.auth.uid &&
+        isValidFriendRequest(request.resource.data);
       allow update: if isAuthenticated() && (
         resource.data.toUid == request.auth.uid ||
         resource.data.fromUid == request.auth.uid
-      );
+      ) && isValidFriendRequest(request.resource.data);
       allow delete: if isAuthenticated() && resource.data.fromUid == request.auth.uid;
     }
   }

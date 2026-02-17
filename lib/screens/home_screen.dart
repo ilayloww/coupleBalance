@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:couple_balance/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -43,13 +44,17 @@ class _HomeScreenState extends State<HomeScreen> {
           context,
           listen: false,
         );
-        debugPrint(
-          'HomeScreen: isHandlingLink: ${deepLinkService.isHandlingLink}',
-        );
+        if (kDebugMode) {
+          debugPrint(
+            'HomeScreen: isHandlingLink: ${deepLinkService.isHandlingLink}',
+          );
+        }
         if (!deepLinkService.isHandlingLink) {
           UpdateService().checkForUpdate(context);
         } else {
-          debugPrint('HomeScreen: Skipping update check due to deep link.');
+          if (kDebugMode) {
+            debugPrint('HomeScreen: Skipping update check due to deep link.');
+          }
         }
       });
     });

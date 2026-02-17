@@ -213,6 +213,7 @@ class _AddExpenseContent extends StatelessWidget {
                       ),
                       child: TextField(
                         onChanged: viewModel.setCustomCategoryText,
+                        maxLength: 500,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
                           hintText: l10n.customCategoryHint,
@@ -354,7 +355,7 @@ class _AddExpenseContent extends StatelessWidget {
                                 // If Custom is selected, the slider has already set
                                 // _customOwedAmount, so we don't need to override it here.
 
-                                final success = await viewModel.saveExpense(
+                                final error = await viewModel.saveExpense(
                                   amount: amount,
                                   note: note,
                                   receiverUid:
@@ -364,8 +365,14 @@ class _AddExpenseContent extends StatelessWidget {
                                       ).selectedPartnerId ??
                                       '',
                                 );
-                                if (success && context.mounted) {
-                                  Navigator.pop(context);
+                                if (context.mounted) {
+                                  if (error == null) {
+                                    Navigator.pop(context);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(error)),
+                                    );
+                                  }
                                 }
                               },
                         style: ElevatedButton.styleFrom(

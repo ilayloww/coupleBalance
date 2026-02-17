@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
@@ -12,12 +14,14 @@ class UpdateProgressState {
   final bool isDone;
   final String? error;
   final String? filePath;
+  final String statusMessage;
 
   const UpdateProgressState({
     this.progress = 0.0,
     this.isDone = false,
     this.error,
     this.filePath,
+    this.statusMessage = 'Downloading...',
   });
 
   UpdateProgressState copyWith({
@@ -25,12 +29,14 @@ class UpdateProgressState {
     bool? isDone,
     String? error,
     String? filePath,
+    String? statusMessage,
   }) {
     return UpdateProgressState(
       progress: progress ?? this.progress,
       isDone: isDone ?? this.isDone,
       error: error, // Nullable override
       filePath: filePath ?? this.filePath,
+      statusMessage: statusMessage ?? this.statusMessage,
     );
   }
 }
@@ -40,6 +46,12 @@ class UpdateService {
   static const String _repo = 'coupleBalance';
   static const String _latestReleaseUrl =
       'https://api.github.com/repos/$_owner/$_repo/releases/latest';
+
+  /// Allowed download URL prefixes (pin to GitHub domains).
+  static const List<String> _allowedUrlPrefixes = [
+    'https://github.com/',
+    'https://objects.githubusercontent.com/',
+  ];
 
   Future<void> checkForUpdate(BuildContext context) async {
     try {
@@ -56,14 +68,95 @@ class UpdateService {
           List<dynamic> assets = releaseData['assets'];
           String? downloadUrl = await _findCorrectApk(assets);
 
+          // Extract expected SHA-256 hash from release body
+          String? releaseBody = releaseData['body'] as String?;
+          String? expectedHash = _extractSha256(
+            releaseBody,
+            assets,
+            downloadUrl,
+          );
+
           if (downloadUrl != null && context.mounted) {
-            _showUpdateDialog(context, downloadUrl, latestVersion);
+            _showUpdateDialog(
+              context,
+              downloadUrl,
+              latestVersion,
+              expectedHash,
+            );
           }
         }
       }
     } catch (e) {
-      debugPrint('Error checking for updates: $e');
+      if (kDebugMode) {
+        debugPrint('Error checking for updates: $e');
+      }
     }
+  }
+
+  /// Extracts SHA-256 hash from the release body text.
+  ///
+  /// Supports formats:
+  /// - `SHA256: <hex>`  (single APK)
+  /// - `SHA256-arm64-v8a: <hex>`  (per-ABI APKs)
+  /// - `SHA256-armeabi-v7a: <hex>`
+  /// - `SHA256-universal: <hex>`
+  String? _extractSha256(
+    String? releaseBody,
+    List<dynamic> assets,
+    String? downloadUrl,
+  ) {
+    if (releaseBody == null || releaseBody.isEmpty || downloadUrl == null) {
+      return null;
+    }
+
+    // Determine which APK name we're downloading
+    String? apkName;
+    for (var asset in assets) {
+      if (asset['browser_download_url'] == downloadUrl) {
+        apkName = asset['name']?.toString().toLowerCase();
+        break;
+      }
+    }
+
+    // Try ABI-specific hash first (e.g., SHA256-arm64-v8a: abc123)
+    if (apkName != null) {
+      for (final abi in ['arm64-v8a', 'armeabi-v7a', 'x86_64', 'universal']) {
+        if (apkName.contains(abi)) {
+          final match = RegExp(
+            r'SHA256-' + RegExp.escape(abi) + r'\s*:\s*([a-fA-F0-9]{64})',
+            caseSensitive: false,
+          ).firstMatch(releaseBody);
+          if (match != null) {
+            return match.group(1)!.toLowerCase();
+          }
+        }
+      }
+    }
+
+    // Fall back to generic SHA256: <hash>
+    final genericMatch = RegExp(
+      r'(?<!\w)SHA256\s*:\s*([a-fA-F0-9]{64})',
+      caseSensitive: false,
+    ).firstMatch(releaseBody);
+    if (genericMatch != null) {
+      return genericMatch.group(1)!.toLowerCase();
+    }
+
+    return null;
+  }
+
+  /// Computes the SHA-256 hash of a file.
+  Future<String> _computeFileHash(String filePath) async {
+    final file = File(filePath);
+    final bytes = await file.readAsBytes();
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
+  /// Validates that the download URL is from an allowed domain (HTTPS only).
+  bool _isUrlAllowed(String url) {
+    if (!url.startsWith('https://')) return false;
+    return _allowedUrlPrefixes.any((prefix) => url.startsWith(prefix));
   }
 
   Future<String?> _findCorrectApk(List<dynamic> assets) async {
@@ -113,39 +206,58 @@ class UpdateService {
     BuildContext context,
     String downloadUrl,
     String version,
+    String? expectedHash,
   ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Update Available'),
+        title: const Text('Update Available'),
         content: Text(
           'A new version ($version) is available. Would you like to update?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Later'),
+            child: const Text('Later'),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _startDownloadProcess(context, downloadUrl);
+              _startDownloadProcess(context, downloadUrl, expectedHash);
             },
-            child: Text('Update Now'),
+            child: const Text('Update Now'),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _startDownloadProcess(BuildContext context, String url) async {
+  Future<void> _startDownloadProcess(
+    BuildContext context,
+    String url,
+    String? expectedHash,
+  ) async {
+    // Validate download URL before starting
+    if (!_isUrlAllowed(url)) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Update blocked: download URL is not from a trusted source.',
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
     final stateNotifier = ValueNotifier<UpdateProgressState>(
       const UpdateProgressState(),
     );
     final cancelToken = CancelToken();
 
     // Trigger download in background
-    _performDownload(url, stateNotifier, cancelToken);
+    _performDownload(url, expectedHash, stateNotifier, cancelToken);
 
     await showDialog(
       context: context,
@@ -169,7 +281,7 @@ class UpdateService {
                   children: [
                     if (state.error != null)
                       Text(
-                        'Error: ${state.error}',
+                        state.error!,
                         style: const TextStyle(color: Colors.red),
                       )
                     else if (state.isDone)
@@ -183,6 +295,8 @@ class UpdateService {
                         ),
                       ),
                       const SizedBox(height: 10),
+                      Text(state.statusMessage),
+                      const SizedBox(height: 4),
                       Text(
                         '${(state.progress * 100).clamp(0, 100).toStringAsFixed(0)}%',
                       ),
@@ -191,7 +305,7 @@ class UpdateService {
                 ),
                 actions: [
                   // Cancel/Close button
-                  if (!state.isDone)
+                  if (!state.isDone && state.error == null)
                     TextButton(
                       onPressed: () {
                         if (!cancelToken.isCancelled) {
@@ -226,7 +340,7 @@ class UpdateService {
       },
     );
 
-    // Ensure cancellation if dialog is closed by other means (though barrierDismissible is false)
+    // Ensure cancellation if dialog is closed by other means
     if (!cancelToken.isCancelled && !stateNotifier.value.isDone) {
       cancelToken.cancel('Dialog closed');
     }
@@ -236,6 +350,7 @@ class UpdateService {
 
   Future<void> _performDownload(
     String url,
+    String? expectedHash,
     ValueNotifier<UpdateProgressState> notifier,
     CancelToken cancelToken,
   ) async {
@@ -243,7 +358,9 @@ class UpdateService {
       Directory? tempDir = await getExternalStorageDirectory();
       String fileName = 'update_${DateTime.now().millisecondsSinceEpoch}.apk';
       String savePath = '${tempDir?.path}/$fileName';
-      debugPrint('Downloading to: $savePath');
+      if (kDebugMode) {
+        debugPrint('Downloading to: $savePath');
+      }
 
       await Dio().download(
         url,
@@ -252,29 +369,65 @@ class UpdateService {
         onReceiveProgress: (received, total) {
           if (total != -1) {
             double progress = (received / total).clamp(0.0, 1.0);
-            notifier.value = notifier.value.copyWith(progress: progress);
+            notifier.value = notifier.value.copyWith(
+              progress: progress,
+              statusMessage: 'Downloading...',
+            );
           }
         },
       );
 
-      // Verify
-      if (await File(savePath).exists()) {
-        notifier.value = notifier.value.copyWith(
-          progress: 1.0,
-          isDone: true,
-          filePath: savePath,
-        );
-      } else {
+      // Verify file exists
+      if (!await File(savePath).exists()) {
         throw Exception('File downloaded but not found at path');
       }
-    } catch (e) {
-      if (CancelToken.isCancel(e as DioException)) {
-        debugPrint('Download canceled');
-        // We might not need to update state if dialog is closing,
-        // but if the dialog is still open (e.g. error view), we can show it.
-        // Usually if canceled, the dialog is already popping.
+
+      // --- Integrity verification ---
+      if (expectedHash != null) {
+        notifier.value = notifier.value.copyWith(
+          statusMessage: 'Verifying integrity...',
+        );
+
+        final actualHash = await _computeFileHash(savePath);
+
+        if (actualHash != expectedHash) {
+          // Hash mismatch — delete the file and report error
+          await File(savePath).delete();
+          notifier.value = notifier.value.copyWith(
+            error:
+                'Integrity check failed: the downloaded file does not match '
+                'the expected checksum. The update has been discarded for your safety.',
+          );
+          return;
+        }
+
+        if (kDebugMode) {
+          debugPrint('SHA-256 verified successfully.');
+        }
       } else {
-        debugPrint('Download error: $e');
+        // No hash available — this is not an error, just a warning
+        if (kDebugMode) {
+          debugPrint(
+            'No SHA-256 hash found in release notes. '
+            'Skipping integrity verification.',
+          );
+        }
+      }
+
+      notifier.value = notifier.value.copyWith(
+        progress: 1.0,
+        isDone: true,
+        filePath: savePath,
+      );
+    } catch (e) {
+      if (e is DioException && CancelToken.isCancel(e)) {
+        if (kDebugMode) {
+          debugPrint('Download canceled');
+        }
+      } else {
+        if (kDebugMode) {
+          debugPrint('Download error: $e');
+        }
         notifier.value = notifier.value.copyWith(error: e.toString());
       }
     }
@@ -282,12 +435,16 @@ class UpdateService {
 
   Future<void> _installApk(BuildContext context, String filePath) async {
     try {
-      debugPrint('Installing from: $filePath');
+      if (kDebugMode) {
+        debugPrint('Installing from: $filePath');
+      }
       final result = await OpenFilex.open(
         filePath,
         type: 'application/vnd.android.package-archive',
       );
-      debugPrint('Install result: ${result.type} - ${result.message}');
+      if (kDebugMode) {
+        debugPrint('Install result: ${result.type} - ${result.message}');
+      }
 
       if (result.type != ResultType.done) {
         if (context.mounted) {

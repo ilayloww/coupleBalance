@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:table_calendar/table_calendar.dart';
@@ -89,7 +90,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   void _handleError(dynamic e) {
-    debugPrint('Calendar Stream Error: $e');
+    if (kDebugMode) {
+      debugPrint('Calendar Stream Error: $e');
+    }
     if (!mounted) return;
 
     if (e.toString().contains('failed-precondition') ||
