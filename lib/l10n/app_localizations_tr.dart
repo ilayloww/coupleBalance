@@ -413,8 +413,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get themeColor => 'Tema Rengi';
 
   @override
-  String partnerAlreadyLinked(String partnerInfo) {
-    return 'Partner zaten bağlı ($partnerInfo)';
+  String partnerAlreadyLinked(String name) {
+    return 'Partner zaten bağlı ($name)';
   }
 
   @override
@@ -850,4 +850,34 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get allTransactions => 'Tüm İşlemler';
+
+  @override
+  String get linkAccounts => 'Hesapları Bağla';
+
+  @override
+  String youPaidAmount(String amount, String currency) {
+    return 'Sen ödedin: $amount $currency';
+  }
+
+  @override
+  String partnerPaidAmount(String partner, String amount, String currency) {
+    return '$partner ödedi: $amount $currency';
+  }
+
+  @override
+  String get transactionDeleted => 'İşlem silindi';
+
+  @override
+  String settleTransactionQuestion(String amount, String currency) {
+    return 'Bu $amount $currency tutarındaki işlemi kapatmak istiyor musun?';
+  }
+
+  @override
+  String get settle => 'Kapat';
+
+  @override
+  String get save => 'Kaydet';
+
+  @override
+  String get enterNote => 'Not girin';
 }

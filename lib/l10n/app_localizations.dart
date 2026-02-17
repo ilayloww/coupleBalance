@@ -851,8 +851,8 @@ abstract class AppLocalizations {
   /// No description provided for @partnerAlreadyLinked.
   ///
   /// In en, this message translates to:
-  /// **'Partner already linked ({partnerInfo})'**
-  String partnerAlreadyLinked(String partnerInfo);
+  /// **'Partner already linked ({name})'**
+  String partnerAlreadyLinked(String name);
 
   /// No description provided for @partnersTitle.
   ///
@@ -1657,6 +1657,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All Transactions'**
   String get allTransactions;
+
+  /// No description provided for @linkAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Link Accounts'**
+  String get linkAccounts;
+
+  /// No description provided for @youPaidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'You paid {amount} {currency}'**
+  String youPaidAmount(String amount, String currency);
+
+  /// No description provided for @partnerPaidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'{partner} paid {amount} {currency}'**
+  String partnerPaidAmount(String partner, String amount, String currency);
+
+  /// No description provided for @transactionDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction deleted'**
+  String get transactionDeleted;
+
+  /// No description provided for @settleTransactionQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to settle this transaction of {amount} {currency}?'**
+  String settleTransactionQuestion(String amount, String currency);
+
+  /// No description provided for @settle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settle'**
+  String get settle;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @enterNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter note'**
+  String get enterNote;
 }
 
 class _AppLocalizationsDelegate

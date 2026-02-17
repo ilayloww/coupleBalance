@@ -7,7 +7,10 @@ import 'dart:async';
 import '../models/user_model.dart';
 
 class AuthService extends ChangeNotifier {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseAuth _auth;
+  final FirebaseFirestore _firestore;
+  final FirebaseFunctions _functions;
+
   UserModel? _currentUserModel;
   UserModel? get currentUserModel => _currentUserModel;
 
@@ -27,7 +30,13 @@ class AuthService extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   // Initialize service by listening to auth changes
-  AuthService() {
+  AuthService({
+    FirebaseAuth? auth,
+    FirebaseFirestore? firestore,
+    FirebaseFunctions? functions,
+  }) : _auth = auth ?? FirebaseAuth.instance,
+       _firestore = firestore ?? FirebaseFirestore.instance,
+       _functions = functions ?? FirebaseFunctions.instance {
     _auth.authStateChanges().listen((User? user) {
       if (user == null) {
         _currentUserModel = null;
@@ -54,7 +63,7 @@ class AuthService extends ChangeNotifier {
 
   Future<void> _fetchCurrentUserDetails(String uid) async {
     _userSubscription?.cancel();
-    _userSubscription = FirebaseFirestore.instance
+    _userSubscription = _firestore
         .collection('users')
         .doc(uid)
         .snapshots()
@@ -97,7 +106,7 @@ class AuthService extends ChangeNotifier {
       final List<UserModel> fetchedPartners = [];
       for (final uid in _currentUserModel!.partnerUids) {
         try {
-          final doc = await FirebaseFirestore.instance
+          final doc = await _firestore
               .collection('users')
               .doc(uid)
               .get(const GetOptions(source: Source.server));
@@ -159,13 +168,10 @@ class AuthService extends ChangeNotifier {
         if (kDebugMode) {
           debugPrint("AuthService: Syncing email for user.");
         }
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(credential.user!.uid)
-            .set({
-              'email': email.toLowerCase(),
-              // We don't overwrite partnerUid or other fields
-            }, SetOptions(merge: true));
+        await _firestore.collection('users').doc(credential.user!.uid).set({
+          'email': email.toLowerCase(),
+          // We don't overwrite partnerUid or other fields
+        }, SetOptions(merge: true));
 
         // Trigger fetch immediately
         await _fetchCurrentUserDetails(credential.user!.uid);
@@ -195,15 +201,12 @@ class AuthService extends ChangeNotifier {
         if (kDebugMode) {
           debugPrint("AuthService: Registering new user doc.");
         }
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(credential.user!.uid)
-            .set({
-              'email': email.toLowerCase(),
-              'displayName': displayName,
-              'createdAt': FieldValue.serverTimestamp(),
-              'partnerUids': [],
-            });
+        await _firestore.collection('users').doc(credential.user!.uid).set({
+          'email': email.toLowerCase(),
+          'displayName': displayName,
+          'createdAt': FieldValue.serverTimestamp(),
+          'partnerUids': [],
+        });
 
         // Send verification email
         await credential.user!.sendEmailVerification();
@@ -308,11 +311,13 @@ class AuthService extends ChangeNotifier {
       if (kDebugMode) {
         debugPrint("AuthService: Calling deleteAccount cloud function.");
       }
-      final functions =
-          FirebaseFunctions.instance; // Uses default region 'us-central1'
+      if (kDebugMode) {
+        debugPrint("AuthService: Calling deleteAccount cloud function.");
+      }
+
       // functions.useFunctionsEmulator('localhost', 5001); // Uncomment for local testing
 
-      final callable = functions.httpsCallable('deleteAccount');
+      final callable = _functions.httpsCallable('deleteAccount');
       await callable.call();
 
       await signOut();
@@ -332,9 +337,7 @@ class AuthService extends ChangeNotifier {
     }
 
     try {
-      final callable = FirebaseFunctions.instance.httpsCallable(
-        'generateUniquePartnerId',
-      );
+      final callable = _functions.httpsCallable('generateUniquePartnerId');
       final result = await callable.call();
       return result.data['partnerId'] as String?;
     } catch (e) {

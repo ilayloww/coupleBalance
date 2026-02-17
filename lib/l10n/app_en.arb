@@ -438,5 +438,46 @@
             }
         }
     },
-    "linkAccounts": "Link Accounts"
+    "linkAccounts": "Link Accounts",
+    "youPaidAmount": "You paid {amount} {currency}",
+    "@youPaidAmount": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            },
+            "currency": {
+                "type": "String"
+            }
+        }
+    },
+    "partnerPaidAmount": "{partner} paid {amount} {currency}",
+    "@partnerPaidAmount": {
+        "placeholders": {
+            "partner": {
+                "type": "String"
+            },
+            "amount": {
+                "type": "String"
+            },
+            "currency": {
+                "type": "String"
+            }
+        }
+    },
+    "delete": "Delete",
+    "transactionDeleted": "Transaction deleted",
+    "settleTransactionQuestion": "Do you want to settle this transaction of {amount} {currency}?",
+    "@settleTransactionQuestion": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            },
+            "currency": {
+                "type": "String"
+            }
+        }
+    },
+    "settle": "Settle",
+    "save": "Save",
+    "enterNote": "Enter note"
 }

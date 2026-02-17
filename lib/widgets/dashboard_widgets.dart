@@ -84,7 +84,7 @@ class DashboardHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Dashboard",
+                    AppLocalizations.of(context)!.dashboard,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -193,7 +193,7 @@ class DashboardBalanceCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "TOTAL BALANCE",
+            AppLocalizations.of(context)!.totalBalance,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.6),
               fontSize: 12,
@@ -221,8 +221,12 @@ class DashboardBalanceCard extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 isPositive
-                    ? "You are owed $formattedBalance"
-                    : "You owe $partnerName $formattedBalance",
+                    ? AppLocalizations.of(
+                        context,
+                      )!.youAreOwedAmount(formattedBalance)
+                    : AppLocalizations.of(
+                        context,
+                      )!.youOweAmount(partnerName, formattedBalance),
                 style: const TextStyle(
                   color: AppTheme.emeraldPrimary,
                   fontSize: 14,
@@ -378,8 +382,14 @@ class DashboardTransactionTile extends StatelessWidget {
     // If partner paid, subtitle: "Partner paid $amount"
 
     final subtitle = isMe
-        ? "You paid ${amount.toStringAsFixed(2)} $currency"
-        : "$partnerName paid ${amount.toStringAsFixed(2)} $currency";
+        ? AppLocalizations.of(
+            context,
+          )!.youPaidAmount(amount.toStringAsFixed(2), currency)
+        : AppLocalizations.of(context)!.partnerPaidAmount(
+            partnerName,
+            amount.toStringAsFixed(2),
+            currency,
+          );
 
     return Container(
       margin: margin ?? const EdgeInsets.only(bottom: 12, left: 16, right: 16),
@@ -411,7 +421,7 @@ class DashboardTransactionTile extends StatelessWidget {
                 Text(
                   transaction.note.isNotEmpty
                       ? transaction.note
-                      : "Transaction",
+                      : AppLocalizations.of(context)!.transaction,
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -489,9 +499,9 @@ class SwipeableTransactionTile extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
-              "Delete",
-              style: TextStyle(
+            child: Text(
+              AppLocalizations.of(context)!.delete,
+              style: const TextStyle(
                 color: Colors.redAccent,
                 fontWeight: FontWeight.bold,
               ),
@@ -508,9 +518,11 @@ class SwipeableTransactionTile extends StatelessWidget {
             .doc(transaction.id)
             .delete();
         if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text("Transaction deleted")));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.transactionDeleted),
+            ),
+          );
         }
       } catch (e) {
         if (context.mounted) {
@@ -534,7 +546,7 @@ class SwipeableTransactionTile extends StatelessWidget {
         backgroundColor: const Color(0xFF1A2621),
         title: Text(l10n.settleUp, style: const TextStyle(color: Colors.white)),
         content: Text(
-          "Do you want to settle this transaction of ${amount.toStringAsFixed(2)} $currency?",
+          l10n.settleTransactionQuestion(amount.toStringAsFixed(2), currency),
           style: const TextStyle(color: Colors.white70),
         ),
         actions: [
@@ -620,13 +632,13 @@ class SwipeableTransactionTile extends StatelessWidget {
                   foregroundColor: Colors.black,
                   borderRadius: BorderRadius.circular(16),
                   padding: EdgeInsets.zero,
-                  child: const Column(
+                  child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.check, size: 24),
                       SizedBox(height: 4),
                       Text(
-                        "Settle",
+                        AppLocalizations.of(context)!.settle,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
@@ -653,13 +665,13 @@ class SwipeableTransactionTile extends StatelessWidget {
                   foregroundColor: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   padding: EdgeInsets.zero,
-                  child: const Column(
+                  child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.delete, size: 24),
                       SizedBox(height: 4),
                       Text(
-                        "Delete",
+                        AppLocalizations.of(context)!.delete,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,

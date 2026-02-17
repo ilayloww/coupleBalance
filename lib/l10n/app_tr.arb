@@ -281,5 +281,15 @@
     "totalBalance": "TOPLAM BAKİYE",
     "youAreOwedAmount": "Sana {amount} borçlu",
     "youOweAmount": "{partner} kişisine {amount} borçlusun",
-    "allTransactions": "Tüm İşlemler"
+    "allTransactions": "Tüm İşlemler",
+    "partnerAlreadyLinked": "Partner zaten bağlı ({name})",
+    "linkAccounts": "Hesapları Bağla",
+    "youPaidAmount": "Sen ödedin: {amount} {currency}",
+    "partnerPaidAmount": "{partner} ödedi: {amount} {currency}",
+    "delete": "Sil",
+    "transactionDeleted": "İşlem silindi",
+    "settleTransactionQuestion": "Bu {amount} {currency} tutarındaki işlemi kapatmak istiyor musun?",
+    "settle": "Kapat",
+    "save": "Kaydet",
+    "enterNote": "Not girin"
 }

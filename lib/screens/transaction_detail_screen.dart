@@ -267,7 +267,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             onPressed: _toggleEdit,
             child: Text(
               _isEditing
-                  ? 'Save'
+                  ? l10n.save
                   : l10n.editProfile, // Using editProfile as it maps to "Edit"
               style: TextStyle(
                 color: theme.colorScheme.primary,
@@ -320,10 +320,10 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
-                      decoration: const InputDecoration(
-                        border: UnderlineInputBorder(),
-                        hintText: 'Enter note',
-                        hintStyle: TextStyle(color: Colors.white54),
+                      decoration: InputDecoration(
+                        border: const UnderlineInputBorder(),
+                        hintText: l10n.enterNote,
+                        hintStyle: const TextStyle(color: Colors.white54),
                       ),
                     )
                   else

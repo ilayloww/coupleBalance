@@ -412,8 +412,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeColor => 'Theme Color';
 
   @override
-  String partnerAlreadyLinked(String partnerInfo) {
-    return 'Partner already linked ($partnerInfo)';
+  String partnerAlreadyLinked(String name) {
+    return 'Partner already linked ($name)';
   }
 
   @override
@@ -851,4 +851,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get allTransactions => 'All Transactions';
+
+  @override
+  String get linkAccounts => 'Link Accounts';
+
+  @override
+  String youPaidAmount(String amount, String currency) {
+    return 'You paid $amount $currency';
+  }
+
+  @override
+  String partnerPaidAmount(String partner, String amount, String currency) {
+    return '$partner paid $amount $currency';
+  }
+
+  @override
+  String get transactionDeleted => 'Transaction deleted';
+
+  @override
+  String settleTransactionQuestion(String amount, String currency) {
+    return 'Do you want to settle this transaction of $amount $currency?';
+  }
+
+  @override
+  String get settle => 'Settle';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get enterNote => 'Enter note';
 }

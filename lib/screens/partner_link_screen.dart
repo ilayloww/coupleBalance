@@ -114,9 +114,9 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
 
       if (formattedPartnerId == _myPartnerId) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Matches your own ID.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.matchesOwnId)),
+        );
         return;
       }
 
@@ -153,7 +153,11 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Partner already linked ($partnerDisplayName)'),
+            content: Text(
+              AppLocalizations.of(
+                context,
+              )!.partnerAlreadyLinked(partnerDisplayName),
+            ),
           ),
         );
         return;
@@ -170,8 +174,8 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
       if (existingRequests.docs.isNotEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Request already sent! Wait for approval.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.requestAlreadySent),
           ),
         );
         return;
@@ -197,9 +201,11 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
       });
 
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Friend request sent!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.friendRequestSent),
+        ),
+      );
 
       Navigator.pop(context);
     } catch (e) {
@@ -237,9 +243,9 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
   void _copyMyId() {
     if (_myPartnerId != null) {
       Clipboard.setData(ClipboardData(text: _myPartnerId!));
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('ID copied to clipboard')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.idCopied)),
+      );
     }
   }
 
@@ -285,10 +291,10 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const SizedBox(height: 20),
-                  const Text(
-                    'Connect with\nyour partner',
+                  Text(
+                    AppLocalizations.of(context)!.connectWithPartnerTitle,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -297,7 +303,7 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Enter your partner\'s unique ID or scan their\nQR code to start tracking expenses\ntogether.',
+                    AppLocalizations.of(context)!.connectWithPartnerSubtitle,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
@@ -313,7 +319,7 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Partner ID',
+                        AppLocalizations.of(context)!.partnerIdLabel,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -331,7 +337,7 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'SCAN',
+                              AppLocalizations.of(context)!.scan,
                               style: const TextStyle(
                                 color: Color(0xFF00E676),
                                 fontWeight: FontWeight.bold,
@@ -451,7 +457,7 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
                       child: _isLoading
                           ? const CircularProgressIndicator(color: Colors.black)
                           : Text(
-                              'Link Accounts',
+                              AppLocalizations.of(context)!.linkAccounts,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -472,7 +478,7 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
-                          'Or share your ID',
+                          AppLocalizations.of(context)!.orShareYourId,
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.5),
                             fontSize: 14,
@@ -502,7 +508,7 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
                     child: Column(
                       children: [
                         Text(
-                          'MY UNIQUE ID',
+                          AppLocalizations.of(context)!.myUniqueId,
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.6),
                             fontSize: 12,
@@ -548,7 +554,8 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                _myPartnerId ?? 'Generating...',
+                                _myPartnerId ??
+                                    AppLocalizations.of(context)!.generating,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 20,
@@ -576,7 +583,9 @@ class _PartnerLinkScreenState extends State<PartnerLinkScreen> {
                           child: OutlinedButton.icon(
                             onPressed: _shareMyId,
                             icon: const Icon(Icons.ios_share, size: 20),
-                            label: const Text('Send Invite'),
+                            label: Text(
+                              AppLocalizations.of(context)!.sendInvite,
+                            ),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.white,
                               side: BorderSide(
@@ -653,7 +662,7 @@ class _QrScanScreenState extends State<_QrScanScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Scan QR Code'),
+        title: Text(AppLocalizations.of(context)!.scanQrCode),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
