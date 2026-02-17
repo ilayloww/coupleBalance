@@ -151,6 +151,8 @@
     "error": "Hata",
     "incorrectPassword": "Girdiğiniz şifre yanlış",
     "weakPassword": "Şifre çok zayıf",
+    "passwordMustContainUppercase": "Şifre en az bir büyük harf içermelidir",
+    "passwordMustContainNumber": "Şifre en az bir rakam içermelidir",
     "reauthRequired": "Şifrenizi değiştirmek için lütfen tekrar giriş yapın",
     "userNotFound": "Bu e-posta ile kayıtlı hesap bulunamadı",
     "emailAlreadyInUse": "Bu e-posta zaten kullanımda",
@@ -252,5 +254,32 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "today": "BUGÜN",
+    "yesterday": "DÜN",
+    "searchTransactionHint": "İsim veya kategori ara",
+    "noTransactionsFound": "İşlem bulunamadı",
+    "calendar": "Takvim",
+    "transactionsForDate": "{date} İşlemleri",
+    "total": "Toplam",
+    "transaction": "İşlem",
+    "connectWithPartnerTitle": "Partnerinle\nBağlan",
+    "connectWithPartnerSubtitle": "Hesapları bağlamak için partnerinin benzersiz ID'sini gir veya QR kodunu tara.",
+    "partnerIdLabel": "Partner ID",
+    "scan": "TARA",
+    "orShareYourId": "Veya ID'ni paylaş",
+    "myUniqueId": "BENZERSİZ ID'M",
+    "generating": "Oluşturuluyor...",
+    "idCopied": "ID kopyalandı",
+    "sendInvite": "Davet Gönder",
+    "scanQrCode": "QR Kod Tara",
+    "matchesOwnId": "Kendi ID'nizle eşleşiyor.",
+    "requestAlreadySent": "İstek zaten gönderildi! Onay bekleyin.",
+    "friendRequestSent": "Arkadaşlık isteği gönderildi!",
+    "inviteMessage": "Couple Balance ile harcamaları birlikte takip edelim! ID'm: {id}",
+    "dashboard": "Panel",
+    "totalBalance": "TOPLAM BAKİYE",
+    "youAreOwedAmount": "Sana {amount} borçlu",
+    "youOweAmount": "{partner} kişisine {amount} borçlusun",
+    "allTransactions": "Tüm İşlemler"
 }

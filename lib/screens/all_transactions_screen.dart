@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:couple_balance/config/theme.dart';
+import 'package:couple_balance/l10n/app_localizations.dart';
 
 import 'package:couple_balance/models/transaction_model.dart';
 import 'package:couple_balance/widgets/dashboard_widgets.dart';
@@ -66,9 +67,9 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
     final checkDate = DateTime(date.year, date.month, date.day);
 
     if (checkDate == today) {
-      return "TODAY";
+      return AppLocalizations.of(context)!.today;
     } else if (checkDate == yesterday) {
-      return "YESTERDAY";
+      return AppLocalizations.of(context)!.yesterday;
     } else {
       return DateFormat('MMMM d').format(date).toUpperCase();
     }
@@ -76,6 +77,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.black, // Dark background as per design
       appBar: AppBar(
@@ -85,8 +87,8 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          "All Transactions",
+        title: Text(
+          l10n.allTransactions,
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
@@ -105,7 +107,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   Icons.search,
                   color: Colors.white.withValues(alpha: 0.5),
                 ),
-                hintText: "Search by name or category",
+                hintText: l10n.searchTransactionHint,
                 hintStyle: TextStyle(
                   color: Colors.white.withValues(alpha: 0.3),
                 ),
@@ -190,7 +192,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                 if (filteredDocs.isEmpty) {
                   return Center(
                     child: Text(
-                      "No transactions found",
+                      l10n.noTransactionsFound,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.5),
                       ),

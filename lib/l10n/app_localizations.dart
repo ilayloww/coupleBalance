@@ -1010,6 +1010,18 @@ abstract class AppLocalizations {
   /// **'Password is too weak'**
   String get weakPassword;
 
+  /// No description provided for @passwordMustContainUppercase.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must contain at least one uppercase letter'**
+  String get passwordMustContainUppercase;
+
+  /// No description provided for @passwordMustContainNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must contain at least one number'**
+  String get passwordMustContainNumber;
+
   /// No description provided for @reauthRequired.
   ///
   /// In en, this message translates to:
@@ -1483,6 +1495,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You owe {name}'**
   String owePartner(String name);
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'TODAY'**
+  String get today;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'YESTERDAY'**
+  String get yesterday;
+
+  /// No description provided for @searchTransactionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name or category'**
+  String get searchTransactionHint;
+
+  /// No description provided for @noTransactionsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No transactions found'**
+  String get noTransactionsFound;
+
+  /// No description provided for @calendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get calendar;
+
+  /// No description provided for @transactionsForDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Transactions for {date}'**
+  String transactionsForDate(String date);
+
+  /// No description provided for @total.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get total;
+
+  /// No description provided for @transaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction'**
+  String get transaction;
+
+  /// No description provided for @connectWithPartnerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect with\nyour partner'**
+  String get connectWithPartnerTitle;
+
+  /// No description provided for @connectWithPartnerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your partner\'s unique ID or scan their QR code to link accounts.'**
+  String get connectWithPartnerSubtitle;
+
+  /// No description provided for @partnerIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Partner ID'**
+  String get partnerIdLabel;
+
+  /// No description provided for @scan.
+  ///
+  /// In en, this message translates to:
+  /// **'SCAN'**
+  String get scan;
+
+  /// No description provided for @orShareYourId.
+  ///
+  /// In en, this message translates to:
+  /// **'Or share your ID'**
+  String get orShareYourId;
+
+  /// No description provided for @myUniqueId.
+  ///
+  /// In en, this message translates to:
+  /// **'MY UNIQUE ID'**
+  String get myUniqueId;
+
+  /// No description provided for @generating.
+  ///
+  /// In en, this message translates to:
+  /// **'Generating...'**
+  String get generating;
+
+  /// No description provided for @idCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'ID copied to clipboard'**
+  String get idCopied;
+
+  /// No description provided for @sendInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Invite'**
+  String get sendInvite;
+
+  /// No description provided for @scanQrCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR Code'**
+  String get scanQrCode;
+
+  /// No description provided for @matchesOwnId.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches your own ID.'**
+  String get matchesOwnId;
+
+  /// No description provided for @requestAlreadySent.
+  ///
+  /// In en, this message translates to:
+  /// **'Request already sent! Wait for approval.'**
+  String get requestAlreadySent;
+
+  /// No description provided for @friendRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend request sent!'**
+  String get friendRequestSent;
+
+  /// No description provided for @inviteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s track expenses together with Couple Balance! My ID is: {id}'**
+  String inviteMessage(String id);
+
+  /// No description provided for @dashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard'**
+  String get dashboard;
+
+  /// No description provided for @totalBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'TOTAL BALANCE'**
+  String get totalBalance;
+
+  /// No description provided for @youAreOwedAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'You are owed {amount}'**
+  String youAreOwedAmount(String amount);
+
+  /// No description provided for @youOweAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'You owe {partner} {amount}'**
+  String youOweAmount(String partner, String amount);
+
+  /// No description provided for @allTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'All Transactions'**
+  String get allTransactions;
 }
 
 class _AppLocalizationsDelegate

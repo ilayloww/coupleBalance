@@ -258,6 +258,8 @@
     "error": "Error",
     "incorrectPassword": "Incorrect password entered",
     "weakPassword": "Password is too weak",
+    "passwordMustContainUppercase": "Password must contain at least one uppercase letter",
+    "passwordMustContainNumber": "Password must contain at least one number",
     "reauthRequired": "Please log in again to change password",
     "userNotFound": "No account found with this email",
     "emailAlreadyInUse": "Email is already registered",
@@ -369,5 +371,72 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "today": "TODAY",
+    "yesterday": "YESTERDAY",
+    "searchTransactionHint": "Search by name or category",
+    "noTransactionsFound": "No transactions found",
+    "calendar": "Calendar",
+    "transactionsForDate": "Transactions for {date}",
+    "@transactionsForDate": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "total": "Total",
+    "transaction": "Transaction",
+    "connectWithPartnerTitle": "Connect with\nyour partner",
+    "connectWithPartnerSubtitle": "Enter your partner's unique ID or scan their QR code to link accounts.",
+    "partnerIdLabel": "Partner ID",
+    "scan": "SCAN",
+    "orShareYourId": "Or share your ID",
+    "myUniqueId": "MY UNIQUE ID",
+    "generating": "Generating...",
+    "idCopied": "ID copied to clipboard",
+    "sendInvite": "Send Invite",
+    "scanQrCode": "Scan QR Code",
+    "matchesOwnId": "Matches your own ID.",
+    "requestAlreadySent": "Request already sent! Wait for approval.",
+    "friendRequestSent": "Friend request sent!",
+    "inviteMessage": "Let's track expenses together with Couple Balance! My ID is: {id}",
+    "@inviteMessage": {
+        "placeholders": {
+            "id": {
+                "type": "String"
+            }
+        }
+    },
+    "dashboard": "Dashboard",
+    "totalBalance": "TOTAL BALANCE",
+    "youAreOwedAmount": "You are owed {amount}",
+    "@youAreOwedAmount": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "youOweAmount": "You owe {partner} {amount}",
+    "@youOweAmount": {
+        "placeholders": {
+            "partner": {
+                "type": "String"
+            },
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "allTransactions": "All Transactions",
+    "partnerAlreadyLinked": "Partner already linked ({name})",
+    "@partnerAlreadyLinked": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "linkAccounts": "Link Accounts"
 }

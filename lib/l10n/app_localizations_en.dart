@@ -499,6 +499,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get weakPassword => 'Password is too weak';
 
   @override
+  String get passwordMustContainUppercase =>
+      'Password must contain at least one uppercase letter';
+
+  @override
+  String get passwordMustContainNumber =>
+      'Password must contain at least one number';
+
+  @override
   String get reauthRequired => 'Please log in again to change password';
 
   @override
@@ -753,4 +761,94 @@ class AppLocalizationsEn extends AppLocalizations {
   String owePartner(String name) {
     return 'You owe $name';
   }
+
+  @override
+  String get today => 'TODAY';
+
+  @override
+  String get yesterday => 'YESTERDAY';
+
+  @override
+  String get searchTransactionHint => 'Search by name or category';
+
+  @override
+  String get noTransactionsFound => 'No transactions found';
+
+  @override
+  String get calendar => 'Calendar';
+
+  @override
+  String transactionsForDate(String date) {
+    return 'Transactions for $date';
+  }
+
+  @override
+  String get total => 'Total';
+
+  @override
+  String get transaction => 'Transaction';
+
+  @override
+  String get connectWithPartnerTitle => 'Connect with\nyour partner';
+
+  @override
+  String get connectWithPartnerSubtitle =>
+      'Enter your partner\'s unique ID or scan their QR code to link accounts.';
+
+  @override
+  String get partnerIdLabel => 'Partner ID';
+
+  @override
+  String get scan => 'SCAN';
+
+  @override
+  String get orShareYourId => 'Or share your ID';
+
+  @override
+  String get myUniqueId => 'MY UNIQUE ID';
+
+  @override
+  String get generating => 'Generating...';
+
+  @override
+  String get idCopied => 'ID copied to clipboard';
+
+  @override
+  String get sendInvite => 'Send Invite';
+
+  @override
+  String get scanQrCode => 'Scan QR Code';
+
+  @override
+  String get matchesOwnId => 'Matches your own ID.';
+
+  @override
+  String get requestAlreadySent => 'Request already sent! Wait for approval.';
+
+  @override
+  String get friendRequestSent => 'Friend request sent!';
+
+  @override
+  String inviteMessage(String id) {
+    return 'Let\'s track expenses together with Couple Balance! My ID is: $id';
+  }
+
+  @override
+  String get dashboard => 'Dashboard';
+
+  @override
+  String get totalBalance => 'TOTAL BALANCE';
+
+  @override
+  String youAreOwedAmount(String amount) {
+    return 'You are owed $amount';
+  }
+
+  @override
+  String youOweAmount(String partner, String amount) {
+    return 'You owe $partner $amount';
+  }
+
+  @override
+  String get allTransactions => 'All Transactions';
 }

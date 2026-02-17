@@ -179,9 +179,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF05100A), // Dark Background
       appBar: AppBar(
-        title: const Text(
-          'Calendar',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          AppLocalizations.of(context)!.calendar,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
         backgroundColor: const Color(0xFF05100A),
@@ -384,7 +387,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Transactions for $dateStr",
+                AppLocalizations.of(context)!.transactionsForDate(dateStr),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -401,7 +404,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  "${dailyTotal.toStringAsFixed(2)} Total",
+                  "${AppLocalizations.of(context)!.total}: ${dailyTotal.toStringAsFixed(2)}",
                   style: TextStyle(
                     color: displayColor,
                     fontWeight: FontWeight.bold,
@@ -488,7 +491,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             const SizedBox(height: 4),
                             Text(
                               // Using hardcoded string/business name simulation or just reuse note/category
-                              "Transaction",
+                              AppLocalizations.of(context)!.transaction,
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.5),
                                 fontSize: 14,

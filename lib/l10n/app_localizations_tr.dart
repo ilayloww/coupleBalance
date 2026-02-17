@@ -500,6 +500,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get weakPassword => 'Şifre çok zayıf';
 
   @override
+  String get passwordMustContainUppercase =>
+      'Şifre en az bir büyük harf içermelidir';
+
+  @override
+  String get passwordMustContainNumber => 'Şifre en az bir rakam içermelidir';
+
+  @override
   String get reauthRequired =>
       'Şifrenizi değiştirmek için lütfen tekrar giriş yapın';
 
@@ -753,4 +760,94 @@ class AppLocalizationsTr extends AppLocalizations {
   String owePartner(String name) {
     return '$name alacaklı';
   }
+
+  @override
+  String get today => 'BUGÜN';
+
+  @override
+  String get yesterday => 'DÜN';
+
+  @override
+  String get searchTransactionHint => 'İsim veya kategori ara';
+
+  @override
+  String get noTransactionsFound => 'İşlem bulunamadı';
+
+  @override
+  String get calendar => 'Takvim';
+
+  @override
+  String transactionsForDate(String date) {
+    return '$date İşlemleri';
+  }
+
+  @override
+  String get total => 'Toplam';
+
+  @override
+  String get transaction => 'İşlem';
+
+  @override
+  String get connectWithPartnerTitle => 'Partnerinle\nBağlan';
+
+  @override
+  String get connectWithPartnerSubtitle =>
+      'Hesapları bağlamak için partnerinin benzersiz ID\'sini gir veya QR kodunu tara.';
+
+  @override
+  String get partnerIdLabel => 'Partner ID';
+
+  @override
+  String get scan => 'TARA';
+
+  @override
+  String get orShareYourId => 'Veya ID\'ni paylaş';
+
+  @override
+  String get myUniqueId => 'BENZERSİZ ID\'M';
+
+  @override
+  String get generating => 'Oluşturuluyor...';
+
+  @override
+  String get idCopied => 'ID kopyalandı';
+
+  @override
+  String get sendInvite => 'Davet Gönder';
+
+  @override
+  String get scanQrCode => 'QR Kod Tara';
+
+  @override
+  String get matchesOwnId => 'Kendi ID\'nizle eşleşiyor.';
+
+  @override
+  String get requestAlreadySent => 'İstek zaten gönderildi! Onay bekleyin.';
+
+  @override
+  String get friendRequestSent => 'Arkadaşlık isteği gönderildi!';
+
+  @override
+  String inviteMessage(String id) {
+    return 'Couple Balance ile harcamaları birlikte takip edelim! ID\'m: $id';
+  }
+
+  @override
+  String get dashboard => 'Panel';
+
+  @override
+  String get totalBalance => 'TOPLAM BAKİYE';
+
+  @override
+  String youAreOwedAmount(String amount) {
+    return 'Sana $amount borçlu';
+  }
+
+  @override
+  String youOweAmount(String partner, String amount) {
+    return '$partner kişisine $amount borçlusun';
+  }
+
+  @override
+  String get allTransactions => 'Tüm İşlemler';
 }

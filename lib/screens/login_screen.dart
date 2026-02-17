@@ -7,6 +7,7 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import '../config/theme.dart';
 import '../utils/input_sanitizer.dart';
+import '../utils/validators.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -302,10 +303,24 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (value == null || value.isEmpty) {
                             return AppLocalizations.of(context)!.enterPassword;
                           }
-                          if (!_isLogin && value.length < 6) {
-                            return AppLocalizations.of(
-                              context,
-                            )!.passwordMinLength;
+                          if (!_isLogin) {
+                            final error = Validators.validatePassword(value);
+                            switch (error) {
+                              case PasswordValidationError.tooShort:
+                                return AppLocalizations.of(
+                                  context,
+                                )!.passwordMinLength8;
+                              case PasswordValidationError.missingUppercase:
+                                return AppLocalizations.of(
+                                  context,
+                                )!.passwordMustContainUppercase;
+                              case PasswordValidationError.missingNumber:
+                                return AppLocalizations.of(
+                                  context,
+                                )!.passwordMustContainNumber;
+                              case PasswordValidationError.none:
+                                return null;
+                            }
                           }
                           return null;
                         },
