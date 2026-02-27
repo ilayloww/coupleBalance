@@ -623,30 +623,22 @@ class SwipeableTransactionTile extends StatelessWidget {
           motion: const BehindMotion(),
           extentRatio: 0.28,
           children: [
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: CustomSlidableAction(
-                  onPressed: (ctx) => _handleSettleUp(context),
-                  backgroundColor: AppTheme.emeraldPrimary,
-                  foregroundColor: Colors.black,
-                  borderRadius: BorderRadius.circular(16),
-                  padding: EdgeInsets.zero,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.check, size: 24),
-                      SizedBox(height: 4),
-                      Text(
-                        AppLocalizations.of(context)!.settle,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+            CustomSlidableAction(
+              onPressed: (ctx) => _handleSettleUp(context),
+              backgroundColor: AppTheme.emeraldPrimary,
+              foregroundColor: Colors.black,
+              borderRadius: BorderRadius.circular(16),
+              padding: EdgeInsets.zero,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.check, size: 24),
+                  SizedBox(height: 4),
+                  Text(
+                    AppLocalizations.of(context)!.settle,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                   ),
-                ),
+                ],
               ),
             ),
           ],
@@ -656,30 +648,22 @@ class SwipeableTransactionTile extends StatelessWidget {
           motion: const BehindMotion(),
           extentRatio: 0.28,
           children: [
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: CustomSlidableAction(
-                  onPressed: (ctx) => _handleDelete(context),
-                  backgroundColor: const Color(0xFFEF4444),
-                  foregroundColor: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  padding: EdgeInsets.zero,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.delete, size: 24),
-                      SizedBox(height: 4),
-                      Text(
-                        AppLocalizations.of(context)!.delete,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+            CustomSlidableAction(
+              onPressed: (ctx) => _handleDelete(context),
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              padding: EdgeInsets.zero,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.delete, size: 24),
+                  SizedBox(height: 4),
+                  Text(
+                    AppLocalizations.of(context)!.delete,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                   ),
-                ),
+                ],
               ),
             ),
           ],
