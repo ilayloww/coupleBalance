@@ -48,6 +48,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enterEmail => 'Please enter your email';
 
   @override
+  String get enterDisplayName => 'Please enter your display name';
+
+  @override
+  String get tooManyRequests => 'Too many attempts. Please try again later.';
+
+  @override
+  String waitToResend(Object seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
   String get validEmail => 'Please enter a valid email';
 
   @override
@@ -120,7 +131,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noTransactionsYet => 'No transactions yet.';
 
   @override
-  String get deleteTransactionTitle => 'Delete Transaction?';
+  String get deleteTransactionTitle => 'Delete Transaction';
 
   @override
   String get deleteTransactionContent =>
@@ -401,8 +412,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeColor => 'Theme Color';
 
   @override
-  String partnerAlreadyLinked(String partnerInfo) {
-    return 'Partner already linked ($partnerInfo)';
+  String partnerAlreadyLinked(String name) {
+    return 'Partner already linked ($name)';
   }
 
   @override
@@ -488,6 +499,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get weakPassword => 'Password is too weak';
 
   @override
+  String get passwordMustContainUppercase =>
+      'Password must contain at least one uppercase letter';
+
+  @override
+  String get passwordMustContainNumber =>
+      'Password must contain at least one number';
+
+  @override
   String get reauthRequired => 'Please log in again to change password';
 
   @override
@@ -498,9 +517,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get invalidCredential => 'Incorrect email or password';
-
-  @override
-  String get tooManyRequests => 'Too many attempts. Please try again later.';
 
   @override
   String get networkRequestFailed =>
@@ -524,6 +540,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountDeleted => 'Account deleted successfully.';
+
+  @override
+  String get areYouSure => 'Are you sure?';
+
+  @override
+  String get deleteAccountDescription =>
+      'This action cannot be undone. All your shared expenses, history, and linked accounts will be permanently deleted from our servers.';
+
+  @override
+  String get typeDeleteToConfirm => 'To confirm, type DELETE below';
+
+  @override
+  String get deleteConfirmationKeyword => 'DELETE';
+
+  @override
+  String get partnerNotifiedInfo =>
+      'Your partner will be notified that the shared ledger has been closed.';
+
+  @override
+  String get deleteMyAccount => 'Delete My Account';
+
+  @override
+  String get goBack => 'Go Back';
 
   @override
   String get requestNotFound => 'Request not found or timed out.';
@@ -596,4 +635,250 @@ class AppLocalizationsEn extends AppLocalizations {
   String settleSingleTransactionContent(String note) {
     return 'Do you want to accept the settlement for \'$note\'?';
   }
+
+  @override
+  String get goodMorning => 'Good Morning';
+
+  @override
+  String get goodAfternoon => 'Good Afternoon';
+
+  @override
+  String get goodEvening => 'Good Evening';
+
+  @override
+  String get goodNight => 'Good Night';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get editProfile => 'Edit';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get passwordMinLength8 => 'Must contain at least 8 characters';
+
+  @override
+  String get updatePassword => 'Update Password';
+
+  @override
+  String get passwordDifferentNote =>
+      'Your new password must be different from previous used passwords';
+
+  @override
+  String get enterCurrentPassword => 'Enter current password';
+
+  @override
+  String get enterNewPassword => 'Enter new password';
+
+  @override
+  String get reenterNewPassword => 'Re-enter new password';
+
+  @override
+  String get passwordCannotBeSame =>
+      'New password cannot be the same as current password';
+
+  @override
+  String get saveExpense => 'Save Expense';
+
+  @override
+  String get tagCustom => 'Custom';
+
+  @override
+  String get customCategoryHint => 'Enter category name';
+
+  @override
+  String get enterCategoryError => 'Please enter a category name';
+
+  @override
+  String get expensesSummary => 'Expenses Summary';
+
+  @override
+  String get items => 'items';
+
+  @override
+  String get pending => 'Pending';
+
+  @override
+  String get dueToday => 'Due today';
+
+  @override
+  String get paysYou => 'pays You';
+
+  @override
+  String get youPay => 'You pay';
+
+  @override
+  String get confirmSettlement => 'Confirm Settlement';
+
+  @override
+  String get filterAllTime => 'All Time';
+
+  @override
+  String get filterThisYear => 'This Year';
+
+  @override
+  String get filterLastYear => 'Last Year';
+
+  @override
+  String get splitDetails => 'Split Details';
+
+  @override
+  String get receipt => 'Receipt';
+
+  @override
+  String get time => 'Time';
+
+  @override
+  String get category => 'Category';
+
+  @override
+  String get paidByYou => 'Paid by You';
+
+  @override
+  String paidByPartner(String name) {
+    return 'Paid by $name';
+  }
+
+  @override
+  String get paidFullAmount => 'Paid full amount';
+
+  @override
+  String get owesYou => 'Owes you';
+
+  @override
+  String get youOwe => 'You owe';
+
+  @override
+  String get you => 'You';
+
+  @override
+  String owePartner(String name) {
+    return 'You owe $name';
+  }
+
+  @override
+  String get today => 'TODAY';
+
+  @override
+  String get yesterday => 'YESTERDAY';
+
+  @override
+  String get searchTransactionHint => 'Search by name or category';
+
+  @override
+  String get noTransactionsFound => 'No transactions found';
+
+  @override
+  String get calendar => 'Calendar';
+
+  @override
+  String transactionsForDate(String date) {
+    return 'Transactions for $date';
+  }
+
+  @override
+  String get total => 'Total';
+
+  @override
+  String get transaction => 'Transaction';
+
+  @override
+  String get connectWithPartnerTitle => 'Connect with\nyour partner';
+
+  @override
+  String get connectWithPartnerSubtitle =>
+      'Enter your partner\'s unique ID or scan their QR code to link accounts.';
+
+  @override
+  String get partnerIdLabel => 'Partner ID';
+
+  @override
+  String get scan => 'SCAN';
+
+  @override
+  String get orShareYourId => 'Or share your ID';
+
+  @override
+  String get myUniqueId => 'MY UNIQUE ID';
+
+  @override
+  String get generating => 'Generating...';
+
+  @override
+  String get idCopied => 'ID copied to clipboard';
+
+  @override
+  String get sendInvite => 'Send Invite';
+
+  @override
+  String get scanQrCode => 'Scan QR Code';
+
+  @override
+  String get matchesOwnId => 'Matches your own ID.';
+
+  @override
+  String get requestAlreadySent => 'Request already sent! Wait for approval.';
+
+  @override
+  String get friendRequestSent => 'Friend request sent!';
+
+  @override
+  String inviteMessage(String id) {
+    return 'Let\'s track expenses together with Couple Balance! My ID is: $id';
+  }
+
+  @override
+  String get dashboard => 'Dashboard';
+
+  @override
+  String get totalBalance => 'TOTAL BALANCE';
+
+  @override
+  String youAreOwedAmount(String amount) {
+    return 'You are owed $amount';
+  }
+
+  @override
+  String youOweAmount(String partner, String amount) {
+    return 'You owe $partner $amount';
+  }
+
+  @override
+  String get allTransactions => 'All Transactions';
+
+  @override
+  String get linkAccounts => 'Link Accounts';
+
+  @override
+  String youPaidAmount(String amount, String currency) {
+    return 'You paid $amount $currency';
+  }
+
+  @override
+  String partnerPaidAmount(String partner, String amount, String currency) {
+    return '$partner paid $amount $currency';
+  }
+
+  @override
+  String get transactionDeleted => 'Transaction deleted';
+
+  @override
+  String settleTransactionQuestion(String amount, String currency) {
+    return 'Do you want to settle this transaction of $amount $currency?';
+  }
+
+  @override
+  String get settle => 'Settle';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get enterNote => 'Enter note';
 }

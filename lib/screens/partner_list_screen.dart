@@ -14,6 +14,27 @@ class PartnerListScreen extends StatefulWidget {
 }
 
 class _PartnerListScreenState extends State<PartnerListScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchText = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchText = _searchController.text.trim().toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // ... [Keep _unlinkPartner, _respondToRequest, _cancelRequest methods unchanged] ...
+
   Future<void> _unlinkPartner(String partnerUid, String partnerName) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -45,24 +66,62 @@ class _PartnerListScreenState extends State<PartnerListScreen> {
     try {
       final batch = FirebaseFirestore.instance.batch();
 
-      // Remove partner from my list
+      // --- 1. Delete Transactions ---
+      final txQuery1 = await FirebaseFirestore.instance
+          .collection('transactions')
+          .where('senderUid', isEqualTo: currentUser.uid)
+          .where('receiverUid', isEqualTo: partnerUid)
+          .get();
+
+      final txQuery2 = await FirebaseFirestore.instance
+          .collection('transactions')
+          .where('senderUid', isEqualTo: partnerUid)
+          .where('receiverUid', isEqualTo: currentUser.uid)
+          .get();
+
+      for (var doc in txQuery1.docs) {
+        batch.delete(doc.reference);
+      }
+      for (var doc in txQuery2.docs) {
+        batch.delete(doc.reference);
+      }
+
+      // --- 2. Delete Settlements ---
+      final settlementQuery1 = await FirebaseFirestore.instance
+          .collection('settlements')
+          .where('payerUid', isEqualTo: currentUser.uid)
+          .where('receiverUid', isEqualTo: partnerUid)
+          .get();
+
+      final settlementQuery2 = await FirebaseFirestore.instance
+          .collection('settlements')
+          .where('payerUid', isEqualTo: partnerUid)
+          .where('receiverUid', isEqualTo: currentUser.uid)
+          .get();
+
+      for (var doc in settlementQuery1.docs) {
+        batch.delete(doc.reference);
+      }
+      for (var doc in settlementQuery2.docs) {
+        batch.delete(doc.reference);
+      }
+
+      // --- 3. Unlink Users ---
       batch.set(
         FirebaseFirestore.instance.collection('users').doc(currentUser.uid),
         {
           'partnerUids': FieldValue.arrayRemove([partnerUid]),
-          // Clear legacy field only if it matches
           if (authService.currentUserModel?.partnerUid == partnerUid)
             'partnerUid': FieldValue.delete(),
         },
         SetOptions(merge: true),
       );
 
-      // Remove me from partner's list (Two-way unlink)
       batch.set(
         FirebaseFirestore.instance.collection('users').doc(partnerUid),
         {
           'partnerUids': FieldValue.arrayRemove([currentUser.uid]),
-          'partnerUid': FieldValue.delete(), // Legacy cleanup
+          'partnerUid': FieldValue.delete(),
         },
         SetOptions(merge: true),
       );
@@ -101,7 +160,6 @@ class _PartnerListScreenState extends State<PartnerListScreen> {
           .doc(requestId);
 
       if (accept) {
-        // 1. Link Users (Two-way)
         final myRef = FirebaseFirestore.instance
             .collection('users')
             .doc(currentUser.uid);
@@ -111,18 +169,15 @@ class _PartnerListScreenState extends State<PartnerListScreen> {
 
         batch.set(myRef, {
           'partnerUids': FieldValue.arrayUnion([fromUid]),
-          'partnerUid': fromUid, // Legacy support
+          'partnerUid': fromUid,
         }, SetOptions(merge: true));
 
         batch.set(partnerRef, {
           'partnerUids': FieldValue.arrayUnion([currentUser.uid]),
-          // We don't force 'partnerUid' on them, they can select manually
         }, SetOptions(merge: true));
 
-        // 2. Update Request Status
         batch.update(requestRef, {'status': 'accepted'});
       } else {
-        // Reject
         batch.update(requestRef, {'status': 'rejected'});
       }
 
@@ -143,315 +198,518 @@ class _PartnerListScreenState extends State<PartnerListScreen> {
     }
   }
 
-  Future<void> _cancelRequest(String requestId) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('friend_requests')
-          .doc(requestId)
-          .delete();
-
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Request cancelled')));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    // Determine colors based on brightness
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark
+        ? const Color(0xFF05100A) // AppTheme.darkBackground
+        : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final searchBarColor = isDark ? const Color(0xFF1A2E25) : Colors.grey[200];
+    final searchIconColor = isDark ? Colors.grey : Colors.grey[600];
+    final greenAccent = const Color(0xFF00E676);
+
     return Scaffold(
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.partnersTitle),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person_add),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const PartnerLinkScreen()),
-              );
-            },
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: textColor),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Connections',
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
           ),
-        ],
+        ),
+        centerTitle: true,
       ),
       body: Consumer<AuthService>(
         builder: (context, authService, child) {
           final currentUser = authService.currentUser;
           if (currentUser == null) return const SizedBox();
 
-          return Column(
-            children: [
-              // 1. Pending Requests Section
-              StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('friend_requests')
-                    .where('toUid', isEqualTo: currentUser.uid)
-                    .where('status', isEqualTo: 'pending')
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const SizedBox();
-                  }
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Search Bar
+                Container(
+                  decoration: BoxDecoration(
+                    color: searchBarColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    style: TextStyle(color: textColor),
+                    decoration: InputDecoration(
+                      hintText: 'Search by User',
+                      hintStyle: TextStyle(color: searchIconColor),
+                      prefixIcon: Icon(Icons.search, color: searchIconColor),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
 
-                  final isDark =
-                      Theme.of(context).brightness == Brightness.dark;
-                  final cardColor = isDark
-                      ? Colors.orange.withValues(alpha: 0.1)
-                      : Colors.orange.shade50;
-                  final titleColor = isDark
-                      ? Colors.orangeAccent
-                      : Colors.orange.shade900;
-
-                  return Card(
-                    margin: const EdgeInsets.all(16),
-                    color: cardColor,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(12),
+                // Pending Requests Section
+                _buildSectionTitle('Pending Requests', textColor),
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('friend_requests')
+                      .where('toUid', isEqualTo: currentUser.uid)
+                      .where('status', isEqualTo: 'pending')
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return Padding(
+                        // Center vertically:
+                        // Top space: 12 (title padding) + 28 = 40
+                        // Bottom space: 16 (this padding) + 24 (next section margin) = 40
+                        padding: const EdgeInsets.only(top: 28.0, bottom: 16.0),
+                        child: Center(
                           child: Text(
-                            'Pending Requests',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: titleColor,
-                            ),
+                            'No pending requests',
+                            style: TextStyle(color: Colors.grey.shade500),
                           ),
                         ),
-                        ...snapshot.data!.docs.map((doc) {
-                          final data = doc.data() as Map<String, dynamic>;
-                          final fromEmail = data['fromEmail'] ?? 'Unknown';
-                          final fromName = data['fromName'] ?? '';
+                      );
+                    }
 
-                          return ListTile(
-                            title: Text(
-                              fromName.isNotEmpty ? fromName : fromEmail,
-                              style: TextStyle(
-                                // Ensure text is visible on the background
-                                color: isDark
-                                    ? Colors.orange.shade100
-                                    : Colors.black87,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text(
-                              'Invites you to link',
-                              style: TextStyle(
-                                color: isDark ? Colors.white70 : Colors.black54,
-                              ),
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.check,
-                                    color: Colors.green,
-                                  ),
-                                  onPressed: () => _respondToRequest(
-                                    doc.id,
-                                    data['fromUid'],
-                                    true,
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.close,
-                                    color: Colors.red,
-                                  ),
-                                  onPressed: () => _respondToRequest(
-                                    doc.id,
-                                    data['fromUid'],
-                                    false,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                      ],
-                    ),
-                  );
-                },
-              ),
+                    final requests = snapshot.data!.docs.where((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final name = (data['fromName'] ?? '')
+                          .toString()
+                          .toLowerCase();
+                      final email = (data['fromEmail'] ?? '')
+                          .toString()
+                          .toLowerCase();
+                      return _searchText.isEmpty ||
+                          name.contains(_searchText) ||
+                          email.contains(_searchText);
+                    }).toList();
 
-              // 2. Sent Requests Section (Sent)
-              StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('friend_requests')
-                    .where('fromUid', isEqualTo: currentUser.uid)
-                    .where('status', isEqualTo: 'pending')
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const SizedBox();
-                  }
+                    if (requests.isEmpty && _searchText.isNotEmpty) {
+                      return const SizedBox.shrink();
+                    }
 
-                  final isDark =
-                      Theme.of(context).brightness == Brightness.dark;
-                  final cardColor = isDark
-                      ? Colors.grey.withValues(alpha: 0.1)
-                      : Colors.grey.shade100;
-                  final titleColor = isDark
-                      ? Colors.grey.shade300
-                      : Colors.grey.shade800;
+                    return Column(
+                      children: requests.map((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        return _buildPendingRequestItem(
+                          context,
+                          doc.id,
+                          data,
+                          textColor,
+                          greenAccent,
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+                const SizedBox(height: 24),
 
-                  return Card(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    color: cardColor,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Text(
-                            'Sent Requests',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: titleColor,
-                            ),
-                          ),
-                        ),
-                        ...snapshot.data!.docs.map((doc) {
-                          final data = doc.data() as Map<String, dynamic>;
-                          final toEmail = data['toEmail'] ?? 'Unknown';
-                          final toName = data['toName'] as String?;
+                // Active Connections Section
+                _buildSectionTitle('Active Connections', textColor),
+                _buildPartnersList(
+                  context,
+                  authService,
+                  textColor,
+                  greenAccent,
+                ),
+                const SizedBox(height: 32),
 
-                          // Use name if available, fallback to email
-                          final displayName =
-                              (toName != null && toName.isNotEmpty)
-                              ? toName
-                              : toEmail;
-
-                          // If we show name in title, show email in subtitle
-                          final displaySubtitle =
-                              (toName != null && toName.isNotEmpty)
-                              ? '$toEmail\nWaiting for approval...'
-                              : 'Waiting for approval...';
-
-                          return ListTile(
-                            leading: Icon(Icons.outbound, color: titleColor),
-                            title: Text(
-                              displayName,
-                              style: TextStyle(
-                                color: isDark
-                                    ? Colors.grey.shade300
-                                    : Colors.black87,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text(
-                              displaySubtitle,
-                              style: TextStyle(
-                                color: isDark ? Colors.white54 : Colors.black54,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                            isThreeLine: (toName != null && toName.isNotEmpty),
-                            trailing: IconButton(
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () => _cancelRequest(doc.id),
-                              tooltip: 'Cancel Request',
-                            ),
-                          );
-                        }),
-                      ],
-                    ),
-                  );
-                },
-              ),
-
-              // 2. Existing Partners List
-              Expanded(child: _buildPartnersList(context, authService)),
-            ],
+                // Invite via Link (Mockup)
+                _buildInviteCard(context, greenAccent),
+              ],
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _buildPartnersList(BuildContext context, AuthService authService) {
-    final partners = authService.partners.reversed.toList();
-    final selectedId = authService.selectedPartnerId;
+  Widget _buildSectionTitle(String title, Color textColor) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: textColor,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPendingRequestItem(
+    BuildContext context,
+    String requestId,
+    Map<String, dynamic> data,
+    Color textColor,
+    Color accentColor,
+  ) {
+    final fromName = data['fromName'] as String?;
+    final fromEmail = data['fromEmail'] as String? ?? '';
+
+    final displayName = (fromName != null && fromName.isNotEmpty)
+        ? fromName
+        : fromEmail;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundImage: null, // Placeholder or fetch image if available
+            backgroundColor: Colors.grey.shade800,
+            child: Text(
+              displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  displayName,
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                if (fromEmail.isNotEmpty && fromEmail != displayName)
+                  Text(
+                    fromEmail,
+                    style: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                Text(
+                  'Wants to track expenses',
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+          // Reject Button
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade800,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              icon: const Icon(Icons.close, color: Colors.white70, size: 20),
+              onPressed: () =>
+                  _respondToRequest(requestId, data['fromUid'], false),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Accept Button
+          Container(
+            height: 36,
+            decoration: BoxDecoration(
+              color: accentColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: TextButton(
+              onPressed: () =>
+                  _respondToRequest(requestId, data['fromUid'], true),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                foregroundColor: Colors.black,
+              ),
+              child: const Text(
+                'Accept',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPartnersList(
+    BuildContext context,
+    AuthService authService,
+    Color textColor,
+    Color accentColor,
+  ) {
+    final partners = authService.partners.reversed.where((p) {
+      final name = p.displayName.toLowerCase();
+      return _searchText.isEmpty || name.contains(_searchText);
+    }).toList();
 
     if (partners.isEmpty) {
-      return Center(
+      if (_searchText.isNotEmpty) {
+        return Text(
+          'No connections found matching "$_searchText"',
+          style: TextStyle(color: Colors.grey.shade500),
+        );
+      }
+      // Empty state with Link Partner button
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 20),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(AppLocalizations.of(context)!.noPartnersLinkedYet),
-            const SizedBox(height: 16),
-            ElevatedButton(
+            Text(
+              'No active connections yet.',
+              style: TextStyle(color: Colors.grey.shade500),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const PartnerLinkScreen()),
                 );
               },
-              child: Text(AppLocalizations.of(context)!.linkPartner),
+              icon: const Icon(Icons.person_add),
+              label: const Text('Link a Partner'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: accentColor,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
             ),
           ],
         ),
       );
     }
 
-    return ListView.builder(
-      itemCount: partners.length,
-      itemBuilder: (context, index) {
-        final partner = partners[index];
-        final isSelected = partner.uid == selectedId;
+    final selectedPartnerId = authService.selectedPartnerId;
 
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundImage: partner.photoUrl != null
-                ? CachedNetworkImageProvider(partner.photoUrl!)
-                : null,
-            child: partner.photoUrl == null
-                ? Text(
-                    partner.displayName.isNotEmpty
-                        ? partner.displayName[0].toUpperCase()
-                        : '?',
-                  )
-                : null,
-          ),
-          title: Text(
-            partner.displayName.isNotEmpty
-                ? partner.displayName
-                : 'Unknown Partner',
-          ),
-          subtitle: Text(partner.email ?? ''),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isSelected)
-                const Icon(Icons.check_circle, color: Colors.green),
-              IconButton(
-                icon: const Icon(Icons.broken_image, color: Colors.red),
-                onPressed: () =>
-                    _unlinkPartner(partner.uid, partner.displayName),
-                tooltip: 'Unlink',
+    return Column(
+      children: partners.map((partner) {
+        final isSelected = partner.uid == selectedPartnerId;
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              if (isSelected) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '${partner.displayName} is already active.',
+                      ),
+                      duration: const Duration(milliseconds: 1000),
+                    ),
+                  );
+                }
+                return;
+              }
+
+              authService.selectPartner(partner.uid);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Switched to ${partner.displayName}'),
+                    duration: const Duration(milliseconds: 1000),
+                  ),
+                );
+                Navigator.pop(context);
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? accentColor.withValues(alpha: 0.1)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+                border: isSelected
+                    ? Border.all(color: accentColor.withValues(alpha: 0.5))
+                    : null,
               ),
-            ],
+              child: Row(
+                children: [
+                  // Avatar with Green Border
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: accentColor, width: 2),
+                    ),
+                    child: CircleAvatar(
+                      radius: 22,
+                      backgroundImage: partner.photoUrl != null
+                          ? CachedNetworkImageProvider(partner.photoUrl!)
+                          : null,
+                      backgroundColor: Colors.grey.shade800,
+                      child: partner.photoUrl == null
+                          ? Text(
+                              partner.displayName.isNotEmpty
+                                  ? partner.displayName[0].toUpperCase()
+                                  : '?',
+                              style: const TextStyle(color: Colors.white),
+                            )
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          partner.displayName,
+                          style: TextStyle(
+                            color: textColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        // "Shared Wallet" text removed
+                        Text(
+                          partner.email ?? '',
+                          style: TextStyle(
+                            color: Colors.grey.shade500,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Current selection indicator or Menu
+                  if (isSelected)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Icon(
+                        Icons.check_circle,
+                        color: accentColor,
+                        size: 24,
+                      ),
+                    ),
+
+                  // Menu / Unlink
+                  PopupMenuButton<String>(
+                    icon: Icon(Icons.more_vert, color: Colors.grey.shade500),
+                    color: Colors.grey.shade900,
+                    onSelected: (value) {
+                      if (value == 'unlink') {
+                        _unlinkPartner(partner.uid, partner.displayName);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'unlink',
+                        child: Row(
+                          children: const [
+                            Icon(
+                              Icons.broken_image,
+                              color: Colors.red,
+                              size: 20,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Unlink',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
-          onTap: () {
-            authService.selectPartner(partner.uid);
-            Navigator.pop(context);
-          },
         );
-      },
+      }).toList(),
+    );
+  }
+
+  Widget _buildInviteCard(BuildContext context, Color accentColor) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F2618), // Slightly lighter dark green
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF1B3E2B)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF153322),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.person_add_alt_1, color: accentColor, size: 24),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Invite via Link',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Send a magic link to connect instantly without searching.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PartnerLinkScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF153322),
+                foregroundColor: accentColor,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'Share Invite Link',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

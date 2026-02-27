@@ -1,23 +1,27 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:couple_balance/l10n/app_localizations.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+
+import '../config/theme.dart';
 import '../models/transaction_model.dart';
 import '../services/auth_service.dart';
 import 'partner_link_screen.dart';
 import 'profile_screen.dart';
-import 'partner_profile_screen.dart';
+// import 'partner_profile_screen.dart'; // Unused
+// import 'settlement_history_screen.dart'; // Used in Details
 import 'settlement_history_screen.dart';
 import '../viewmodels/settlement_viewmodel.dart';
 import 'partner_list_screen.dart';
 import 'transaction_detail_screen.dart';
+import 'all_transactions_screen.dart'; // Added
 import '../models/user_model.dart';
 import '../services/theme_service.dart';
 import '../services/update_service.dart';
+import '../services/deep_link_service.dart'; // Add this
 import '../widgets/pending_settlements_widget.dart';
+import '../widgets/dashboard_widgets.dart'; // New Dashboard Widgets
 
 class HomeScreen extends StatefulWidget {
   final int? refreshTrigger;
@@ -32,7 +36,27 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      UpdateService().checkForUpdate(context);
+      // Small delay to allow DeepLinkService to process any initial link
+      // and set 'isHandlingLink' flag before showing update dialog.
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (!mounted) return;
+        final deepLinkService = Provider.of<DeepLinkService>(
+          context,
+          listen: false,
+        );
+        if (kDebugMode) {
+          debugPrint(
+            'HomeScreen: isHandlingLink: ${deepLinkService.isHandlingLink}',
+          );
+        }
+        if (!deepLinkService.isHandlingLink) {
+          UpdateService().checkForUpdate(context);
+        } else {
+          if (kDebugMode) {
+            debugPrint('HomeScreen: Skipping update check due to deep link.');
+          }
+        }
+      });
     });
   }
 
@@ -44,18 +68,15 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, authService, child) {
         final user = authService.currentUser;
         if (user == null) {
-          return const SizedBox(); // Should not happen due to AuthWrapper
+          return const SizedBox();
         }
 
         // Use selected partner ID managed by AuthService
         final selectedPartnerId = authService.selectedPartnerId;
         final selectedPartner = authService.partners.firstWhere(
           (p) => p.uid == selectedPartnerId,
-          orElse: () =>
-              UserModel(uid: '', displayName: '', partnerUids: []), // Dummy
+          orElse: () => UserModel(uid: '', displayName: '', partnerUids: []),
         );
-        final hasPartner =
-            selectedPartnerId != null && selectedPartner.uid.isNotEmpty;
 
         if (authService.isLoading) {
           return const Scaffold(
@@ -64,78 +85,32 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         return Scaffold(
-          // backgroundColor: handled by Theme
-          appBar: AppBar(
-            leading: hasPartner
-                ? _AnimatedHeartButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PartnerProfileScreen(
-                            partnerUid: selectedPartnerId,
-                          ),
-                        ),
-                      );
-                    },
-                  )
-                : const SizedBox(),
-            title: InkWell(
-              onTap: authService.partners.length > 1
-                  ? () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const PartnerListScreen(),
-                        ),
-                      );
-                    }
-                  : null,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('CoupleBalance'),
-                  if (hasPartner && authService.partners.length > 1) ...[
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        '(${selectedPartner.displayName.isNotEmpty ? selectedPartner.displayName : 'Partner'})',
-                        style: const TextStyle(fontSize: 12),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const Icon(Icons.arrow_drop_down),
-                  ],
-                ],
-              ),
-            ),
-            centerTitle: true,
-            // backgroundColor: handled by Theme
-            elevation: 0,
-            actions: [
-              StreamBuilder<DocumentSnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(user.uid)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  final userData =
-                      snapshot.data?.data() as Map<String, dynamic>?;
-                  final displayName = userData?['displayName'] as String? ?? '';
-                  final email = userData?['email'] as String? ?? '';
-                  final photoUrl = userData?['photoUrl'] as String?;
+          extendBody: true, // Allow content to extend behind bottom nav
+          // Background color usually handled by theme, but for this specific dashboard look
+          // we might want to ensure it's compatible with the dark theme.
+          // The screenshot implies a dark background. Our theme is already dark emerald.
+          body: SafeArea(
+            bottom:
+                false, // Don't add bottom safe area padding - let content extend
+            child: Column(
+              children: [
+                // 1. Header
+                StreamBuilder<DocumentSnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    final userData =
+                        snapshot.data?.data() as Map<String, dynamic>?;
+                    final displayName =
+                        userData?['displayName'] as String? ?? '';
+                    final photoUrl = userData?['photoUrl'] as String?;
 
-                  String initials = 'U';
-                  if (displayName.isNotEmpty) {
-                    initials = displayName[0].toUpperCase();
-                  } else if (email.isNotEmpty) {
-                    initials = email[0].toUpperCase();
-                  }
-
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 16.0),
-                    child: InkWell(
-                      onTap: () {
+                    return DashboardHeader(
+                      displayName: displayName,
+                      photoUrl: photoUrl,
+                      onProfileTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -143,68 +118,43 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         );
                       },
-                      child: CircleAvatar(
-                        backgroundColor: Colors.pinkAccent,
-                        backgroundImage: photoUrl != null
-                            ? CachedNetworkImageProvider(photoUrl)
-                            : null,
-                        child: photoUrl == null
-                            ? Text(
-                                initials,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              )
-                            : null,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-          body: Column(
-            children: [
-              // Balance Card
-              _BalanceCard(
-                userUid: user.uid,
-                partnerUid: selectedPartnerId,
-                refreshTrigger: widget.refreshTrigger,
-              ),
-
-              // Pending Settlements
-              PendingSettlementsWidget(
-                myUid: user.uid,
-                partnerUid: selectedPartnerId,
-              ),
-
-              // Transaction Header
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      AppLocalizations.of(context)!.recentTransactions,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                      onNotificationTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PartnerListScreen(),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
-              ),
 
-              // Transaction List
-              Expanded(
-                child: _TransactionList(
+                // 2. Balance Section
+                _DashboardBalanceSection(
                   userUid: user.uid,
                   partnerUid: selectedPartnerId,
+                  partnerName: selectedPartner.displayName,
                   refreshTrigger: widget.refreshTrigger,
                 ),
-              ),
-            ],
+
+                // 3. Pending Settlements (Keep existing logic)
+                PendingSettlementsWidget(
+                  myUid: user.uid,
+                  partnerUid: selectedPartnerId,
+                ),
+
+                // 4. Transaction List
+                Expanded(
+                  child: _DashboardTransactionList(
+                    userUid: user.uid,
+                    partnerUid: selectedPartnerId,
+                    partnerName: selectedPartner.displayName,
+                    refreshTrigger: widget.refreshTrigger,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -212,22 +162,25 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _BalanceCard extends StatefulWidget {
+class _DashboardBalanceSection extends StatefulWidget {
   final String userUid;
   final String? partnerUid;
+  final String partnerName;
   final int? refreshTrigger;
-  const _BalanceCard({
+
+  const _DashboardBalanceSection({
     required this.userUid,
     this.partnerUid,
+    this.partnerName = "Partner",
     this.refreshTrigger,
   });
 
   @override
-  State<_BalanceCard> createState() => _BalanceCardState();
+  State<_DashboardBalanceSection> createState() =>
+      _DashboardBalanceSectionState();
 }
 
-class _BalanceCardState extends State<_BalanceCard> {
-  late Stream<DocumentSnapshot> _userStream;
+class _DashboardBalanceSectionState extends State<_DashboardBalanceSection> {
   late Stream<QuerySnapshot> _transactionStream;
 
   @override
@@ -237,7 +190,7 @@ class _BalanceCardState extends State<_BalanceCard> {
   }
 
   @override
-  void didUpdateWidget(_BalanceCard oldWidget) {
+  void didUpdateWidget(_DashboardBalanceSection oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.userUid != widget.userUid ||
         oldWidget.partnerUid != widget.partnerUid ||
@@ -247,11 +200,6 @@ class _BalanceCardState extends State<_BalanceCard> {
   }
 
   void _initStreams() {
-    _userStream = FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.userUid)
-        .snapshots();
-
     _transactionStream = FirebaseFirestore.instance
         .collection('transactions')
         .where(
@@ -260,263 +208,10 @@ class _BalanceCardState extends State<_BalanceCard> {
             Filter('receiverUid', isEqualTo: widget.userUid),
           ),
         )
-        .orderBy('timestamp', descending: true)
         .snapshots();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<DocumentSnapshot>(
-      stream: _userStream,
-      builder: (context, userSnap) {
-        if (!userSnap.hasData) return const SizedBox();
-
-        final userData = userSnap.data!.data() as Map<String, dynamic>?;
-        // Use the passed partnerUid (selected from AuthService) if available, otherwise fallback or null.
-        // If we want complete decoupling, we should rely solely on the passed partnerUid.
-        // However, the original code fetched it from userSnap.
-        // Let's prefer the passed one, but if it's null, we show the link screen.
-
-        if (widget.partnerUid == null) {
-          return Container(
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  AppLocalizations.of(context)!.noPartnerLinked,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const PartnerLinkScreen(),
-                      ),
-                    );
-                  },
-                  child: Text(AppLocalizations.of(context)!.linkPartner),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return StreamBuilder<QuerySnapshot>(
-          stream: _transactionStream,
-          builder: (context, txSnap) {
-            if (txSnap.hasError) {
-              debugPrint('BalanceCard Error: ${txSnap.error}');
-              return const Center(child: Text('Error loading data'));
-            }
-            if (!txSnap.hasData) return const CircularProgressIndicator();
-            final docs = txSnap.data!.docs;
-            double mySpends = 0;
-            double partnerSpends = 0;
-
-            for (var doc in docs) {
-              final data = doc.data() as Map<String, dynamic>;
-              if (data['isSettled'] == true) continue; // Skip settled
-              if (data['isDeleted'] == true) continue; // Skip deleted
-
-              final sender = data['senderUid'];
-              final receiver = data['receiverUid'];
-              final amount = (data['amount'] ?? 0).toDouble();
-
-              if (sender == widget.userUid && receiver == widget.partnerUid) {
-                mySpends += amount;
-              } else if (sender == widget.partnerUid &&
-                  receiver == widget.userUid) {
-                partnerSpends += amount;
-              }
-            }
-
-            final netBalance = mySpends - partnerSpends;
-            final isPositive = netBalance >= 0;
-            final absBalance = netBalance.abs();
-
-            // Settlement Day Logic
-            final now = DateTime.now();
-            final today = DateTime(now.year, now.month, now.day);
-            final settlementDay = userData?['settlementDay'] ?? 10;
-
-            var targetDate = DateTime(today.year, today.month, settlementDay);
-            if (today.day > settlementDay) {
-              targetDate = DateTime(today.year, today.month + 1, settlementDay);
-            }
-            final daysLeft = targetDate.difference(today).inDays;
-
-            final isDark = Theme.of(context).brightness == Brightness.dark;
-
-            return Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: isDark
-                      ? [
-                          Colors.pink.shade900.withValues(alpha: 0.8),
-                          Colors.pink.shade600.withValues(alpha: 0.9),
-                        ]
-                      : [Colors.pinkAccent.shade100, Colors.pinkAccent],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: (isDark ? Colors.pinkAccent : Colors.pinkAccent)
-                        .withValues(alpha: isDark ? 0.15 : 0.3),
-                    blurRadius: isDark ? 20 : 10,
-                    offset: isDark ? const Offset(0, 0) : const Offset(0, 5),
-                    spreadRadius: isDark ? 2 : 0,
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    isPositive
-                        ? AppLocalizations.of(context)!.partnerOwesYou
-                        : AppLocalizations.of(context)!.youOwePartner,
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${absBalance.toStringAsFixed(2)} ₺',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: () => _selectSettlementDay(
-                      context,
-                      widget.userUid,
-                      widget.partnerUid,
-                      settlementDay,
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(
-                          alpha: isDark ? 0.1 : 0.2,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        border: isDark
-                            ? Border.all(
-                                color: Colors.white.withValues(alpha: 0.1),
-                                width: 0.5,
-                              )
-                            : null,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            AppLocalizations.of(
-                              context,
-                            )!.settlementInDays(daysLeft),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Icon(
-                            Icons.edit,
-                            color: Colors.white70,
-                            size: 14,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (absBalance > 0)
-                        ElevatedButton.icon(
-                          onPressed: () => _showSettleUpDialog(
-                            context,
-                            widget.userUid,
-                            widget.partnerUid!,
-                            absBalance,
-                            !isPositive, // I am payer if balance is negative (partner owes me is positive) -> Wait.
-                            // isPositive = (mySpends - partnerSpends) >= 0.
-                            // If positive: partner owes me. I am receiver. IAmPayer = false.
-                            // If negative: I owe partner. I am payer. IAmPayer = true.
-                            // Logic: isPositive means Partner Owes Me.
-                            // So if isPositive is true, iAmPayer is false.
-                            // If isPositive is false, iAmPayer is true.
-                          ),
-                          icon: const Icon(Icons.check, size: 18),
-                          label: Text(AppLocalizations.of(context)!.settleUp),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isDark
-                                ? Colors.white.withValues(alpha: 0.9)
-                                : Colors.white,
-                            foregroundColor: isDark
-                                ? Colors.pink.shade700
-                                : Colors.pinkAccent,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
-                            ),
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                        ),
-                      if (absBalance > 0) const SizedBox(width: 12),
-                      IconButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => SettlementHistoryScreen(
-                                myUid: widget.userUid,
-                                partnerUid: widget.partnerUid!,
-                              ),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.history, color: Colors.white),
-                        tooltip: AppLocalizations.of(context)!.history,
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.white.withValues(
-                            alpha: isDark ? 0.1 : 0.2,
-                          ),
-                          padding: const EdgeInsets.all(12),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
+  // Logic to show Settle Up Dialog (Reused/Adapted)
   Future<void> _showSettleUpDialog(
     BuildContext context,
     String myUid,
@@ -524,41 +219,27 @@ class _BalanceCardState extends State<_BalanceCard> {
     double amount,
     bool iAmPayer,
   ) async {
+    // Determine if we need to explain who pays whom in the dialog
+    // amount is absBalance.
+    // iAmPayer means I owe.
+
     final resultCode = await showDialog<int>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.settleUpTitle),
+        backgroundColor: const Color(0xFF1A2621), // Dark bg
+        title: Text(
+          AppLocalizations.of(context)!.settleUpTitle,
+          style: const TextStyle(color: Colors.white),
+        ),
         content: Text(
-          // Use a new key or reuse settleUpContent logic if appropriate,
-          // but here we had a specific string:
-          // "This will send a request to your partner to confirm the settlement of ${amount.toStringAsFixed(2)} ₺."
-          // I will assume I can create a new key or just interpolating for now if I missed it in plan,
-          // checking plan: I missed adding a specific key for this dialog content in the plan,
-          // but I have settleUpContent which is different.
-          // Wait, I did NOT add a specific key for this dialog content in my previous step.
-          // I should double check my plan vs execution.
-          // Ah, I see I missed adding "This will send a request..." to the ARB file.
-          // I'll skip this specific text update in this step and do it in a fix-up step or add it now?
-          // I will use a simple string for now and fix it in next turn to avoid breaking flow,
-          // actually I should check if I can use existing keys.
-          // Let's use:
           AppLocalizations.of(
             context,
           )!.sendRequestDialogContent(amount.toStringAsFixed(2), "₺"),
-          // Actually the existing string was:
-          // "This will send a request to your partner to confirm the settlement of..."
-          // The settleUpContent key says: "This will archive all current transactions..."
-          // They are different.
-          // I should ADD a new key for this dialog.
-          // For now, I will leave this one string hardcoded or try to approximate it?
-          // No, I must be precise. I will add `settleUpConfirmationDialogContent` to ARB in a quick detour?
-          // No, I'll stick to the plan: "Update _showSettleUpDialog snackbars and button text."
-          // I will Only update what I have keys for.
-          // "This will send a request to your partner to confirm the settlement of ${amount.toStringAsFixed(2)} ₺.",
+          style: const TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, null), // Cancel or dismiss
+            onPressed: () => Navigator.pop(ctx, null),
             child: Text(AppLocalizations.of(context)!.cancel),
           ),
           ChangeNotifierProvider(
@@ -574,7 +255,6 @@ class _BalanceCardState extends State<_BalanceCard> {
                 }
                 return TextButton(
                   onPressed: () async {
-                    // Logic: requestSettlement -> returns int (0=Success, 1=Error, 2=Duplicate)
                     final result = await viewModel.requestSettlement(
                       senderUid: myUid,
                       receiverUid: partnerUid,
@@ -583,10 +263,8 @@ class _BalanceCardState extends State<_BalanceCard> {
                     );
 
                     if (context.mounted) {
-                      // Use clean post-frame callback to avoid Navigator lock issues
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         if (context.mounted) {
-                          // Pass the integer result code directly
                           Navigator.pop(context, result);
                         }
                       });
@@ -595,7 +273,7 @@ class _BalanceCardState extends State<_BalanceCard> {
                   child: Text(
                     AppLocalizations.of(context)!.sendRequest,
                     style: const TextStyle(
-                      color: Colors.pinkAccent,
+                      color: AppTheme.emeraldPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -632,94 +310,150 @@ class _BalanceCardState extends State<_BalanceCard> {
     }
   }
 
-  // Refactored Dialog Logic
-  // ... (See next implementation step for clarity, I will replace the whole _showSettleUpDialog method in next tool call to avoid confusion)
-
-  Future<void> _selectSettlementDay(
-    BuildContext context,
-    String myUid,
-    String? partnerUid,
-    int currentDay,
-  ) async {
-    final pickedDay = await showDialog<int>(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: Text(AppLocalizations.of(context)!.selectSettlementDay),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: 31,
-              itemBuilder: (context, index) {
-                final day = index + 1;
-                return ListTile(
-                  title: Text(AppLocalizations.of(context)!.day(day)),
-                  selected: day == currentDay,
-                  onTap: () => Navigator.pop(ctx, day),
+  @override
+  Widget build(BuildContext context) {
+    // If no partner, show link screen link (reuse logic or simplify)
+    if (widget.partnerUid == null) {
+      return Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          children: [
+            Text(
+              AppLocalizations.of(context)!.noPartnerLinked,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PartnerLinkScreen()),
                 );
               },
+              child: Text(AppLocalizations.of(context)!.linkPartner),
             ),
-          ),
+          ],
+        ),
+      );
+    }
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: _transactionStream,
+      builder: (context, txSnap) {
+        if (!txSnap.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final docs = txSnap.data!.docs;
+        double mySpends = 0;
+        double partnerSpends = 0;
+
+        for (var doc in docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          if (data['isSettled'] == true) continue;
+          if (data['isDeleted'] == true) continue;
+
+          final sender = data['senderUid'];
+          final receiver = data['receiverUid'];
+          final amount = (data['amount'] ?? 0).toDouble();
+
+          if (sender == widget.userUid && receiver == widget.partnerUid) {
+            mySpends += amount;
+          } else if (sender == widget.partnerUid &&
+              receiver == widget.userUid) {
+            partnerSpends += amount;
+          }
+        }
+
+        final netBalance = mySpends - partnerSpends;
+        // netBalance > 0: I spent more. Partner owes me.
+        // netBalance < 0: Partner spent more. I owe partner.
+
+        return DashboardBalanceCard(
+          netBalance: netBalance,
+          partnerName: widget.partnerName,
+          onSettleUp: () {
+            if (netBalance.abs() > 0) {
+              _showSettleUpDialog(
+                context,
+                widget.userUid,
+                widget.partnerUid!,
+                netBalance.abs(),
+                netBalance < 0,
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Nothing to settle!")),
+              );
+            }
+          },
+          onDetails: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => SettlementHistoryScreen(
+                  myUid: widget.userUid,
+                  partnerUid: widget.partnerUid!,
+                ),
+              ),
+            );
+          },
         );
       },
     );
-
-    if (pickedDay != null && pickedDay != currentDay) {
-      final batch = FirebaseFirestore.instance.batch();
-      final myRef = FirebaseFirestore.instance.collection('users').doc(myUid);
-
-      batch.set(myRef, {'settlementDay': pickedDay}, SetOptions(merge: true));
-
-      if (partnerUid != null) {
-        final partnerRef = FirebaseFirestore.instance
-            .collection('users')
-            .doc(partnerUid);
-        batch.set(partnerRef, {
-          'settlementDay': pickedDay,
-        }, SetOptions(merge: true));
-      }
-
-      await batch.commit();
-    }
   }
 }
 
-class _TransactionList extends StatefulWidget {
+class _DashboardTransactionList extends StatefulWidget {
   final String userUid;
   final String? partnerUid;
+  final String partnerName;
   final int? refreshTrigger;
-  const _TransactionList({
+
+  const _DashboardTransactionList({
     required this.userUid,
     this.partnerUid,
+    this.partnerName = "Partner",
     this.refreshTrigger,
   });
 
   @override
-  State<_TransactionList> createState() => _TransactionListState();
+  State<_DashboardTransactionList> createState() =>
+      _DashboardTransactionListState();
 }
 
-class _TransactionListState extends State<_TransactionList> {
+class _DashboardTransactionListState extends State<_DashboardTransactionList> {
   late Stream<QuerySnapshot> _transactionStream;
 
   @override
   void initState() {
     super.initState();
-    _transactionStream = _createStream();
+    _createStream();
   }
 
   @override
-  void didUpdateWidget(_TransactionList oldWidget) {
+  void didUpdateWidget(_DashboardTransactionList oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.userUid != widget.userUid ||
         oldWidget.partnerUid != widget.partnerUid ||
         oldWidget.refreshTrigger != widget.refreshTrigger) {
-      _transactionStream = _createStream();
+      _createStream();
     }
   }
 
-  Stream<QuerySnapshot> _createStream() {
-    return FirebaseFirestore.instance
+  void _createStream() {
+    // Limit to let's say 30 first to minimize data if only showing 20,
+    // but user wanted 'recent transactions limit to 20'.
+    // Firestore limit would be better efficiently.
+    _transactionStream = FirebaseFirestore.instance
         .collection('transactions')
         .where(
           Filter.or(
@@ -728,393 +462,127 @@ class _TransactionListState extends State<_TransactionList> {
           ),
         )
         .orderBy('timestamp', descending: true)
+        // .limit(20) // REMOVED: limit(20) here causes issues if the top 20 are settled/deleted.
+        // We will limit the display count instead.
         .snapshots();
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _transactionStream,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          debugPrint('TransactionList Error: ${snapshot.error}');
-          return const Center(child: Text('Error loading data'));
-        }
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    if (widget.partnerUid == null) {
+      return const SizedBox();
+    }
 
-        final allDocs = snapshot.data?.docs ?? [];
-        // Filter out deleted, settled, and irrelevant transactions
-        final docs = allDocs.where((d) {
-          final data = d.data() as Map<String, dynamic>;
-          if (data['isDeleted'] == true || data['isSettled'] == true) {
-            return false;
-          }
-
-          // Strict filtering: If no partner selected, show nothing
-          if (widget.partnerUid == null) return false;
-
-          final sender = data['senderUid'];
-          final receiver = data['receiverUid'];
-
-          // Must involve the selected partner
-          return sender == widget.partnerUid || receiver == widget.partnerUid;
-        }).toList();
-
-        if (docs.isEmpty) {
-          return Center(
-            child: Text(AppLocalizations.of(context)!.noTransactionsYet),
-          );
-        }
-
-        return ListView.builder(
-          itemCount: docs.length,
-          padding: const EdgeInsets.only(left: 16, right: 16, bottom: 100),
-          itemBuilder: (context, index) {
-            final data = docs[index].data() as Map<String, dynamic>;
-
-            final tx = TransactionModel.fromMap(data, docs[index].id);
-            final isMe = tx.senderUid == widget.userUid;
-
-            final docId = docs[index].id;
-
-            final cardWidget = Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+    return Column(
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                AppLocalizations.of(context)!.recentTransactions,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
-              elevation: 0,
-              child: ListTile(
+              GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => TransactionDetailScreen(
-                        transaction: tx,
-                        currentUserId: widget.userUid,
+                      builder: (_) => AllTransactionsScreen(
+                        userUid: widget.userUid,
+                        partnerUid: widget.partnerUid!,
+                        partnerName: widget.partnerName,
                       ),
                     ),
                   );
                 },
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                leading: CircleAvatar(
-                  backgroundColor: isMe
-                      ? Theme.of(
-                          context,
-                        ).colorScheme.primary.withValues(alpha: 0.1)
-                      : Theme.of(
-                          context,
-                        ).colorScheme.secondary.withValues(alpha: 0.1),
-                  child: Icon(
-                    isMe ? Icons.arrow_outward : Icons.arrow_downward,
-                    color: isMe
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.secondary,
-                  ),
-                ),
-                title: Text(
-                  tx.note,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  DateFormat.MMMd(
-                    AppLocalizations.of(context)!.localeName,
-                  ).add_jm().format(tx.timestamp),
+                child: Text(
+                  "See All", // Could move to localizations
                   style: TextStyle(
-                    color: Theme.of(context).textTheme.bodySmall?.color,
-                    fontSize: 12,
-                  ),
-                ),
-                trailing: Text(
-                  '${isMe ? '+' : '-'}${tx.amount % 1 == 0 ? tx.amount.toInt().toString() : tx.amount.toString()} ${tx.currency}',
-                  style: TextStyle(
+                    color: AppTheme.emeraldPrimary,
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: isMe
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.secondary,
+                    fontSize: 14,
                   ),
                 ),
               ),
-            );
+            ],
+          ),
+        ),
 
-            // Logic for Deletion capability
-            final canModify = tx.addedByUid != null
-                ? tx.addedByUid == widget.userUid
-                : tx.senderUid == widget.userUid;
+        // List
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: _transactionStream,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final allDocs = snapshot.data?.docs ?? [];
 
-            if (!canModify) return cardWidget;
-
-            return Dismissible(
-              key: Key(docId),
-              direction: DismissDirection.horizontal,
-              // Swipe Right (Start to End) -> Settle
-              background: Container(
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.only(left: 20),
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.check, color: Colors.white),
-                    const SizedBox(width: 8),
-                    Text(
-                      AppLocalizations.of(context)!.settleUp,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Swipe Left (End to Start) -> Delete
-              secondaryBackground: Container(
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 20),
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(Icons.delete, color: Colors.white),
-              ),
-              confirmDismiss: (direction) async {
-                if (direction == DismissDirection.endToStart) {
-                  // Delete Logic
-                  if (!canModify) return false;
-                  return await showDialog(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: Text(
-                        AppLocalizations.of(context)!.deleteTransactionTitle,
-                      ),
-                      content: Text(
-                        AppLocalizations.of(context)!.deleteTransactionContent,
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: Text(AppLocalizations.of(context)!.cancel),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: Text(
-                            AppLocalizations.of(context)!.delete,
-                            style: TextStyle(color: Colors.red),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                } else {
-                  // Settle Logic (Start to End)
-                  await _showSettleSingleTransactionDialog(
-                    context,
-                    tx,
-                    widget.userUid,
-                    // If IS_ME (sender is me), I paid. Partner needs to pay me. Partner is payer. I am Receiver.
-                    // If NOT_ME (sender is partner), Partner paid. I need to pay partner. I am Payer.
-                    // iAmPayer logic:
-                    // tx.senderUid == userUid => I paid => Partner owes => iAmPayer = false
-                    // tx.senderUid != userUid => Partner paid => I owe => iAmPayer = true
-                    tx.senderUid != widget.userUid,
-                  );
-                  // Return false so the item is NOT dismissed from the list
+              // Filter logic
+              final docs = allDocs.where((d) {
+                final data = d.data() as Map<String, dynamic>;
+                if (data['isDeleted'] == true || data['isSettled'] == true) {
                   return false;
                 }
-              },
-              onDismissed: (direction) {
-                if (direction == DismissDirection.endToStart) {
-                  final myUid = Provider.of<AuthService>(
-                    context,
-                    listen: false,
-                  ).currentUser?.uid;
-                  if (myUid != null) {
-                    FirebaseFirestore.instance
-                        .collection('transactions')
-                        .doc(docId)
-                        .update({'isDeleted': true, 'deletedBy': myUid});
-                  }
-                } else {
-                  // Already handled in confirmDismiss or we can just let it animate away
-                  // If confirmDismiss returns true, it animates out.
-                  // The Firestore update in confirmDismiss will cause a stream rebuild.
-                }
-              },
-              child: cardWidget,
-            );
-          },
-        );
-      },
-    );
-  }
 
-  Future<bool?> _showSettleSingleTransactionDialog(
-    BuildContext context,
-    TransactionModel tx,
-    String myUid,
-    bool iAmPayer,
-  ) async {
-    return await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.settleUpTitle),
-        content: Text(
-          // "This will send a request to your partner to confirm the settlement of..."
-          // Reusing generic or custom string.
-          // Since I didn't add a new key yet, I'll use the one I used in the main dialog or construct it.
-          AppLocalizations.of(context)!.sendRequestDialogContent(
-            tx.amount.toStringAsFixed(2),
-            tx.currency,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(AppLocalizations.of(context)!.cancel),
-          ),
-          ChangeNotifierProvider(
-            create: (_) => SettlementViewModel(),
-            child: Consumer<SettlementViewModel>(
-              builder: (context, viewModel, child) {
-                if (viewModel.isLoading) {
-                  return const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  );
-                }
-                return TextButton(
-                  onPressed: () async {
-                    // Start Request
-                    final resultCode = await viewModel
-                        .requestSingleTransactionSettlement(
-                          myUid: myUid,
-                          partnerUid: iAmPayer
-                              ? tx.senderUid
-                              : tx.receiverUid, // derived logic from previous step
-                          transactionId: tx.id,
-                          amount: tx.amount,
-                          iAmPayer: iAmPayer,
-                        );
+                final sender = data['senderUid'];
+                final receiver = data['receiverUid'];
+                return sender == widget.partnerUid ||
+                    receiver == widget.partnerUid;
+              }).toList();
 
-                    if (context.mounted) {
-                      Navigator.pop(
-                        context,
-                        resultCode == 0,
-                      ); // true if success
-
-                      if (resultCode == 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              AppLocalizations.of(context)!.requestSentSuccess,
-                            ),
-                          ),
-                        );
-                      } else if (resultCode == 2) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              AppLocalizations.of(
-                                context,
-                              )!.pendingRequestExists,
-                            ),
-                            backgroundColor: Colors.orange,
-                          ),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              AppLocalizations.of(context)!.requestSendFailed,
-                            ),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    }
-                  },
+              if (docs.isEmpty) {
+                return Center(
                   child: Text(
-                    AppLocalizations.of(context)!.sendRequest,
-                    style: const TextStyle(
-                      color: Colors.pinkAccent,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    AppLocalizations.of(context)!.noTransactionsYet,
+                    style: const TextStyle(color: Colors.white54),
                   ),
                 );
-              },
-            ),
+              }
+
+              // Apply limit here
+              final displayCount = docs.length > 20 ? 20 : docs.length;
+
+              return ListView.builder(
+                padding: const EdgeInsets.only(
+                  bottom: 100,
+                ), // Space for FAB/BottomBar
+                itemCount: displayCount,
+                itemBuilder: (context, index) {
+                  final data = docs[index].data() as Map<String, dynamic>;
+                  final tx = TransactionModel.fromMap(data, docs[index].id);
+
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => TransactionDetailScreen(
+                            transaction: tx,
+                            currentUserId: widget.userUid,
+                          ),
+                        ),
+                      );
+                    },
+                    child: SwipeableTransactionTile(
+                      transaction: tx,
+                      currentUserId: widget.userUid,
+                      partnerName: widget.partnerName,
+                    ),
+                  );
+                },
+              );
+            },
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AnimatedHeartButton extends StatefulWidget {
-  final VoidCallback onPressed;
-  const _AnimatedHeartButton({required this.onPressed});
-
-  @override
-  State<_AnimatedHeartButton> createState() => _AnimatedHeartButtonState();
-}
-
-class _AnimatedHeartButtonState extends State<_AnimatedHeartButton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-      lowerBound: 0.0,
-      upperBound: 1.0,
-    );
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.8,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _handleTap() async {
-    await HapticFeedback.mediumImpact();
-    await _controller.forward();
-    await _controller.reverse();
-    widget.onPressed();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _handleTap,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          return Transform.scale(scale: _scaleAnimation.value, child: child);
-        },
-        child: const Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Icon(Icons.favorite, color: Colors.redAccent, size: 28),
         ),
-      ),
+      ],
     );
   }
 }

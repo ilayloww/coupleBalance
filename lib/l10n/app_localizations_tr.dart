@@ -48,6 +48,18 @@ class AppLocalizationsTr extends AppLocalizations {
   String get enterEmail => 'Lütfen e-posta adresinizi girin';
 
   @override
+  String get enterDisplayName => 'Lütfen isminizi girin';
+
+  @override
+  String get tooManyRequests =>
+      'Çok fazla deneme yaptınız. Lütfen daha sonra tekrar deneyin.';
+
+  @override
+  String waitToResend(Object seconds) {
+    return '${seconds}sn sonra tekrar deneyin';
+  }
+
+  @override
   String get validEmail => 'Lütfen geçerli bir e-posta girin';
 
   @override
@@ -120,7 +132,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get noTransactionsYet => 'Henüz işlem yok.';
 
   @override
-  String get deleteTransactionTitle => 'İşlemi Sil?';
+  String get deleteTransactionTitle => 'İşlemi Sil';
 
   @override
   String get deleteTransactionContent =>
@@ -368,7 +380,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get me => 'Ben';
 
   @override
-  String get partner => 'Partnerim';
+  String get partner => 'Partner';
 
   @override
   String get splitEqually => 'Eşit';
@@ -401,8 +413,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get themeColor => 'Tema Rengi';
 
   @override
-  String partnerAlreadyLinked(String partnerInfo) {
-    return 'Partner zaten bağlı ($partnerInfo)';
+  String partnerAlreadyLinked(String name) {
+    return 'Partner zaten bağlı ($name)';
   }
 
   @override
@@ -488,6 +500,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get weakPassword => 'Şifre çok zayıf';
 
   @override
+  String get passwordMustContainUppercase =>
+      'Şifre en az bir büyük harf içermelidir';
+
+  @override
+  String get passwordMustContainNumber => 'Şifre en az bir rakam içermelidir';
+
+  @override
   String get reauthRequired =>
       'Şifrenizi değiştirmek için lütfen tekrar giriş yapın';
 
@@ -499,10 +518,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get invalidCredential => 'E-posta veya şifre hatalı';
-
-  @override
-  String get tooManyRequests =>
-      'Çok fazla deneme yaptınız. Lütfen daha sonra tekrar deneyin.';
 
   @override
   String get networkRequestFailed =>
@@ -526,6 +541,29 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get accountDeleted => 'Hesap başarıyla silindi.';
+
+  @override
+  String get areYouSure => 'Emin misiniz?';
+
+  @override
+  String get deleteAccountDescription =>
+      'Bu işlem geri alınamaz. Tüm paylaşılan harcamalarınız, geçmişiniz ve bağlı hesaplarınız sunucularımızdan kalıcı olarak silinecektir.';
+
+  @override
+  String get typeDeleteToConfirm => 'Onaylamak için aşağıya DELETE yazın';
+
+  @override
+  String get deleteConfirmationKeyword => 'DELETE';
+
+  @override
+  String get partnerNotifiedInfo =>
+      'Partneriniz, ortak defterin kapatıldığına dair bilgilendirilecektir.';
+
+  @override
+  String get deleteMyAccount => 'Hesabımı Sil';
+
+  @override
+  String get goBack => 'Geri Dön';
 
   @override
   String get requestNotFound => 'İstek bulunamadı veya zaman aşımına uğradı.';
@@ -597,4 +635,249 @@ class AppLocalizationsTr extends AppLocalizations {
   String settleSingleTransactionContent(String note) {
     return '\'$note\' işlemi için hesaplaşmayı onaylıyor musun?';
   }
+
+  @override
+  String get goodMorning => 'Günaydın';
+
+  @override
+  String get goodAfternoon => 'Tünaydın';
+
+  @override
+  String get goodEvening => 'İyi Akşamlar';
+
+  @override
+  String get goodNight => 'İyi Geceler';
+
+  @override
+  String get settings => 'Ayarlar';
+
+  @override
+  String get notifications => 'Bildirimler';
+
+  @override
+  String get editProfile => 'Düzenle';
+
+  @override
+  String get done => 'Tamam';
+
+  @override
+  String get passwordMinLength8 => 'En az 8 karakter içermeli';
+
+  @override
+  String get updatePassword => 'Şifreyi Güncelle';
+
+  @override
+  String get passwordDifferentNote =>
+      'Yeni şifreniz öncekilerden farklı olmalı';
+
+  @override
+  String get enterCurrentPassword => 'Mevcut şifreyi girin';
+
+  @override
+  String get enterNewPassword => 'Yeni şifreyi girin';
+
+  @override
+  String get reenterNewPassword => 'Yeni şifreyi tekrar girin';
+
+  @override
+  String get passwordCannotBeSame => 'Yeni şifre mevcut şifre ile aynı olamaz';
+
+  @override
+  String get saveExpense => 'Harcamayı Kaydet';
+
+  @override
+  String get tagCustom => 'Özel';
+
+  @override
+  String get customCategoryHint => 'Kategori adı girin';
+
+  @override
+  String get enterCategoryError => 'Lütfen kategori adı girin';
+
+  @override
+  String get expensesSummary => 'Harcama Özeti';
+
+  @override
+  String get items => 'öğe';
+
+  @override
+  String get pending => 'Bekliyor';
+
+  @override
+  String get dueToday => 'Son gün bugün';
+
+  @override
+  String get paysYou => 'sana ödüyor';
+
+  @override
+  String get youPay => 'Sen ödüyorsun';
+
+  @override
+  String get confirmSettlement => 'Hesaplaşmayı Onayla';
+
+  @override
+  String get filterAllTime => 'Tüm Zamanlar';
+
+  @override
+  String get filterThisYear => 'Bu Yıl';
+
+  @override
+  String get filterLastYear => 'Geçen Yıl';
+
+  @override
+  String get splitDetails => 'Bölüşüm Detayları';
+
+  @override
+  String get receipt => 'Fiş';
+
+  @override
+  String get time => 'Saat';
+
+  @override
+  String get category => 'Kategori';
+
+  @override
+  String get paidByYou => 'Sen ödedin';
+
+  @override
+  String paidByPartner(String name) {
+    return '$name ödedi';
+  }
+
+  @override
+  String get paidFullAmount => 'Tamamını ödedi (borç yok)';
+
+  @override
+  String get owesYou => 'Sana borçlu';
+
+  @override
+  String get youOwe => 'Sen borçlusun';
+
+  @override
+  String get you => 'Sen';
+
+  @override
+  String owePartner(String name) {
+    return '$name alacaklı';
+  }
+
+  @override
+  String get today => 'BUGÜN';
+
+  @override
+  String get yesterday => 'DÜN';
+
+  @override
+  String get searchTransactionHint => 'İsim veya kategori ara';
+
+  @override
+  String get noTransactionsFound => 'İşlem bulunamadı';
+
+  @override
+  String get calendar => 'Takvim';
+
+  @override
+  String transactionsForDate(String date) {
+    return '$date İşlemleri';
+  }
+
+  @override
+  String get total => 'Toplam';
+
+  @override
+  String get transaction => 'İşlem';
+
+  @override
+  String get connectWithPartnerTitle => 'Partnerinle\nBağlan';
+
+  @override
+  String get connectWithPartnerSubtitle =>
+      'Hesapları bağlamak için partnerinin benzersiz ID\'sini gir veya QR kodunu tara.';
+
+  @override
+  String get partnerIdLabel => 'Partner ID';
+
+  @override
+  String get scan => 'TARA';
+
+  @override
+  String get orShareYourId => 'Veya ID\'ni paylaş';
+
+  @override
+  String get myUniqueId => 'BENZERSİZ ID\'M';
+
+  @override
+  String get generating => 'Oluşturuluyor...';
+
+  @override
+  String get idCopied => 'ID kopyalandı';
+
+  @override
+  String get sendInvite => 'Davet Gönder';
+
+  @override
+  String get scanQrCode => 'QR Kod Tara';
+
+  @override
+  String get matchesOwnId => 'Kendi ID\'nizle eşleşiyor.';
+
+  @override
+  String get requestAlreadySent => 'İstek zaten gönderildi! Onay bekleyin.';
+
+  @override
+  String get friendRequestSent => 'Arkadaşlık isteği gönderildi!';
+
+  @override
+  String inviteMessage(String id) {
+    return 'Couple Balance ile harcamaları birlikte takip edelim! ID\'m: $id';
+  }
+
+  @override
+  String get dashboard => 'Panel';
+
+  @override
+  String get totalBalance => 'TOPLAM BAKİYE';
+
+  @override
+  String youAreOwedAmount(String amount) {
+    return 'Sana $amount borçlu';
+  }
+
+  @override
+  String youOweAmount(String partner, String amount) {
+    return '$partner kişisine $amount borçlusun';
+  }
+
+  @override
+  String get allTransactions => 'Tüm İşlemler';
+
+  @override
+  String get linkAccounts => 'Hesapları Bağla';
+
+  @override
+  String youPaidAmount(String amount, String currency) {
+    return 'Sen ödedin: $amount $currency';
+  }
+
+  @override
+  String partnerPaidAmount(String partner, String amount, String currency) {
+    return '$partner ödedi: $amount $currency';
+  }
+
+  @override
+  String get transactionDeleted => 'İşlem silindi';
+
+  @override
+  String settleTransactionQuestion(String amount, String currency) {
+    return 'Bu $amount $currency tutarındaki işlemi kapatmak istiyor musun?';
+  }
+
+  @override
+  String get settle => 'Kapat';
+
+  @override
+  String get save => 'Kaydet';
+
+  @override
+  String get enterNote => 'Not girin';
 }

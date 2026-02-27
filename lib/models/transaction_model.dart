@@ -12,6 +12,9 @@ class TransactionModel {
   final bool isSettled;
   final String? settlementId;
   final String? addedByUid;
+  final String? category;
+  final double? totalAmount;
+  final double? splitPercentage;
 
   TransactionModel({
     required this.id,
@@ -25,6 +28,9 @@ class TransactionModel {
     this.isSettled = false,
     this.settlementId,
     this.addedByUid,
+    this.category,
+    this.totalAmount,
+    this.splitPercentage,
   });
 
   factory TransactionModel.fromMap(
@@ -43,6 +49,9 @@ class TransactionModel {
       isSettled: data['isSettled'] ?? false,
       settlementId: data['settlementId'],
       addedByUid: data['addedByUid'],
+      category: data['category'],
+      totalAmount: (data['totalAmount'] as num?)?.toDouble(),
+      splitPercentage: (data['splitPercentage'] as num?)?.toDouble(),
     );
   }
 
@@ -58,6 +67,9 @@ class TransactionModel {
       'isSettled': isSettled,
       'settlementId': settlementId,
       'addedByUid': addedByUid,
+      'category': category,
+      'totalAmount': totalAmount,
+      'splitPercentage': splitPercentage,
     };
   }
 }

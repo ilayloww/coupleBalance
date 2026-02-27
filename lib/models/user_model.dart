@@ -9,6 +9,7 @@ class UserModel {
   final int settlementDay;
   final String? photoUrl;
   final String? email;
+  final String? partnerId; // Unique partner ID (e.g., A1B2-C3D4)
 
   UserModel({
     required this.uid,
@@ -19,6 +20,7 @@ class UserModel {
     this.settlementDay = 10,
     this.photoUrl,
     this.email,
+    this.partnerId,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> data, String documentId) {
@@ -41,6 +43,7 @@ class UserModel {
       settlementDay: data['settlementDay'] ?? 10,
       photoUrl: data['photoUrl'],
       email: data['email'],
+      partnerId: data['partnerId'],
     );
   }
 
@@ -54,6 +57,7 @@ class UserModel {
       'settlementDay': settlementDay,
       'photoUrl': photoUrl,
       'email': email,
+      'partnerId': partnerId,
     };
   }
 

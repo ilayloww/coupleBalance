@@ -3,9 +3,11 @@ import 'package:couple_balance/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:rive/rive.dart';
-import '../widgets/login_animation.dart';
+import '../widgets/custom_text_field.dart';
+import '../widgets/custom_button.dart';
 import '../config/theme.dart';
+import '../utils/input_sanitizer.dart';
+import '../utils/validators.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,71 +16,31 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-enum ValidationStatus { none, success, fail }
-
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _displayNameController = TextEditingController();
   bool _isLogin = true;
   bool _isLoading = false;
   bool _isPasswordVisible = false;
-  ValidationStatus _validationStatus = ValidationStatus.none;
   String? _errorMessage;
-
-  final _emailFocusNode = FocusNode();
-  final _passwordFocusNode = FocusNode();
-
-  // Rive inputs
-  SMIBool? _isFocus;
-  SMIBool? _isPrivateField;
-  SMIBool? _isPrivateFieldShow; // For peeking
-  SMITrigger? _successTrigger;
-  SMITrigger? _failTrigger;
-  SMINumber? _numLook;
-
-  @override
-  void initState() {
-    super.initState();
-    _emailFocusNode.addListener(_emailFocusChanged);
-    _passwordFocusNode.addListener(_passwordFocusChanged);
-  }
-
-  void _emailFocusChanged() {
-    _isFocus?.change(_emailFocusNode.hasFocus);
-  }
-
-  void _passwordFocusChanged() {
-    // When password has focus, raise hands (isPrivateField)
-    _isPrivateField?.change(_passwordFocusNode.hasFocus);
-
-    // Also sync the "peek" state (isPrivateFieldShow) immediately if we gain focus
-    if (_passwordFocusNode.hasFocus) {
-      _isPrivateFieldShow?.change(_isPasswordVisible);
-    }
-  }
 
   @override
   void dispose() {
-    _emailFocusNode.removeListener(_emailFocusChanged);
-    _passwordFocusNode.removeListener(_passwordFocusChanged);
-    _emailFocusNode.dispose();
-    _passwordFocusNode.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _displayNameController.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-
-    // Unfocus keyboard immediately to let hands start dropping naturally
     FocusScope.of(context).unfocus();
 
     setState(() {
       _isLoading = true;
       _errorMessage = null;
-      _validationStatus = ValidationStatus.none;
     });
 
     final authService = Provider.of<AuthService>(context, listen: false);
@@ -89,50 +51,36 @@ class _LoginScreenState extends State<LoginScreen> {
       if (_isLogin) {
         await authService.signInWithEmailAndPassword(email, password);
       } else {
-        await authService.registerWithEmailAndPassword(email, password);
-      }
-
-      // Reset internal hands state so Success animation can play
-      _isPrivateField?.change(false);
-      _isPrivateFieldShow?.change(false);
-      _isFocus?.change(false); // Also stop looking
-
-      // Trigger success animation
-      _successTrigger?.fire();
-
-      if (mounted) {
-        setState(() {
-          _validationStatus = ValidationStatus.success;
-        });
+        try {
+          await authService.registerWithEmailAndPassword(
+            email,
+            password,
+            InputSanitizer.sanitizeAndTruncate(
+              _displayNameController.text,
+              100,
+            ),
+          );
+        } on FirebaseAuthException catch (e) {
+          if (e.code == 'email-already-in-use') {
+            // Try to log in with these credentials transparency
+            try {
+              await authService.signInWithEmailAndPassword(email, password);
+              // If successful, the auth state stream will update and redirect
+              return;
+            } catch (_) {
+              // If login fails (wrong password), throw original error
+              rethrow;
+            }
+          }
+          rethrow;
+        }
       }
     } on FirebaseAuthException catch (e) {
-      // Reset internal hands state so Fail animation can play
-      // Reset internal hands state so Fail animation can play
-      _isPrivateField?.change(false);
-      _isPrivateFieldShow?.change(false);
-      _isFocus?.change(false);
-
-      // Wait for "Hands Down" animation to complete
-      if (mounted) await Future.delayed(const Duration(milliseconds: 1000));
-
-      _failTrigger?.fire();
       setState(() {
-        _validationStatus = ValidationStatus.fail;
         _errorMessage = _getErrorMessage(e);
       });
     } catch (e) {
-      // Reset internal hands state so Fail animation can play
-      // Reset internal hands state so Fail animation can play
-      _isPrivateField?.change(false);
-      _isPrivateFieldShow?.change(false);
-      _isFocus?.change(false);
-
-      // Wait for "Hands Down" animation to complete
-      if (mounted) await Future.delayed(const Duration(milliseconds: 1000));
-
-      _failTrigger?.fire();
       setState(() {
-        _validationStatus = ValidationStatus.fail;
         _errorMessage = AppLocalizations.of(context)!.unexpectedError;
       });
     } finally {
@@ -149,40 +97,44 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLogin = !_isLogin;
       _errorMessage = null;
       _formKey.currentState?.reset();
-      // Reset animation states
-      _isFocus?.change(false);
-      _isPrivateField?.change(false);
-      _isPrivateFieldShow?.change(false);
     });
-  }
-
-  void _onRiveInit(
-    SMIBool? isFocus,
-    SMIBool? isPrivateField,
-    SMIBool? isPrivateFieldShow,
-    SMITrigger? successTrigger,
-    SMITrigger? failTrigger,
-    SMINumber? numLook,
-  ) {
-    _isFocus = isFocus;
-    _isPrivateField = isPrivateField;
-    _isPrivateFieldShow = isPrivateFieldShow;
-    _successTrigger = successTrigger;
-    _failTrigger = failTrigger;
-    _numLook = numLook;
   }
 
   @override
   Widget build(BuildContext context) {
+    // If not using standard dark theme, ensure we force dark background here
+    // But since we updated AppTheme.darkTheme, it should be fine.
+
     return Scaffold(
-      // backgroundColor: Colors.white, // Removed to use theme background
-      body: Theme(
-        data: Theme.of(context).brightness == Brightness.dark
-            ? AppTheme.darkTheme(Colors.pinkAccent)
-            : AppTheme.lightTheme(Colors.pinkAccent),
-        child: Builder(
-          builder: (context) {
-            return Center(
+      body: Stack(
+        children: [
+          // Background Gradient/Image Placeholder
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment(0, -0.6),
+                  radius: 0.8,
+                  colors: [
+                    Color(0xFF0F3D24), // Dark Green Glow
+                    Color(0xFF05100A), // Deep Black
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Abstract Wave at Top (Placeholder for standard CustomPainter)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 200,
+            child: CustomPaint(painter: WavePainter()),
+          ),
+
+          SafeArea(
+            child: Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
                 child: Form(
@@ -191,260 +143,250 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 50), // Move teddy down a bit
-                      // Login Animation
-                      Center(child: LoginAnimation(onInit: _onRiveInit)),
-                      // const Icon(Icons.favorite, size: 80, color: Colors.pinkAccent), // Replaced by animation
-                      const SizedBox(
-                        height: 5,
-                      ), // Reduce space below teddy since it is bigger now
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        transitionBuilder: (child, animation) =>
-                            FadeTransition(opacity: animation, child: child),
-                        child: Text(
-                          key: ValueKey<bool>(_isLogin),
-                          _isLogin
-                              ? AppLocalizations.of(context)!.welcomeBack
-                              : AppLocalizations.of(context)!.createAccount,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                      // Logo
+                      Center(
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.05),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppTheme.emeraldPrimary.withValues(
+                                alpha: 0.5,
+                              ),
+                              width: 2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.emeraldPrimary.withValues(
+                                  alpha: 0.2,
+                                ),
+                                blurRadius: 20,
+                                spreadRadius: 5,
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.wallet,
+                            color: AppTheme.emeraldPrimary,
+                            size: 40,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 16),
                       Text(
-                        AppLocalizations.of(context)!.trackExpensesTogether,
+                        'COUPLE BALANCE',
                         textAlign: TextAlign.center,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          letterSpacing: 2,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                       const SizedBox(height: 48),
 
+                      // Welcome Text
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        child: Column(
+                          key: ValueKey<bool>(_isLogin),
+                          children: [
+                            Text(
+                              _isLogin
+                                  ? AppLocalizations.of(context)!.welcomeBack
+                                  : 'Join Us',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.headlineMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              AppLocalizations.of(
+                                context,
+                              )!.trackExpensesTogether,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+
                       // Error Message
                       if (_errorMessage != null)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 24),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.redAccent.withValues(alpha: 0.5),
+                            ),
+                          ),
                           child: Text(
                             _errorMessage!,
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontSize: 14,
-                            ),
+                            style: const TextStyle(color: Colors.redAccent),
                             textAlign: TextAlign.center,
                           ),
                         ),
 
+                      // Display Name Field (Sign Up Only)
+                      if (!_isLogin) ...[
+                        CustomTextField(
+                          label: AppLocalizations.of(context)!.displayName,
+                          controller: _displayNameController,
+                          prefixIcon: const Icon(
+                            Icons.person_outline,
+                            color: Colors.white54,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return AppLocalizations.of(
+                                context,
+                              )!.enterDisplayName;
+                            }
+                            if (value.length > 100) {
+                              return 'Display name is too long (max 100 characters).';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
                       // Email Field
-                      TextFormField(
+                      CustomTextField(
+                        label: AppLocalizations.of(context)!.email,
                         controller: _emailController,
-                        focusNode: _emailFocusNode,
                         keyboardType: TextInputType.emailAddress,
-                        cursorColor: Colors.pinkAccent, // Explicit pink cursor
-                        onChanged: (value) {
-                          _numLook?.change(value.length.toDouble());
-                          if (_validationStatus != ValidationStatus.none) {
-                            setState(() {
-                              _validationStatus = ValidationStatus.none;
-                            });
-                          }
-                        },
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(context)!.email,
-                          prefixIcon: const Icon(Icons.email_outlined),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color:
-                                  _validationStatus == ValidationStatus.success
-                                  ? Colors.green
-                                  : _validationStatus == ValidationStatus.fail
-                                  ? Colors.red
-                                  : Colors.grey,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color:
-                                  _validationStatus == ValidationStatus.success
-                                  ? Colors.green
-                                  : _validationStatus == ValidationStatus.fail
-                                  ? Colors.red
-                                  : Colors.pinkAccent,
-                              width: 2,
-                            ),
-                          ),
+                        prefixIcon: const Icon(
+                          Icons.email_outlined,
+                          color: Colors.white54,
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your email';
+                            return AppLocalizations.of(context)!.enterEmail;
                           }
                           if (!value.contains('@')) {
-                            return 'Please enter a valid email';
+                            return AppLocalizations.of(context)!.validEmail;
                           }
                           return null;
                         },
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
 
                       // Password Field
-                      TextFormField(
+                      CustomTextField(
+                        label: AppLocalizations.of(context)!.password,
                         controller: _passwordController,
-                        focusNode: _passwordFocusNode,
                         obscureText: !_isPasswordVisible,
-                        cursorColor: Colors.pinkAccent, // Explicit pink cursor
-                        onChanged: (value) {
-                          if (_validationStatus != ValidationStatus.none) {
+                        prefixIcon: const Icon(
+                          Icons.lock_outline,
+                          color: Colors.white54,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isPasswordVisible
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Colors.white54,
+                          ),
+                          onPressed: () {
                             setState(() {
-                              _validationStatus = ValidationStatus.none;
+                              _isPasswordVisible = !_isPasswordVisible;
                             });
-                          }
-                        },
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(context)!.password,
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _isPasswordVisible
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _isPasswordVisible = !_isPasswordVisible;
-                              });
-                              // If password field has focus, toggle the peek state (isPrivateFieldShow)
-                              if (_passwordFocusNode.hasFocus) {
-                                _isPrivateFieldShow?.change(_isPasswordVisible);
-                              }
-                            },
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color:
-                                  _validationStatus == ValidationStatus.success
-                                  ? Colors.green
-                                  : _validationStatus == ValidationStatus.fail
-                                  ? Colors.red
-                                  : Colors.grey,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color:
-                                  _validationStatus == ValidationStatus.success
-                                  ? Colors.green
-                                  : _validationStatus == ValidationStatus.fail
-                                  ? Colors.red
-                                  : Colors.pinkAccent,
-                              width: 2,
-                            ),
-                          ),
+                          },
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your password';
+                            return AppLocalizations.of(context)!.enterPassword;
                           }
-                          if (!_isLogin && value.length < 6) {
-                            return 'Password must be at least 6 characters';
+                          if (!_isLogin) {
+                            final error = Validators.validatePassword(value);
+                            switch (error) {
+                              case PasswordValidationError.tooShort:
+                                return AppLocalizations.of(
+                                  context,
+                                )!.passwordMinLength8;
+                              case PasswordValidationError.missingUppercase:
+                                return AppLocalizations.of(
+                                  context,
+                                )!.passwordMustContainUppercase;
+                              case PasswordValidationError.missingNumber:
+                                return AppLocalizations.of(
+                                  context,
+                                )!.passwordMustContainNumber;
+                              case PasswordValidationError.none:
+                                return null;
+                            }
                           }
                           return null;
                         },
                       ),
 
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () => _showForgotPasswordDialog(context),
-                          style: TextButton.styleFrom(
-                            foregroundColor:
-                                Colors.pinkAccent, // Explicit pink text
+                      // Forgot Password (Login Only)
+                      if (_isLogin)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () => _showForgotPasswordDialog(context),
+                            child: Text(
+                              AppLocalizations.of(context)!.forgotPassword,
+                              style: const TextStyle(
+                                color: AppTheme.emeraldPrimary,
+                              ),
+                            ),
                           ),
-                          child: Text(
-                            AppLocalizations.of(context)!.forgotPassword,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
+                        )
+                      else
+                        const SizedBox(height: 24),
+
+                      const SizedBox(height: 32),
 
                       // Submit Button
-                      ElevatedButton(
-                        onPressed: _isLoading ? null : _submit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Colors.pinkAccent, // Explicit pink background
-                          foregroundColor: Colors.white, // Explicit white text
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          elevation: 2,
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 300),
-                                transitionBuilder: (child, animation) =>
-                                    FadeTransition(
-                                      opacity: animation,
-                                      child: child,
-                                    ),
-                                child: Text(
-                                  key: ValueKey<bool>(_isLogin),
-                                  _isLogin
-                                      ? AppLocalizations.of(context)!.login
-                                      : AppLocalizations.of(context)!.signUp,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
+                      CustomButton(
+                        text: _isLogin
+                            ? AppLocalizations.of(context)!.login
+                            : AppLocalizations.of(context)!.signUp,
+                        isLoading: _isLoading,
+                        onPressed: _submit,
                       ),
-                      const SizedBox(height: 16),
+
+                      const SizedBox(height: 24),
 
                       // Toggle Button
-                      TextButton(
-                        onPressed: _isLoading ? null : _toggleAuthMode,
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 300),
-                          transitionBuilder: (child, animation) =>
-                              FadeTransition(opacity: animation, child: child),
-                          child: Text(
-                            key: ValueKey<bool>(_isLogin),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
                             _isLogin
-                                ? AppLocalizations.of(context)!.dontHaveAccount
-                                : AppLocalizations.of(
-                                    context,
-                                  )!.alreadyHaveAccount,
-                            style: const TextStyle(color: Colors.pinkAccent),
+                                ? "Don't have an account? "
+                                : "Already have an account? ",
+                            style: const TextStyle(color: Colors.white60),
                           ),
-                        ),
+                          GestureDetector(
+                            onTap: _toggleAuthMode,
+                            child: Text(
+                              _isLogin
+                                  ? AppLocalizations.of(context)!.signUp
+                                  : AppLocalizations.of(context)!.login,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -458,20 +400,24 @@ class _LoginScreenState extends State<LoginScreen> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.resetPassword),
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: Text(
+          AppLocalizations.of(context)!.resetPassword,
+          style: const TextStyle(color: Colors.white),
+        ),
         content: Form(
           key: formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(AppLocalizations.of(context)!.enterEmailToReset),
+              Text(
+                AppLocalizations.of(context)!.enterEmailToReset,
+                style: const TextStyle(color: Colors.white70),
+              ),
               const SizedBox(height: 16),
-              TextFormField(
+              CustomTextField(
+                label: "Email",
                 controller: emailController,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)!.email,
-                  border: const OutlineInputBorder(),
-                ),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || !value.contains('@')) {
@@ -486,7 +432,10 @@ class _LoginScreenState extends State<LoginScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context)!.cancel),
+            child: Text(
+              AppLocalizations.of(context)!.cancel,
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -518,7 +467,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 }
               }
             },
-            child: Text(AppLocalizations.of(context)!.sendResetLink),
+            child: Text(
+              AppLocalizations.of(context)!.sendResetLink,
+              style: const TextStyle(color: AppTheme.emeraldPrimary),
+            ),
           ),
         ],
       ),
@@ -546,5 +498,63 @@ class _LoginScreenState extends State<LoginScreen> {
       default:
         return AppLocalizations.of(context)!.authFailed;
     }
+  }
+}
+
+// Simple Wave Painter for aesthetic
+class WavePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    var paint = Paint()
+      ..color = AppTheme.emeraldPrimary.withValues(alpha: 0.1)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    var path = Path();
+
+    // Draw multiple sine waves
+    for (int i = 0; i < 3; i++) {
+      path.reset();
+      path.moveTo(0, size.height * 0.5 + (i * 10));
+      var y = 0.0;
+      for (double x = 0; x <= size.width; x++) {
+        y =
+            size.height * 0.5 +
+            (i * 10) +
+            20 *
+                (0.5 *
+                    (x / size.width) *
+                    (x / size.width) // Amplitude modulation
+                    *
+                    (
+                        // Sine function
+                        (1 * (x / size.width * 6.28 + (i))) -
+                            (0.5 * (x / size.width * 12.56)))
+                        .abs()); // Simple visual wave
+        path.lineTo(x, y);
+      }
+      canvas.drawPath(path, paint);
+    }
+
+    // Top glow
+    var gradientPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          AppTheme.emeraldPrimary.withValues(alpha: 0.2),
+          Colors.transparent,
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      gradientPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    return false;
   }
 }

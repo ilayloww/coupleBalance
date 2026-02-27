@@ -35,7 +35,7 @@ class ThemeService extends ChangeNotifier {
         themeIndex < ThemeMode.values.length) {
       _themeMode = ThemeMode.values[themeIndex];
     } else {
-      _themeMode = ThemeMode.system;
+      _themeMode = ThemeMode.dark; // Default to Dark Mode for new design
     }
 
     // Load Color
@@ -45,7 +45,7 @@ class ThemeService extends ChangeNotifier {
         colorIndex < availableColors.length) {
       _themeColorIndex = colorIndex;
     } else {
-      _themeColorIndex = 0; // Default to first color
+      _themeColorIndex = 2; // Default to Emerald Green
     }
   }
 

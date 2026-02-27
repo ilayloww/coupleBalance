@@ -15,8 +15,10 @@ import 'screens/home_screen.dart';
 import 'screens/main_screen.dart'; // Add this
 import 'screens/login_screen.dart';
 import 'screens/email_verification_screen.dart';
-import 'screens/partner_list_screen.dart'; // Add this
-import 'viewmodels/settlement_viewmodel.dart'; // Add this
+import 'screens/partner_list_screen.dart';
+import 'screens/partner_link_screen.dart'; // Add this
+import 'viewmodels/settlement_viewmodel.dart';
+import 'services/deep_link_service.dart'; // Add this
 
 // UNCOMMENT the following line after running `flutterfire configure`
 import 'firebase_options.dart';
@@ -105,19 +107,42 @@ class InitializationErrorApp extends StatelessWidget {
 
 class MyApp extends StatelessWidget {
   final SharedPreferences prefs;
+  final AuthService? authServiceOverride;
+  final DeepLinkService? deepLinkServiceOverride;
+  final NotificationService? notificationServiceOverride;
 
-  const MyApp({super.key, required this.prefs});
+  const MyApp({
+    super.key,
+    required this.prefs,
+    this.authServiceOverride,
+    this.deepLinkServiceOverride,
+    this.notificationServiceOverride,
+  });
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(
+          create: (_) => authServiceOverride ?? AuthService(),
+        ),
         ChangeNotifierProvider(create: (_) => ThemeService(prefs)),
         ChangeNotifierProvider(create: (_) => LocalizationService(prefs)),
         ChangeNotifierProvider(
           create: (_) => SettlementViewModel(),
         ), // Add Global Provider
+        Provider<DeepLinkService>(
+          create: (_) {
+            if (deepLinkServiceOverride != null) {
+              return deepLinkServiceOverride!;
+            }
+            return DeepLinkService(navigatorKey, prefs)..init();
+          },
+          lazy: false, // Init immediately
+        ),
+        Provider<NotificationService>(
+          create: (_) => notificationServiceOverride ?? NotificationService(),
+        ),
       ],
       child: Consumer2<ThemeService, LocalizationService>(
         builder: (context, themeService, localizationService, child) {
@@ -141,7 +166,7 @@ class MyApp extends StatelessWidget {
               Locale('tr'), // Turkish
             ],
             navigatorKey: navigatorKey, // Add this
-            home: const AuthWrapper(),
+            home: AuthWrapper(prefs: prefs),
             routes: {
               '/login': (context) => const LoginScreen(),
               '/home': (context) => const HomeScreen(),
@@ -155,7 +180,9 @@ class MyApp extends StatelessWidget {
 }
 
 class AuthWrapper extends StatefulWidget {
-  const AuthWrapper({super.key});
+  final SharedPreferences prefs;
+
+  const AuthWrapper({super.key, required this.prefs});
 
   @override
   State<AuthWrapper> createState() => _AuthWrapperState();
@@ -181,18 +208,41 @@ class _AuthWrapperState extends State<AuthWrapper> {
         await Future.delayed(const Duration(seconds: 2));
       }
 
-      if (mounted) {
-        setState(() {
-          _user = user;
-          _isInit = false;
-        });
-      }
+      if (!mounted) return;
+
+      setState(() {
+        _user = user;
+        _isInit = false;
+      });
 
       if (user != null) {
         // Initialize notifications (request permission + save token)
-        NotificationService().initialize(navigatorKey);
+        context.read<NotificationService>().initialize(navigatorKey);
+
+        // Check for pending invite
+        _checkPendingInvite();
       }
     });
+
+    // Initialize Deep Links
+    // DeepLinkService(navigatorKey, widget.prefs).init(); // Moved to Provider
+  }
+
+  void _checkPendingInvite() {
+    final pendingId = widget.prefs.getString('pending_invite_id');
+    if (pendingId != null) {
+      widget.prefs.remove('pending_invite_id');
+      // Navigate to PartnerLinkScreen
+      // We use addPostFrameCallback to ensure the navigator is ready
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(
+            builder: (context) =>
+                PartnerLinkScreen(initialPartnerId: pendingId),
+          ),
+        );
+      });
+    }
   }
 
   @override

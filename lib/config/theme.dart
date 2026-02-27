@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // --- Light Theme ---
+  // --- Colors ---
+  static const Color emeraldPrimary = Color(0xFF2ECC71); // Neon Green
+  static const Color darkBackground = Color(
+    0xFF05100A,
+  ); // Deep Dark Green/Black
+  static const Color surfaceColor = Color(0xFF1E1E1E);
+  static const Color glassColor = Color(0x0DFFFFFF); // White with 5% opacity
+
+  // --- Light Theme (Legacy/Fallback) ---
   static ThemeData lightTheme(Color seedColor) {
     return ThemeData(
       useMaterial3: true,
@@ -9,133 +17,77 @@ class AppTheme {
       colorScheme: ColorScheme.fromSeed(
         seedColor: seedColor,
         brightness: Brightness.light,
-        primary: seedColor,
-        secondary: seedColor,
-        surface: Colors.white,
-        onSurface: Colors.black87,
-        surfaceContainerHighest: Colors.grey[100],
       ),
       scaffoldBackgroundColor: Colors.white,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      cardTheme: CardThemeData(
-        color: Colors.white,
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: seedColor,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      ),
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: seedColor,
-        foregroundColor: Colors.white,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.grey[100],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: seedColor, width: 2),
-        ),
-      ),
-      snackBarTheme: const SnackBarThemeData(
-        behavior: SnackBarBehavior.floating,
-      ),
-      textTheme: const TextTheme(
-        bodySmall: TextStyle(color: Colors.black54),
-        bodyMedium: TextStyle(color: Colors.black87),
-      ),
     );
   }
 
-  // --- Dark Theme ---
+  // --- Dark Theme (Emerald) ---
   static ThemeData darkTheme(Color seedColor) {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: seedColor,
-        brightness: Brightness.dark,
-        primary: seedColor, // Force saturation for primary
-        secondary: seedColor, // Force saturation for secondary
-        surface: const Color(0xFF121212),
+      scaffoldBackgroundColor: darkBackground,
+      colorScheme: const ColorScheme.dark(
+        primary: emeraldPrimary,
+        secondary: emeraldPrimary,
+        surface: surfaceColor,
         onSurface: Colors.white,
-        surfaceContainerHighest: const Color(0xFF1E1E1E),
+        error: Colors.redAccent,
       ),
-      scaffoldBackgroundColor: Colors.black,
       appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent, // For glass effect headers
         elevation: 0,
         centerTitle: true,
-      ),
-      cardTheme: CardThemeData(
-        color: const Color(0xFF121212),
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        foregroundColor: Colors.white,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: seedColor.withValues(alpha: 0.8), // Slightly muted?
-          foregroundColor:
-              Colors.black, // Dark text on light accent? Or white on dark?
-          // Material 3 defaults are usually good. Let's force seed color but ensure text contrast.
-          // If seed is pink (bright), black text might be better. If dark purple, white.
-          // For simplicity, let's keep it consistent with previous:
-          // Previous was pinkAccent[200] (light pink) + black text.
+          backgroundColor: emeraldPrimary,
+          foregroundColor: Colors.black, // Dark text on bright green
+          elevation: 5,
+          shadowColor: emeraldPrimary.withValues(alpha: 0.5),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(30), // Capsule shape
           ),
+          textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
-      ),
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: seedColor,
-        foregroundColor: Colors.white,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF1E1E1E),
-        hintStyle: TextStyle(color: Colors.grey[400]),
-        labelStyle: const TextStyle(color: Colors.white70),
+        fillColor: glassColor,
+        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: seedColor, width: 2),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: emeraldPrimary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 1),
         ),
       ),
       textTheme: const TextTheme(
-        bodySmall: TextStyle(color: Colors.white70),
-        bodyMedium: TextStyle(color: Colors.white),
-      ),
-      bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: Color(0xFF121212),
-        modalBackgroundColor: Color(0xFF121212),
-      ),
-      dialogTheme: const DialogThemeData(
-        backgroundColor: Color(0xFF121212),
-        surfaceTintColor: Colors.transparent,
-      ),
-      snackBarTheme: const SnackBarThemeData(
-        backgroundColor: Color(0xFF333333),
-        contentTextStyle: TextStyle(color: Colors.white),
-        behavior: SnackBarBehavior.floating,
+        headlineLarge: TextStyle(
+          color: Colors.white,
+          fontSize: 32,
+          fontWeight: FontWeight.bold,
+        ),
+        headlineMedium: TextStyle(
+          color: Colors.white,
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+        ),
+        bodyLarge: TextStyle(color: Colors.white70, fontSize: 16),
+        bodyMedium: TextStyle(color: Colors.white60, fontSize: 14),
       ),
     );
   }

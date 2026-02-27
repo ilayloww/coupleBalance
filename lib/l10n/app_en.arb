@@ -12,6 +12,9 @@
     "authFailed": "Authentication failed",
     "unexpectedError": "An unexpected error occurred",
     "enterEmail": "Please enter your email",
+    "enterDisplayName": "Please enter your display name",
+    "tooManyRequests": "Too many requests. Please try again later.",
+    "waitToResend": "Resend in {seconds}s",
     "validEmail": "Please enter a valid email",
     "enterPassword": "Please enter your password",
     "passwordMinLength": "Password must be at least 6 characters",
@@ -61,7 +64,7 @@
         }
     },
     "noTransactionsYet": "No transactions yet.",
-    "deleteTransactionTitle": "Delete Transaction?",
+    "deleteTransactionTitle": "Delete Transaction",
     "deleteTransactionContent": "Are you sure you want to delete this item?",
     "delete": "Delete",
     "addExpense": "Add Expense",
@@ -255,6 +258,8 @@
     "error": "Error",
     "incorrectPassword": "Incorrect password entered",
     "weakPassword": "Password is too weak",
+    "passwordMustContainUppercase": "Password must contain at least one uppercase letter",
+    "passwordMustContainNumber": "Password must contain at least one number",
     "reauthRequired": "Please log in again to change password",
     "userNotFound": "No account found with this email",
     "emailAlreadyInUse": "Email is already registered",
@@ -267,6 +272,13 @@
     "enterEmailToConfirm": "Enter your email to confirm",
     "deleteForever": "Delete Forever",
     "accountDeleted": "Account deleted successfully.",
+    "areYouSure": "Are you sure?",
+    "deleteAccountDescription": "This action cannot be undone. All your shared expenses, history, and linked accounts will be permanently deleted from our servers.",
+    "typeDeleteToConfirm": "To confirm, type DELETE below",
+    "deleteConfirmationKeyword": "DELETE",
+    "partnerNotifiedInfo": "Your partner will be notified that the shared ledger has been closed.",
+    "deleteMyAccount": "Delete My Account",
+    "goBack": "Go Back",
     "requestNotFound": "Request not found or timed out.",
     "partnerWantsToSettleUp": "Partner wants to settle up",
     "settlementConfirmationDescription": "Confirming this will clear selected transactions and update your balance.",
@@ -304,5 +316,168 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "goodMorning": "Good Morning",
+    "goodAfternoon": "Good Afternoon",
+    "goodEvening": "Good Evening",
+    "goodNight": "Good Night",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "editProfile": "Edit",
+    "done": "Done",
+    "passwordMinLength8": "Must contain at least 8 characters",
+    "updatePassword": "Update Password",
+    "passwordDifferentNote": "Your new password must be different from previous used passwords",
+    "enterCurrentPassword": "Enter current password",
+    "enterNewPassword": "Enter new password",
+    "reenterNewPassword": "Re-enter new password",
+    "passwordCannotBeSame": "New password cannot be the same as current password",
+    "saveExpense": "Save Expense",
+    "tagCustom": "Custom",
+    "customCategoryHint": "Enter category name",
+    "enterCategoryError": "Please enter a category name",
+    "expensesSummary": "Expenses Summary",
+    "items": "items",
+    "pending": "Pending",
+    "dueToday": "Due today",
+    "paysYou": "pays You",
+    "youPay": "You pay",
+    "confirmSettlement": "Confirm Settlement",
+    "filterAllTime": "All Time",
+    "filterThisYear": "This Year",
+    "filterLastYear": "Last Year",
+    "splitDetails": "Split Details",
+    "receipt": "Receipt",
+    "time": "Time",
+    "category": "Category",
+    "paidByYou": "Paid by You",
+    "paidByPartner": "Paid by {name}",
+    "@paidByPartner": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "paidFullAmount": "Paid full amount",
+    "owesYou": "Owes you",
+    "youOwe": "You owe",
+    "you": "You",
+    "partner": "Partner",
+    "owePartner": "You owe {name}",
+    "@owePartner": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "today": "TODAY",
+    "yesterday": "YESTERDAY",
+    "searchTransactionHint": "Search by name or category",
+    "noTransactionsFound": "No transactions found",
+    "calendar": "Calendar",
+    "transactionsForDate": "Transactions for {date}",
+    "@transactionsForDate": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "total": "Total",
+    "transaction": "Transaction",
+    "connectWithPartnerTitle": "Connect with\nyour partner",
+    "connectWithPartnerSubtitle": "Enter your partner's unique ID or scan their QR code to link accounts.",
+    "partnerIdLabel": "Partner ID",
+    "scan": "SCAN",
+    "orShareYourId": "Or share your ID",
+    "myUniqueId": "MY UNIQUE ID",
+    "generating": "Generating...",
+    "idCopied": "ID copied to clipboard",
+    "sendInvite": "Send Invite",
+    "scanQrCode": "Scan QR Code",
+    "matchesOwnId": "Matches your own ID.",
+    "requestAlreadySent": "Request already sent! Wait for approval.",
+    "friendRequestSent": "Friend request sent!",
+    "inviteMessage": "Let's track expenses together with Couple Balance! My ID is: {id}",
+    "@inviteMessage": {
+        "placeholders": {
+            "id": {
+                "type": "String"
+            }
+        }
+    },
+    "dashboard": "Dashboard",
+    "totalBalance": "TOTAL BALANCE",
+    "youAreOwedAmount": "You are owed {amount}",
+    "@youAreOwedAmount": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "youOweAmount": "You owe {partner} {amount}",
+    "@youOweAmount": {
+        "placeholders": {
+            "partner": {
+                "type": "String"
+            },
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "allTransactions": "All Transactions",
+    "partnerAlreadyLinked": "Partner already linked ({name})",
+    "@partnerAlreadyLinked": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "linkAccounts": "Link Accounts",
+    "youPaidAmount": "You paid {amount} {currency}",
+    "@youPaidAmount": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            },
+            "currency": {
+                "type": "String"
+            }
+        }
+    },
+    "partnerPaidAmount": "{partner} paid {amount} {currency}",
+    "@partnerPaidAmount": {
+        "placeholders": {
+            "partner": {
+                "type": "String"
+            },
+            "amount": {
+                "type": "String"
+            },
+            "currency": {
+                "type": "String"
+            }
+        }
+    },
+    "delete": "Delete",
+    "transactionDeleted": "Transaction deleted",
+    "settleTransactionQuestion": "Do you want to settle this transaction of {amount} {currency}?",
+    "@settleTransactionQuestion": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            },
+            "currency": {
+                "type": "String"
+            }
+        }
+    },
+    "settle": "Settle",
+    "save": "Save",
+    "enterNote": "Enter note"
 }

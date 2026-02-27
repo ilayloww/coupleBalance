@@ -176,6 +176,24 @@ abstract class AppLocalizations {
   /// **'Please enter your email'**
   String get enterEmail;
 
+  /// No description provided for @enterDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your display name'**
+  String get enterDisplayName;
+
+  /// No description provided for @tooManyRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Please try again later.'**
+  String get tooManyRequests;
+
+  /// No description provided for @waitToResend.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {seconds}s'**
+  String waitToResend(Object seconds);
+
   /// No description provided for @validEmail.
   ///
   /// In en, this message translates to:
@@ -311,7 +329,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteTransactionTitle.
   ///
   /// In en, this message translates to:
-  /// **'Delete Transaction?'**
+  /// **'Delete Transaction'**
   String get deleteTransactionTitle;
 
   /// No description provided for @deleteTransactionContent.
@@ -833,8 +851,8 @@ abstract class AppLocalizations {
   /// No description provided for @partnerAlreadyLinked.
   ///
   /// In en, this message translates to:
-  /// **'Partner already linked ({partnerInfo})'**
-  String partnerAlreadyLinked(String partnerInfo);
+  /// **'Partner already linked ({name})'**
+  String partnerAlreadyLinked(String name);
 
   /// No description provided for @partnersTitle.
   ///
@@ -992,6 +1010,18 @@ abstract class AppLocalizations {
   /// **'Password is too weak'**
   String get weakPassword;
 
+  /// No description provided for @passwordMustContainUppercase.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must contain at least one uppercase letter'**
+  String get passwordMustContainUppercase;
+
+  /// No description provided for @passwordMustContainNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must contain at least one number'**
+  String get passwordMustContainNumber;
+
   /// No description provided for @reauthRequired.
   ///
   /// In en, this message translates to:
@@ -1015,12 +1045,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Incorrect email or password'**
   String get invalidCredential;
-
-  /// No description provided for @tooManyRequests.
-  ///
-  /// In en, this message translates to:
-  /// **'Too many attempts. Please try again later.'**
-  String get tooManyRequests;
 
   /// No description provided for @networkRequestFailed.
   ///
@@ -1063,6 +1087,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Account deleted successfully.'**
   String get accountDeleted;
+
+  /// No description provided for @areYouSure.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure?'**
+  String get areYouSure;
+
+  /// No description provided for @deleteAccountDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be undone. All your shared expenses, history, and linked accounts will be permanently deleted from our servers.'**
+  String get deleteAccountDescription;
+
+  /// No description provided for @typeDeleteToConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'To confirm, type DELETE below'**
+  String get typeDeleteToConfirm;
+
+  /// No description provided for @deleteConfirmationKeyword.
+  ///
+  /// In en, this message translates to:
+  /// **'DELETE'**
+  String get deleteConfirmationKeyword;
+
+  /// No description provided for @partnerNotifiedInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Your partner will be notified that the shared ledger has been closed.'**
+  String get partnerNotifiedInfo;
+
+  /// No description provided for @deleteMyAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete My Account'**
+  String get deleteMyAccount;
+
+  /// No description provided for @goBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Go Back'**
+  String get goBack;
 
   /// No description provided for @requestNotFound.
   ///
@@ -1189,6 +1255,456 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Do you want to accept the settlement for \'{note}\'?'**
   String settleSingleTransactionContent(String note);
+
+  /// No description provided for @goodMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Good Morning'**
+  String get goodMorning;
+
+  /// No description provided for @goodAfternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Good Afternoon'**
+  String get goodAfternoon;
+
+  /// No description provided for @goodEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good Evening'**
+  String get goodEvening;
+
+  /// No description provided for @goodNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Good Night'**
+  String get goodNight;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @editProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get editProfile;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @passwordMinLength8.
+  ///
+  /// In en, this message translates to:
+  /// **'Must contain at least 8 characters'**
+  String get passwordMinLength8;
+
+  /// No description provided for @updatePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Password'**
+  String get updatePassword;
+
+  /// No description provided for @passwordDifferentNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Your new password must be different from previous used passwords'**
+  String get passwordDifferentNote;
+
+  /// No description provided for @enterCurrentPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter current password'**
+  String get enterCurrentPassword;
+
+  /// No description provided for @enterNewPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter new password'**
+  String get enterNewPassword;
+
+  /// No description provided for @reenterNewPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-enter new password'**
+  String get reenterNewPassword;
+
+  /// No description provided for @passwordCannotBeSame.
+  ///
+  /// In en, this message translates to:
+  /// **'New password cannot be the same as current password'**
+  String get passwordCannotBeSame;
+
+  /// No description provided for @saveExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Expense'**
+  String get saveExpense;
+
+  /// No description provided for @tagCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get tagCustom;
+
+  /// No description provided for @customCategoryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter category name'**
+  String get customCategoryHint;
+
+  /// No description provided for @enterCategoryError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a category name'**
+  String get enterCategoryError;
+
+  /// No description provided for @expensesSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses Summary'**
+  String get expensesSummary;
+
+  /// No description provided for @items.
+  ///
+  /// In en, this message translates to:
+  /// **'items'**
+  String get items;
+
+  /// No description provided for @pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pending;
+
+  /// No description provided for @dueToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Due today'**
+  String get dueToday;
+
+  /// No description provided for @paysYou.
+  ///
+  /// In en, this message translates to:
+  /// **'pays You'**
+  String get paysYou;
+
+  /// No description provided for @youPay.
+  ///
+  /// In en, this message translates to:
+  /// **'You pay'**
+  String get youPay;
+
+  /// No description provided for @confirmSettlement.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Settlement'**
+  String get confirmSettlement;
+
+  /// No description provided for @filterAllTime.
+  ///
+  /// In en, this message translates to:
+  /// **'All Time'**
+  String get filterAllTime;
+
+  /// No description provided for @filterThisYear.
+  ///
+  /// In en, this message translates to:
+  /// **'This Year'**
+  String get filterThisYear;
+
+  /// No description provided for @filterLastYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Year'**
+  String get filterLastYear;
+
+  /// No description provided for @splitDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Split Details'**
+  String get splitDetails;
+
+  /// No description provided for @receipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt'**
+  String get receipt;
+
+  /// No description provided for @time.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get time;
+
+  /// No description provided for @category.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get category;
+
+  /// No description provided for @paidByYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid by You'**
+  String get paidByYou;
+
+  /// No description provided for @paidByPartner.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid by {name}'**
+  String paidByPartner(String name);
+
+  /// No description provided for @paidFullAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid full amount'**
+  String get paidFullAmount;
+
+  /// No description provided for @owesYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Owes you'**
+  String get owesYou;
+
+  /// No description provided for @youOwe.
+  ///
+  /// In en, this message translates to:
+  /// **'You owe'**
+  String get youOwe;
+
+  /// No description provided for @you.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get you;
+
+  /// No description provided for @owePartner.
+  ///
+  /// In en, this message translates to:
+  /// **'You owe {name}'**
+  String owePartner(String name);
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'TODAY'**
+  String get today;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'YESTERDAY'**
+  String get yesterday;
+
+  /// No description provided for @searchTransactionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name or category'**
+  String get searchTransactionHint;
+
+  /// No description provided for @noTransactionsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No transactions found'**
+  String get noTransactionsFound;
+
+  /// No description provided for @calendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get calendar;
+
+  /// No description provided for @transactionsForDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Transactions for {date}'**
+  String transactionsForDate(String date);
+
+  /// No description provided for @total.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get total;
+
+  /// No description provided for @transaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction'**
+  String get transaction;
+
+  /// No description provided for @connectWithPartnerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect with\nyour partner'**
+  String get connectWithPartnerTitle;
+
+  /// No description provided for @connectWithPartnerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your partner\'s unique ID or scan their QR code to link accounts.'**
+  String get connectWithPartnerSubtitle;
+
+  /// No description provided for @partnerIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Partner ID'**
+  String get partnerIdLabel;
+
+  /// No description provided for @scan.
+  ///
+  /// In en, this message translates to:
+  /// **'SCAN'**
+  String get scan;
+
+  /// No description provided for @orShareYourId.
+  ///
+  /// In en, this message translates to:
+  /// **'Or share your ID'**
+  String get orShareYourId;
+
+  /// No description provided for @myUniqueId.
+  ///
+  /// In en, this message translates to:
+  /// **'MY UNIQUE ID'**
+  String get myUniqueId;
+
+  /// No description provided for @generating.
+  ///
+  /// In en, this message translates to:
+  /// **'Generating...'**
+  String get generating;
+
+  /// No description provided for @idCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'ID copied to clipboard'**
+  String get idCopied;
+
+  /// No description provided for @sendInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Invite'**
+  String get sendInvite;
+
+  /// No description provided for @scanQrCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR Code'**
+  String get scanQrCode;
+
+  /// No description provided for @matchesOwnId.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches your own ID.'**
+  String get matchesOwnId;
+
+  /// No description provided for @requestAlreadySent.
+  ///
+  /// In en, this message translates to:
+  /// **'Request already sent! Wait for approval.'**
+  String get requestAlreadySent;
+
+  /// No description provided for @friendRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend request sent!'**
+  String get friendRequestSent;
+
+  /// No description provided for @inviteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s track expenses together with Couple Balance! My ID is: {id}'**
+  String inviteMessage(String id);
+
+  /// No description provided for @dashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard'**
+  String get dashboard;
+
+  /// No description provided for @totalBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'TOTAL BALANCE'**
+  String get totalBalance;
+
+  /// No description provided for @youAreOwedAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'You are owed {amount}'**
+  String youAreOwedAmount(String amount);
+
+  /// No description provided for @youOweAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'You owe {partner} {amount}'**
+  String youOweAmount(String partner, String amount);
+
+  /// No description provided for @allTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'All Transactions'**
+  String get allTransactions;
+
+  /// No description provided for @linkAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Link Accounts'**
+  String get linkAccounts;
+
+  /// No description provided for @youPaidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'You paid {amount} {currency}'**
+  String youPaidAmount(String amount, String currency);
+
+  /// No description provided for @partnerPaidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'{partner} paid {amount} {currency}'**
+  String partnerPaidAmount(String partner, String amount, String currency);
+
+  /// No description provided for @transactionDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction deleted'**
+  String get transactionDeleted;
+
+  /// No description provided for @settleTransactionQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to settle this transaction of {amount} {currency}?'**
+  String settleTransactionQuestion(String amount, String currency);
+
+  /// No description provided for @settle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settle'**
+  String get settle;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @enterNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter note'**
+  String get enterNote;
 }
 
 class _AppLocalizationsDelegate

@@ -117,7 +117,9 @@ class _PendingRequestItem extends StatelessWidget {
                       style: TextStyle(color: Colors.orange.shade800),
                     );
                   }
-                  final txName = snapshot.data?.note ?? "Transaction";
+                  final txName =
+                      snapshot.data?.note ??
+                      AppLocalizations.of(context)!.transaction;
                   return Text(
                     "${AppLocalizations.of(context)!.partnerWantsToSettleUp}: $txName (${request.amount.toStringAsFixed(2)} ${request.currency})",
                     style: TextStyle(color: Colors.orange.shade800),
