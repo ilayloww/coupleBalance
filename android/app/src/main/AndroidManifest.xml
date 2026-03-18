@@ -55,7 +55,26 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="couplebalance" android:host="invite" />
             </intent-filter>
+            
+            <!-- Static Shortcuts for Automation Apps (Tap, Tap) -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
+
+        <activity
+            android:name=".QuickAddActivity"
+            android:theme="@style/Theme.Transparent"
+            android:exported="true"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="couplebalance" android:host="quickadd" />
+            </intent-filter>
+        </activity>
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

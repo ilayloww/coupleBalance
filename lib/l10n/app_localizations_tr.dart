@@ -880,4 +880,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get enterNote => 'Not girin';
+
+  @override
+  String get quickAddSettings => 'Hızlı Ekleme\'yi Yapılandır';
 }

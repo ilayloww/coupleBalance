@@ -881,4 +881,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get enterNote => 'Enter note';
+
+  @override
+  String get quickAddSettings => 'Configure Quick Add';
 }

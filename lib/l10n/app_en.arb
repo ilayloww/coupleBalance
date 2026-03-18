@@ -479,5 +479,6 @@
     },
     "settle": "Settle",
     "save": "Save",
-    "enterNote": "Enter note"
+    "enterNote": "Enter note",
+    "quickAddSettings": "Configure Quick Add"
 }

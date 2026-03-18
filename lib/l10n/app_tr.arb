@@ -291,5 +291,6 @@
     "settleTransactionQuestion": "Bu {amount} {currency} tutarındaki işlemi kapatmak istiyor musun?",
     "settle": "Kapat",
     "save": "Kaydet",
-    "enterNote": "Not girin"
+    "enterNote": "Not girin",
+    "quickAddSettings": "Hızlı Ekleme'yi Yapılandır"
 }

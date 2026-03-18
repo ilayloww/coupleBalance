@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="action_quick_add_static"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/quick_add"
+        android:shortcutLongLabel="@string/quick_add">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="couplebalance://quickadd"
+            android:targetPackage="com.couplebalance.app"
+            android:targetClass="com.couplebalance.app.QuickAddActivity">
+            <extra android:name="some unique action key" android:value="action_quick_add" />
+        </intent>
+    </shortcut>
+</shortcuts>

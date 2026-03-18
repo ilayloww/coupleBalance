@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:couple_balance/l10n/app_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -19,6 +20,8 @@ import 'screens/partner_list_screen.dart';
 import 'screens/partner_link_screen.dart'; // Add this
 import 'viewmodels/settlement_viewmodel.dart';
 import 'services/deep_link_service.dart'; // Add this
+import 'services/quick_add_service.dart';
+import 'screens/quick_add_screen.dart'; // Add this
 
 // UNCOMMENT the following line after running `flutterfire configure`
 import 'firebase_options.dart';
@@ -143,6 +146,10 @@ class MyApp extends StatelessWidget {
         Provider<NotificationService>(
           create: (_) => notificationServiceOverride ?? NotificationService(),
         ),
+        Provider<QuickAddService>(
+          create: (_) => QuickAddService(navigatorKey)..init(),
+          lazy: false,
+        ),
       ],
       child: Consumer2<ThemeService, LocalizationService>(
         builder: (context, themeService, localizationService, child) {
@@ -170,7 +177,8 @@ class MyApp extends StatelessWidget {
             routes: {
               '/login': (context) => const LoginScreen(),
               '/home': (context) => const HomeScreen(),
-              '/partners': (context) => const PartnerListScreen(), // Add this
+              '/partners': (context) => const PartnerListScreen(),
+              '/quick-add': (context) => const QuickAddScreen(), // Add this
             },
           );
         },
@@ -266,5 +274,103 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
 
     return const MainScreen();
+  }
+}
+
+// ==========================================
+// Quick Add Transparent Activity Entry Point
+// ==========================================
+@pragma('vm:entry-point')
+void quickAddMain() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint("Firebase Initialization Error in QuickAdd: $e");
+  }
+
+  final prefs = await SharedPreferences.getInstance();
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(create: (_) => ThemeService(prefs)),
+        ChangeNotifierProvider(create: (_) => LocalizationService(prefs)),
+      ],
+      child: Consumer2<ThemeService, LocalizationService>(
+        builder: (context, themeService, localizationService, child) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Quick Add',
+            themeAnimationDuration: Duration.zero,
+            theme: AppTheme.lightTheme(
+              themeService.selectedColor,
+            ).copyWith(scaffoldBackgroundColor: Colors.transparent),
+            darkTheme: AppTheme.darkTheme(
+              themeService.selectedColor,
+            ).copyWith(scaffoldBackgroundColor: Colors.transparent),
+            themeMode: themeService.themeMode,
+            locale: localizationService.locale,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [Locale('en'), Locale('tr')],
+            home: const QuickAddWrapper(),
+          );
+        },
+      ),
+    ),
+  );
+}
+
+class QuickAddWrapper extends StatelessWidget {
+  const QuickAddWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthService>(
+      builder: (context, authService, child) {
+        if (authService.isLoading) {
+          return const Scaffold(
+            backgroundColor: Colors.transparent,
+            body: Center(
+              child: CircularProgressIndicator(color: AppTheme.emeraldPrimary),
+            ),
+          );
+        }
+
+        if (authService.currentUser == null) {
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            body: GestureDetector(
+              onTap: () => SystemNavigator.pop(),
+              child: Container(
+                color: Colors.black54,
+                alignment: Alignment.center,
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0C1A13),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: const Text(
+                    "Please login to use Quick Add.",
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        return const QuickAddScreen();
+      },
+    );
   }
 }

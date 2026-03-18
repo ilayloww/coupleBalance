@@ -1705,6 +1705,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter note'**
   String get enterNote;
+
+  /// No description provided for @quickAddSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure Quick Add'**
+  String get quickAddSettings;
 }
 
 class _AppLocalizationsDelegate

@@ -228,6 +228,84 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _showQuickAddInstructions() {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF05100A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          l10n.quickAddSettings,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "How to Setup Back Tap:",
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.emeraldPrimary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "Standard Devices (Pixel, Samsung):",
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "1. Go to your phone's Settings -> System -> Gestures -> Quick Tap (or RegiStar).",
+                style: TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                "2. Select 'Open app' and choose 'CoupleBalance' -> 'Quick Add'.",
+                style: TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                "Restricted Devices (Xiaomi HyperOS, etc):",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "Install the free 'Tap, Tap' app from XDA or GitHub.",
+                style: TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                "In Tap, Tap, add an action to launch a shortcut: 'CoupleBalance -> Quick Add'.",
+                style: TextStyle(color: Colors.white70),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              l10n.done,
+              style: const TextStyle(color: AppTheme.emeraldPrimary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthService>(context).currentUser;
@@ -432,6 +510,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ? 'Türkçe'
                         : 'English',
                     onTap: _showLanguageSelector,
+                  ),
+                  const SizedBox(height: 12),
+                  _SettingsTile(
+                    icon: Icons.flash_on,
+                    title: l10n.quickAddSettings,
+                    onTap: () {
+                      _showQuickAddInstructions();
+                    },
                   ),
                   const SizedBox(height: 12),
                   _SettingsTile(

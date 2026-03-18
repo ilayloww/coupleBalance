@@ -66,6 +66,7 @@ dependencies:
   share_plus: ^12.0.1
   app_links: ^7.0.0
   crypto: ^3.0.7
+  quick_actions: ^1.1.0
 
 dev_dependencies:
   flutter_test:
